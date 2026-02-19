@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roblox AI</title>
+    <title>V1zions.gg - Generador Pro</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
@@ -20,6 +20,8 @@
             overflow: hidden;
             display: flex;
         }
+        
+        /* BARRA LATERAL */
         .sidebar {
             width: 280px;
             background-color: #1e1f20;
@@ -27,6 +29,7 @@
             flex-direction: column;
             border-right: 1px solid #333538;
             padding: 15px;
+            z-index: 10;
         }
         .sidebar-header {
             display: flex;
@@ -40,6 +43,7 @@
             display: flex;
             align-items: center;
             gap: 10px;
+            font-weight: 700;
         }
         .new-chat-btn {
             background-color: transparent;
@@ -54,6 +58,7 @@
             font-size: 0.95rem;
             font-weight: 600;
             margin-bottom: 20px;
+            transition: background 0.2s;
         }
         .new-chat-btn:hover {
             background-color: #282a2c;
@@ -110,10 +115,13 @@
         .vip-button:hover {
             background-color: #fcd53f;
         }
+
+        /* AREA DE CHAT */
         .chat-main {
             flex-grow: 1;
             display: flex;
             flex-direction: column;
+            position: relative;
         }
         .chat-header {
             padding: 15px 30px;
@@ -121,6 +129,7 @@
             justify-content: space-between;
             align-items: center;
             border-bottom: 1px solid #333538;
+            background-color: #131314;
         }
         .model-selector select {
             background-color: #282a2c;
@@ -186,6 +195,7 @@
             max-width: 850px;
             margin: 0 auto;
             width: 100%;
+            background-color: #131314;
         }
         .input-wrapper {
             display: flex;
@@ -218,22 +228,98 @@
             justify-content: center;
             margin-left: 10px;
         }
+
+        /* VENTANAS EMERGENTES (MODALES) */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        .modal-content {
+            background-color: #1e1f20;
+            width: 400px;
+            border-radius: 12px;
+            border: 1px solid #333538;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        .modal-header h3 {
+            color: #e3e3e3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .close-btn {
+            background: transparent;
+            border: none;
+            color: #a0a0a0;
+            cursor: pointer;
+            font-size: 1.2rem;
+        }
+        .close-btn:hover {
+            color: #e3e3e3;
+        }
+        .paypal-btn {
+            width: 100%;
+            background-color: #0070ba;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .paypal-btn:hover {
+            background-color: #005ea6;
+        }
+        .modal-body p {
+            color: #a0a0a0;
+            font-size: 0.95rem;
+            line-height: 1.5;
+        }
     </style>
 </head>
 <body>
+    
     <div class="sidebar">
         <div class="sidebar-header">
-            <h2><i class="fa-solid fa-robot"></i> BloxAI</h2>
+            <h2><i class="fa-solid fa-code"></i> V1zions.gg</h2>
         </div>
-        <button class="new-chat-btn"><i class="fa-solid fa-plus"></i> Nuevo Chat</button>
+        <button class="new-chat-btn" id="btn-nuevo-chat"><i class="fa-solid fa-plus"></i> Nuevo Chat</button>
         <div class="chat-history">
-            <p class="history-title">Hoy</p>
-            <ul class="history-list">
-                <li class="history-item active"><i class="fa-regular fa-message"></i> Script Inicial</li>
+            <p class="history-title">Historial</p>
+            <ul class="history-list" id="lista-historial">
+                <li class="history-item active"><i class="fa-regular fa-message"></i> Script Actual</li>
             </ul>
         </div>
         <div class="sidebar-footer">
-            <button class="vip-button"><i class="fa-solid fa-crown"></i> Mejorar a VIP</button>
+            <button class="vip-button" id="btn-abrir-vip"><i class="fa-solid fa-crown"></i> Mejorar a VIP</button>
         </div>
     </div>
 
@@ -241,8 +327,8 @@
         <header class="chat-header">
             <div class="model-selector">
                 <select id="model-select">
-                    <option value="normal">BloxAI Estándar</option>
-                    <option value="vip">BloxAI Pro (Luau 2026)</option>
+                    <option value="normal">V1zions Estándar (Gratis)</option>
+                    <option value="vip">V1zions Pro (Requiere VIP)</option>
                 </select>
             </div>
         </header>
@@ -251,7 +337,7 @@
             <div class="message ai-message">
                 <div class="avatar"><i class="fa-solid fa-robot"></i></div>
                 <div class="message-content">
-                    <p>¡Hola! Soy tu asistente experto en Luau. ¿Qué script necesitas crear hoy? Te entregaré el código completo y verificado.</p>
+                    <p>¡Bienvenido a V1zions.gg! Soy tu asistente experto en Luau. ¿Qué script de Roblox necesitas crear hoy?</p>
                 </div>
             </div>
         </div>
@@ -259,23 +345,49 @@
         <div class="chat-input-container">
             <form id="chat-form">
                 <div class="input-wrapper">
-                    <textarea id="user-input" placeholder="Escribe tu mensaje aquí..." rows="1" required></textarea>
+                    <textarea id="user-input" placeholder="Ej: Crea un datastore para guardar dinero..." rows="1" required></textarea>
                     <button type="submit" class="send-button"><i class="fa-solid fa-paper-plane"></i></button>
                 </div>
             </form>
         </div>
     </main>
 
+    <div class="modal-overlay" id="modal-vip">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-crown" style="color: #fbbc04;"></i> Suscripción VIP</h3>
+                <button class="close-btn" id="btn-cerrar-vip"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Desbloquea el poder total de V1zions.gg. Obtén el código sin recortes, análisis de errores avanzado y acceso al modelo Pro.</p>
+                <h2 style="color: #e3e3e3; margin: 15px 0;">$9.99 / mes</h2>
+                <button class="paypal-btn">
+                    <i class="fa-brands fa-paypal"></i> Suscribirse con PayPal
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
+        // Elementos del Chat
         const chatForm = document.getElementById('chat-form');
         const userInput = document.getElementById('user-input');
         const chatMessages = document.getElementById('chat-messages');
+        const btnNuevoChat = document.getElementById('btn-nuevo-chat');
+        
+        // Elementos del Modal VIP
+        const modalVip = document.getElementById('modal-vip');
+        const btnAbrirVip = document.getElementById('btn-abrir-vip');
+        const btnCerrarVip = document.getElementById('btn-cerrar-vip');
+        const modelSelect = document.getElementById('model-select');
 
+        // Función para enviar mensaje en el chat
         chatForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const text = userInput.value.trim();
             if (text === '') return;
 
+            // Mostrar mensaje del usuario
             const userMessageDiv = document.createElement('div');
             userMessageDiv.className = 'message user-message';
             userMessageDiv.innerHTML = `
@@ -284,24 +396,62 @@
             `;
             chatMessages.appendChild(userMessageDiv);
             userInput.value = '';
-            chatMessages.scrollTop = chatMessages.scrollHeight;
+            chatMessages.scrollTop = chatMessages.scrollHeight; // Bajar el scroll
 
+            // Simular que la IA está escribiendo
             setTimeout(() => {
                 const aiMessageDiv = document.createElement('div');
                 aiMessageDiv.className = 'message ai-message';
                 aiMessageDiv.innerHTML = `
                     <div class="avatar"><i class="fa-solid fa-robot"></i></div>
-                    <div class="message-content"><p>Estoy procesando tu solicitud... (Aquí conectaremos el backend que hicimos antes).</p></div>
+                    <div class="message-content"><p>Estoy procesando tu solicitud para V1zions.gg. (Aquí es donde conectaremos el backend de Node.js más adelante).</p></div>
                 `;
                 chatMessages.appendChild(aiMessageDiv);
                 chatMessages.scrollTop = chatMessages.scrollHeight;
             }, 800);
         });
 
+        // Enviar al presionar Enter (sin Shift)
         userInput.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();
                 chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+
+        // Limpiar el chat al presionar "Nuevo Chat"
+        btnNuevoChat.addEventListener('click', function() {
+            chatMessages.innerHTML = `
+                <div class="message ai-message">
+                    <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="message-content">
+                        <p>Chat reiniciado. ¿En qué nuevo script trabajamos ahora?</p>
+                    </div>
+                </div>
+            `;
+        });
+
+        // ABRIR Y CERRAR LA VENTANA VIP
+        btnAbrirVip.addEventListener('click', function() {
+            modalVip.classList.add('active');
+        });
+
+        btnCerrarVip.addEventListener('click', function() {
+            modalVip.classList.remove('active');
+        });
+
+        // Cerrar ventana si se hace clic afuera de la caja
+        modalVip.addEventListener('click', function(e) {
+            if (e.target === modalVip) {
+                modalVip.classList.remove('active');
+            }
+        });
+
+        // Avisar si intentan elegir VIP sin pagar
+        modelSelect.addEventListener('change', function() {
+            if (this.value === 'vip') {
+                modalVip.classList.add('active');
+                this.value = 'normal'; // Lo regresa a normal hasta que pague
             }
         });
     </script>
