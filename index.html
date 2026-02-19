@@ -3,168 +3,307 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Roblox AI - Generador de Scripts Pro</title>
-    
+    <title>Roblox AI</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
-    
-    <link rel="stylesheet" href="style.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Inter', sans-serif;
+        }
+        body {
+            background-color: #131314;
+            color: #e3e3e3;
+            height: 100vh;
+            overflow: hidden;
+            display: flex;
+        }
+        .sidebar {
+            width: 280px;
+            background-color: #1e1f20;
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid #333538;
+            padding: 15px;
+        }
+        .sidebar-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+        .sidebar-header h2 {
+            font-size: 1.2rem;
+            color: #e3e3e3;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .new-chat-btn {
+            background-color: transparent;
+            color: #e3e3e3;
+            border: 1px solid #333538;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        .new-chat-btn:hover {
+            background-color: #282a2c;
+        }
+        .chat-history {
+            flex-grow: 1;
+            overflow-y: auto;
+        }
+        .history-title {
+            font-size: 0.75rem;
+            color: #a0a0a0;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+        }
+        .history-list {
+            list-style: none;
+        }
+        .history-item {
+            padding: 10px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            color: #a0a0a0;
+            font-size: 0.9rem;
+            margin-bottom: 5px;
+        }
+        .history-item:hover, .history-item.active {
+            background-color: #282a2c;
+            color: #e3e3e3;
+        }
+        .sidebar-footer {
+            margin-top: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            padding-top: 15px;
+            border-top: 1px solid #333538;
+        }
+        .vip-button {
+            background-color: #fbbc04;
+            color: #000;
+            border: none;
+            padding: 10px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+        }
+        .vip-button:hover {
+            background-color: #fcd53f;
+        }
+        .chat-main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .chat-header {
+            padding: 15px 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #333538;
+        }
+        .model-selector select {
+            background-color: #282a2c;
+            color: #e3e3e3;
+            border: 1px solid #333538;
+            padding: 8px 15px;
+            border-radius: 8px;
+            outline: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 25px;
+        }
+        .message {
+            display: flex;
+            gap: 15px;
+            max-width: 800px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .message.user-message {
+            flex-direction: row-reverse;
+        }
+        .message-content {
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-size: 0.95rem;
+            line-height: 1.6;
+            max-width: 80%;
+        }
+        .ai-message .message-content {
+            background-color: transparent;
+            color: #e3e3e3;
+        }
+        .user-message .message-content {
+            background-color: #282a2c;
+            color: #e3e3e3;
+        }
+        .avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background-color: #fbbc04;
+            color: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .user-message .avatar {
+            background-color: #4a4a4a;
+            color: white;
+        }
+        .chat-input-container {
+            padding: 20px 30px 30px;
+            max-width: 850px;
+            margin: 0 auto;
+            width: 100%;
+        }
+        .input-wrapper {
+            display: flex;
+            align-items: center;
+            background-color: #282a2c;
+            border: 1px solid #333538;
+            border-radius: 12px;
+            padding: 10px 15px;
+        }
+        .input-wrapper textarea {
+            flex-grow: 1;
+            background: transparent;
+            border: none;
+            color: #e3e3e3;
+            font-size: 1rem;
+            resize: none;
+            outline: none;
+            padding: 5px;
+        }
+        .send-button {
+            background-color: #fbbc04;
+            color: #000;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-left: 10px;
+        }
+    </style>
 </head>
 <body>
-    <div class="app-container">
-        <aside class="sidebar" id="sidebar">
-            <div class="sidebar-header">
-                <h2><i class="fa-solid fa-robot"></i> BloxAI</h2>
-                <button id="close-sidebar-btn" class="mobile-only"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            
-            <button id="new-chat-btn" class="action-btn new-chat-btn">
-                <i class="fa-solid fa-plus"></i> Nuevo Chat
-            </button>
-            
-            <div class="chat-history">
-                <p class="history-title">Hoy</p>
-                <ul id="history-list-today" class="history-list">
-                    <li class="history-item active">
-                        <i class="fa-regular fa-message"></i> 
-                        <span class="history-text">Script de Leaderboard</span>
-                        <button class="delete-chat-btn"><i class="fa-solid fa-trash-can"></i></button>
-                    </li>
-                    <li class="history-item">
-                        <i class="fa-regular fa-message"></i> 
-                        <span class="history-text">DataStore de Dinero</span>
-                        <button class="delete-chat-btn"><i class="fa-solid fa-trash-can"></i></button>
-                    </li>
-                </ul>
-            </div>
-            
-            <div class="sidebar-footer">
-                <button id="open-vip-modal" class="vip-button">
-                    <i class="fa-solid fa-crown"></i> Mejorar a VIP
-                </button>
-                <button id="open-settings-modal" class="settings-btn">
-                    <i class="fa-solid fa-gear"></i> Configuración
-                </button>
-                <div class="user-profile" id="open-login-modal">
-                    <img src="https://ui-avatars.com/api/?name=Usuario&background=2d2d2d&color=fff" alt="Avatar" class="avatar-img">
-                    <span id="username-display">Iniciar Sesión</span>
-                </div>
-            </div>
-        </aside>
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h2><i class="fa-solid fa-robot"></i> BloxAI</h2>
+        </div>
+        <button class="new-chat-btn"><i class="fa-solid fa-plus"></i> Nuevo Chat</button>
+        <div class="chat-history">
+            <p class="history-title">Hoy</p>
+            <ul class="history-list">
+                <li class="history-item active"><i class="fa-regular fa-message"></i> Script Inicial</li>
+            </ul>
+        </div>
+        <div class="sidebar-footer">
+            <button class="vip-button"><i class="fa-solid fa-crown"></i> Mejorar a VIP</button>
+        </div>
+    </div>
 
-        <main class="chat-main">
-            <header class="chat-header">
-                <button id="mobile-menu-btn" class="mobile-only"><i class="fa-solid fa-bars"></i></button>
-                <div class="model-selector">
-                    <select id="model-select">
-                        <option value="normal">⚡ BloxAI Estándar</option>
-                        <option value="vip">💎 BloxAI Pro (Luau 2026)</option>
-                    </select>
-                    <span id="model-badge" class="badge normal-badge">Gratis</span>
-                </div>
-                <div class="header-actions">
-                    <button class="icon-btn" title="Exportar Chat"><i class="fa-solid fa-download"></i></button>
-                </div>
-            </header>
+    <main class="chat-main">
+        <header class="chat-header">
+            <div class="model-selector">
+                <select id="model-select">
+                    <option value="normal">BloxAI Estándar</option>
+                    <option value="vip">BloxAI Pro (Luau 2026)</option>
+                </select>
+            </div>
+        </header>
 
-            <div class="chat-messages" id="chat-messages">
-                <div class="message ai-message">
+        <div class="chat-messages" id="chat-messages">
+            <div class="message ai-message">
+                <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                <div class="message-content">
+                    <p>¡Hola! Soy tu asistente experto en Luau. ¿Qué script necesitas crear hoy? Te entregaré el código completo y verificado.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="chat-input-container">
+            <form id="chat-form">
+                <div class="input-wrapper">
+                    <textarea id="user-input" placeholder="Escribe tu mensaje aquí..." rows="1" required></textarea>
+                    <button type="submit" class="send-button"><i class="fa-solid fa-paper-plane"></i></button>
+                </div>
+            </form>
+        </div>
+    </main>
+
+    <script>
+        const chatForm = document.getElementById('chat-form');
+        const userInput = document.getElementById('user-input');
+        const chatMessages = document.getElementById('chat-messages');
+
+        chatForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const text = userInput.value.trim();
+            if (text === '') return;
+
+            const userMessageDiv = document.createElement('div');
+            userMessageDiv.className = 'message user-message';
+            userMessageDiv.innerHTML = `
+                <div class="avatar"><i class="fa-solid fa-user"></i></div>
+                <div class="message-content"><p>${text}</p></div>
+            `;
+            chatMessages.appendChild(userMessageDiv);
+            userInput.value = '';
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+
+            setTimeout(() => {
+                const aiMessageDiv = document.createElement('div');
+                aiMessageDiv.className = 'message ai-message';
+                aiMessageDiv.innerHTML = `
                     <div class="avatar"><i class="fa-solid fa-robot"></i></div>
-                    <div class="message-content">
-                        <p>¡Hola! Soy tu asistente experto en Luau y Roblox Studio. ¿Qué script necesitas crear hoy? Te entregaré el código completo, verificado y listo para funcionar en tu juego.</p>
-                    </div>
-                </div>
-            </div>
+                    <div class="message-content"><p>Estoy procesando tu solicitud... (Aquí conectaremos el backend que hicimos antes).</p></div>
+                `;
+                chatMessages.appendChild(aiMessageDiv);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, 800);
+        });
 
-            <div class="chat-input-container">
-                <form id="chat-form" class="input-form">
-                    <div class="input-wrapper">
-                        <textarea id="user-input" placeholder="Ej: Crea un sistema de combate básico con animaciones..." rows="1" required></textarea>
-                        <button type="submit" id="send-btn" class="send-button"><i class="fa-solid fa-arrow-up"></i></button>
-                    </div>
-                </form>
-                <p class="disclaimer">La IA puede cometer errores. Verifica siempre los scripts en Roblox Studio. Prohibido usar para explotar o romper términos de servicio.</p>
-            </div>
-        </main>
-    </div>
-
-    <div id="vip-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-crown"></i> Suscripción VIP</h3>
-                <button class="close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="modal-body">
-                <p>Desbloquea el poder total de la IA para Roblox. Obtén respuestas más rápidas, cero límites de uso y acceso al modelo Pro Luau 2026.</p>
-                <div class="pricing-card">
-                    <h4>Membresía Mensual</h4>
-                    <p class="price">$9.99 <span>/ mes</span></p>
-                    <ul class="benefits-list">
-                        <li><i class="fa-solid fa-check"></i> Acceso a Gemini Pro (Sin recortes)</li>
-                        <li><i class="fa-solid fa-check"></i> Análisis avanzado de scripts</li>
-                        <li><i class="fa-solid fa-check"></i> Prioridad en el servidor</li>
-                    </ul>
-                    <button id="paypal-subscribe-btn" class="payment-btn paypal-btn">
-                        <i class="fa-brands fa-paypal"></i> Suscribirse con PayPal
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div id="login-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Iniciar Sesión</h3>
-                <button class="close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="modal-body">
-                <form id="login-form">
-                    <div class="form-group">
-                        <label for="email">Correo Electrónico</label>
-                        <input type="email" id="email" placeholder="tu@correo.com" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="password">Contraseña</label>
-                        <input type="password" id="password" placeholder="••••••••" required>
-                    </div>
-                    <button type="submit" class="auth-btn">Entrar</button>
-                </form>
-                <p class="auth-switch">¿No tienes cuenta? <a href="#" id="switch-to-register">Regístrate</a></p>
-            </div>
-        </div>
-    </div>
-
-    <div id="settings-modal" class="modal-overlay hidden">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3><i class="fa-solid fa-gear"></i> Configuración</h3>
-                <button class="close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
-            </div>
-            <div class="modal-body">
-                <div class="settings-group">
-                    <label>Tema Visual</label>
-                    <select id="theme-select">
-                        <option value="dark">Oscuro (Por defecto)</option>
-                        <option value="light">Claro</option>
-                    </select>
-                </div>
-                <div class="settings-group">
-                    <label>Comportamiento de la IA</label>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="auto-scroll" checked>
-                        <span class="slider"></span>
-                        Desplazamiento automático al responder
-                    </label>
-                </div>
-                <button id="save-settings-btn" class="action-btn">Guardar Cambios</button>
-            </div>
-        </div>
-    </div>
-
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-lua.min.js"></script>
-    <script src="script.js"></script>
+        userInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                chatForm.dispatchEvent(new Event('submit'));
+            }
+        });
+    </script>
 </body>
 </html>
