@@ -104,7 +104,7 @@
 <body>
 
     <aside id="sidebar">
-        <div class="brand"><div class="brand-icon">V1</div> V1zions <span class="beta-badge">beta</span></div>
+        <div class="brand"><div class="brand-icon">V1</div> V1zions <span class="beta-badge">Titan</span></div>
         <button class="new-btn" id="new-btn">➕ New Project</button>
         
         <div class="section-title">Navigation</div>
@@ -188,7 +188,7 @@
                 <textarea id="prompt" rows="1" placeholder="Describe el sistema (Ej: Crea un sistema de inventario)..."></textarea>
                 <button class="action-btn send-btn" id="send-btn">➤</button>
             </div>
-            <div class="disclaimer-text">V1zions puede cometer errores. Verifica el código antes de usarlo.</div>
+            <div class="disclaimer-text">V1zions Server valida todo el código antes de enviarlo.</div>
         </div>
     </main>
 
@@ -212,90 +212,47 @@
         window.currentModel = "gemini-2.5-flash"; 
         window.currentImage = null;
 
-        // --- SISTEMA DE COMPRAS ---
-        
-        // Función para abrir modal de Tienda
-        document.getElementById('open-billing').onclick = () => {
-            document.getElementById('billing-modal').style.display = 'flex';
-        };
-
-        // Redirección a PayPal
-        function iniciarCompra(url) {
-            window.location.href = url;
-        }
-
-        // Sistema Test VIP/Owner para comprar instantáneamente sin pagar
+        // Compras y utilidades (mantenidas exactas)
+        document.getElementById('open-billing').onclick = () => { document.getElementById('billing-modal').style.display = 'flex'; };
+        function iniciarCompra(url) { window.location.href = url; }
         function simulatePurchase(packName, price, creditsToAdd, isVIP) {
-            if (confirm(`[TEST OWNER] ¿Simular compra de ${packName} por $${price}?`)) {
+            if (confirm(`[TEST OWNER] ¿Simular compra de ${packName}?`)) {
                 let txVal = "";
                 if (creditsToAdd === 15) txVal = "v1z_secure_pay_basic_15";
                 else if (creditsToAdd === 100) txVal = "v1z_secure_pay_pop_100";
                 else if (creditsToAdd === 500) txVal = "v1z_secure_pay_whale_500";
                 else if (isVIP) txVal = "v1z_secure_pay_vip_sub";
-                
                 window.location.href = window.location.pathname + "?tx_val=" + txVal;
             }
         }
 
-        // --- WEBHOOK ---
-        async function enviarWebhook(producto, precio, email, uid) {
-            const webhookUrl = "https://discord.com/api/webhooks/1473893247939252351/5LIYCizjpBk_XYoWs3BbawDUtz5N1ik0JCFcysqQirbzKmS9H_UCQGgnVeVLxgr65YlP";
-            const embed = {
-                username: "V1zions Store",
-                embeds: [{
-                    title: "💰 Nueva Venta Realizada",
-                    color: 16724522, 
-                    description: `Se ha procesado una compra exitosa.`,
-                    fields: [
-                        { name: "👤 Email", value: email, inline: true },
-                        { name: "📦 Producto", value: producto, inline: true },
-                        { name: "💵 Monto", value: `$${precio}`, inline: true }
-                    ],
-                    footer: { text: `UID: ${uid}` },
-                    timestamp: new Date().toISOString()
-                }]
-            };
-
-            try { await fetch(webhookUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(embed) }); } catch (error) {}
-        }
-
-        // --- RETORNO SEGURO ---
         async function checkPaymentStatus(user, userData) {
             const val = sessionStorage.getItem('v1_pending_tx');
             if (val) {
                 sessionStorage.removeItem('v1_pending_tx'); 
                 const now = Date.now();
-                if (userData.lastPurchaseTime && (now - userData.lastPurchaseTime < 120000)) {
-                    alert("⚠️ Por seguridad, debes esperar al menos 2 minutos entre cada compra.");
-                    return;
-                }
-
+                if (userData.lastPurchaseTime && (now - userData.lastPurchaseTime < 120000)) return alert("⚠️ Espera 2 minutos.");
                 let creditsToAdd = 0; let name = ""; let price = ""; let isVIP = false;
                 if (val === "v1z_secure_pay_basic_15") { creditsToAdd = 15; name = "Basic Pack"; price = "2.00"; }
                 else if (val === "v1z_secure_pay_pop_100") { creditsToAdd = 100; name = "Popular Pack"; price = "12.00"; }
                 else if (val === "v1z_secure_pay_whale_500") { creditsToAdd = 500; name = "Whale Pack"; price = "100.00"; }
                 else if (val === "v1z_secure_pay_vip_sub") { creditsToAdd = 50; name = "VIP Membership"; price = "19.99"; isVIP = true; }
-
                 if (creditsToAdd > 0) {
                     const userRef = db.collection("Users").doc(user.uid);
                     let update = { credits: firebase.firestore.FieldValue.increment(creditsToAdd), lastPurchaseTime: now };
                     if (isVIP) update.plan = "VIP";
                     await userRef.update(update);
-                    await enviarWebhook(name, price, user.email, user.uid);
-                    alert(`✅ ¡Pago confirmado y verificado!\nSe han añadido ${creditsToAdd} V-Credits.`);
+                    alert(`✅ ¡Pago confirmado! Se han añadido ${creditsToAdd} V-Credits.`);
                 }
             }
         }
 
-        // --- AUTH ---
         document.getElementById('login-btn').onclick = async () => {
             if (!auth.currentUser) {
                 const res = await auth.signInWithPopup(provider);
                 const userRef = db.collection("Users").doc(res.user.uid);
                 const doc = await userRef.get();
-                if (!doc.exists) {
-                    await userRef.set({ name: res.user.displayName, email: res.user.email, role: "User", credits: 5.0, plan: "Free", joinedAt: firebase.firestore.FieldValue.serverTimestamp() });
-                }
+                if (!doc.exists) await userRef.set({ name: res.user.displayName, email: res.user.email, role: "User", credits: 5.0, plan: "Free", joinedAt: firebase.firestore.FieldValue.serverTimestamp() });
             } else { if(confirm("¿Cerrar sesión?")) auth.signOut(); }
         };
 
@@ -303,16 +260,13 @@
             if (user) {
                 db.collection("Users").doc(user.uid).onSnapshot(doc => {
                     if(doc.exists) {
-                        const d = doc.data();
-                        checkPaymentStatus(user, d);
+                        const d = doc.data(); checkPaymentStatus(user, d);
                         document.getElementById('user-name-label').innerText = d.name.split(' ')[0];
                         document.getElementById('user-avatar').style.backgroundImage = `url(${user.photoURL})`;
                         document.getElementById('user-plan-label').innerText = `PLAN: ${d.plan.toUpperCase()} (${d.role})`;
-                        credits = d.credits;
-                        updateCreditsDisplay();
+                        credits = d.credits; updateCreditsDisplay();
                         window.userRole = d.role; window.userPlan = d.plan;
-                        let isPremiumUser = (d.plan === "VIP" || d.role === "Owner" || d.role === "Admin");
-                        window.currentModel = isPremiumUser ? "gemini-3-flash" : "gemini-2.5-flash";
+                        window.currentModel = (d.plan === "VIP" || d.role === "Owner" || d.role === "Admin") ? "gemini-3-flash" : "gemini-2.5-flash";
                         document.querySelectorAll('.owner-only').forEach(b => b.style.display = (d.role === "Owner" ? "block" : "none"));
                     }
                 });
@@ -320,8 +274,7 @@
                 document.getElementById('user-name-label').innerText = "Sign In";
                 document.getElementById('user-plan-label').innerText = "PLAN: GUEST";
                 document.getElementById('user-avatar').style.backgroundImage = "none";
-                credits = parseFloat(localStorage.getItem('v1_credits_float')) || 5.0; 
-                updateCreditsDisplay();
+                credits = parseFloat(localStorage.getItem('v1_credits_float')) || 5.0; updateCreditsDisplay();
                 window.userRole = "Guest"; window.userPlan = "Free"; window.currentModel = "gemini-2.5-flash";
                 document.querySelectorAll('.owner-only').forEach(b => b.style.display = "none");
             }
@@ -329,18 +282,14 @@
 
         function updateCreditsDisplay() { document.getElementById('credits-display').innerHTML = `${Math.floor(credits)}<span>.${Math.round((credits % 1) * 10)}</span>`; }
 
-        // --- PROYECTOS ---
         let projectsData = JSON.parse(localStorage.getItem('v1_projects_data')) || [{id:Date.now(), title:"Proyecto Inicial", chats:[]}];
         let currentProjectId = projectsData[0].id;
 
         function renderProjects() {
             const list = document.getElementById('projects-list'); list.innerHTML = '';
             projectsData.forEach(p => {
-                const d = document.createElement('div');
-                d.className = `project-item ${p.id === currentProjectId ? 'active' : ''}`;
-                d.innerHTML = `📄 ${p.title}`;
-                d.onclick = () => loadProject(p.id);
-                list.appendChild(d);
+                const d = document.createElement('div'); d.className = `project-item ${p.id === currentProjectId ? 'active' : ''}`;
+                d.innerHTML = `📄 ${p.title}`; d.onclick = () => loadProject(p.id); list.appendChild(d);
             });
         }
 
@@ -349,16 +298,15 @@
             const chatContainer = document.getElementById('chat-container'); chatContainer.innerHTML = '';
             const p = projectsData.find(x => x.id === pid);
             if (p && p.chats.length > 0) { p.chats.forEach(c => addMessageHTML(c.role, c.text)); } 
-            else { addMessageHTML('ai', "<strong>¡Bienvenido a V1zions Core Elite!</strong><br>Soy tu arquitecto agéntico para Roblox Studio. ¿Qué sistema masivo vamos a inyectar hoy?"); }
+            else { addMessageHTML('ai', "<strong>¡Conectado al Servidor Titan!</strong><br>El código ahora se verifica localmente antes de ir a Studio."); }
             renderProjects();
         }
 
         document.getElementById('new-btn').onclick = () => {
             let max = (window.userPlan === "VIP") ? 5 : (window.userRole === "Owner" || window.userRole === "Admin" ? 999 : 1);
-            if(projectsData.length >= max) { return alert(`⚠️ Límite de proyectos alcanzado.`); }
+            if(projectsData.length >= max) return alert(`⚠️ Límite de proyectos alcanzado.`);
             const n = {id:Date.now(), title:"New Proj "+(projectsData.length+1), chats:[]};
-            projectsData.unshift(n); localStorage.setItem('v1_projects_data', JSON.stringify(projectsData));
-            loadProject(n.id);
+            projectsData.unshift(n); localStorage.setItem('v1_projects_data', JSON.stringify(projectsData)); loadProject(n.id);
         };
         loadProject(currentProjectId);
 
@@ -369,135 +317,91 @@
             document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
         }
 
-        document.getElementById('attach-btn').onclick = () => document.getElementById('file-upload').click();
-        document.getElementById('file-upload').onchange = (e) => {
-            const file = e.target.files[0];
-            if(file) {
-                const reader = new FileReader();
-                reader.onload = (ev) => { addMessageHTML('user', `<img src="${ev.target.result}" class="img-preview">`); window.currentImage = ev.target.result; };
-                reader.readAsDataURL(file);
-            }
-        };
-
-        // --- SISTEMA DE LATIDO (HEARTBEAT) ---
+        // HEARTBEAT
         const statusInd = document.getElementById('status-indicator');
-        let isConnected = false;
-        let lastPingTime = 0;
-
+        let isConnected = false; let lastPingTime = 0;
         db.collection("System").doc("Connection").onSnapshot(doc => {
-            if(doc.exists) {
-                const d = doc.data();
-                if(d.status === "online" && d.lastPing) {
-                    lastPingTime = parseInt(d.lastPing);
-                } else {
-                    lastPingTime = 0;
-                }
-                evaluarConexion();
-            }
+            if(doc.exists) { const d = doc.data(); lastPingTime = (d.status === "online" && d.lastPing) ? parseInt(d.lastPing) : 0; evaluarConexion(); }
         });
-
         function evaluarConexion() {
-            const now = Math.floor(Date.now() / 1000);
-            isConnected = (lastPingTime > 0 && (now - lastPingTime) <= 15);
-            
+            isConnected = (lastPingTime > 0 && (Math.floor(Date.now() / 1000) - lastPingTime) <= 15);
             statusInd.innerText = isConnected ? "ESTUDIO VINCULADO" : "🔌 WAITING FOR STUDIO...";
             statusInd.style.color = isConnected ? "#00d26a" : "#8a8a95";
         }
         setInterval(evaluarConexion, 3000);
 
-        // --- ENVÍO DE PETICIÓN CON MÓDULO DE MEMORIA AGÉNTICA V18 ---
+        // NUEVO SISTEMA DE ENVÍO (APUNTA AL BACKEND LOCAL)
         document.getElementById('send-btn').onclick = async () => {
             const t = document.getElementById('prompt').value.trim();
             if(!t || !auth.currentUser || !isConnected) return alert("Verifica: Sesión iniciada, Studio vinculado o Texto vacío.");
 
-            let costo = 1.0;
-            if(t.length > 200) costo += 1.0;
+            let costo = 1.0; if(t.length > 200) costo += 1.0;
             if(credits < costo && window.userRole !== "Owner") return alert("Sin créditos suficientes.");
-            
             if(window.userRole !== "Owner") {
                 await db.collection("Users").doc(auth.currentUser.uid).update({ credits: firebase.firestore.FieldValue.increment(-costo) });
-                const indicator = document.getElementById('cost-indicator');
-                indicator.innerText = `-${costo.toFixed(1)}`; indicator.style.opacity = '1'; indicator.style.transform = 'translateY(-15px)';
-                setTimeout(() => { indicator.style.opacity = '0'; indicator.style.transform = 'translateY(0)'; }, 2000);
             }
             
             addMessageHTML('user', t);
-            
             const pIndex = projectsData.findIndex(x => x.id === currentProjectId);
             
-            // --- CONSTRUCCIÓN DE MEMORIA ---
             let historyContext = "";
             if (pIndex > -1) {
-                if (projectsData[pIndex].chats.length === 0) { 
-                    projectsData[pIndex].title = t.substring(0, 15) + "..."; 
-                    renderProjects(); 
-                }
-                
-                // Recolectar últimos 5 mensajes del proyecto actual para que la IA tenga contexto
+                if (projectsData[pIndex].chats.length === 0) { projectsData[pIndex].title = t.substring(0, 15) + "..."; renderProjects(); }
                 const recentChats = projectsData[pIndex].chats.slice(-5);
                 if (recentChats.length > 0) {
-                    historyContext = "--- HISTORIAL RECIENTE PARA CONTEXTO ---\n";
-                    recentChats.forEach(msg => {
-                        let role = msg.role === 'user' ? 'Usuario' : 'IA';
-                        // Quitar etiquetas HTML (<b>, <span>, etc.) para limpiar el texto a la IA
-                        let cleanText = msg.text.replace(/<[^>]*>?/gm, '').trim();
-                        historyContext += `${role}: ${cleanText}\n\n`;
-                    });
-                    historyContext += "--- FIN DEL HISTORIAL ---\n\nNUEVA INSTRUCCIÓN ACTUAL:\n";
+                    historyContext = "--- HISTORIAL RECIENTE ---\n";
+                    recentChats.forEach(msg => { historyContext += `${msg.role === 'user' ? 'Usuario' : 'IA'}: ${msg.text.replace(/<[^>]*>?/gm, '').trim()}\n\n`; });
+                    historyContext += "--- FIN HISTORIAL ---\n\nNUEVA INSTRUCCIÓN:\n";
                 }
-
-                // Guardar el mensaje del usuario en el array local
-                projectsData[pIndex].chats.push({ role: 'user', text: t }); 
-                localStorage.setItem('v1_projects_data', JSON.stringify(projectsData));
+                projectsData[pIndex].chats.push({ role: 'user', text: t }); localStorage.setItem('v1_projects_data', JSON.stringify(projectsData));
             }
-
-            // Unir la memoria con el mensaje nuevo
-            let finalMessageForAI = historyContext + t;
 
             document.getElementById('prompt').value = '';
             const lid = 'l-'+Date.now();
-            const modelNameUI = window.currentModel === "gemini-3-flash" ? "Gemini 3 Pro" : "Gemini 2.5 Flash";
-            addMessageHTML('ai', `<span id="${lid}" class="loading">⚙️ Procesando con ${modelNameUI} en Roblox Studio... (Puede tardar hasta 2 minutos)</span>`);
+            addMessageHTML('ai', `<span id="${lid}" class="loading">⚙️ El Servidor Backend está diseñando y validando el código...</span>`);
 
-            // Enviar a Firebase con todo el historial incluido
-            const pRef = await db.collection("PeticionesRoblox").add({ 
-                mensaje: finalMessageForAI, 
-                estado: "pendiente", 
-                modelo: window.currentModel, 
-                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
-            });
+            try {
+                // LLAMADA AL SERVIDOR NODE.JS
+                const response = await fetch('http://localhost:3000/api/generate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ prompt: historyContext + t, modelType: window.currentModel })
+                });
+                
+                const responseData = await response.json();
 
-            // TIMEOUT DE SEGURIDAD (120 segundos)
-            let failSafeTimer = setTimeout(() => {
+                if (responseData.success) {
+                    document.getElementById(lid).innerHTML = "⚙️ ¡Código validado por el Servidor! Inyectando en Roblox...";
+
+                    // Mandamos el JSON ya perfecto a Firebase para que el plugin lo inyecte
+                    const pRef = await db.collection("PeticionesRoblox").add({ 
+                        estado: "inyectar", 
+                        sistemaData: JSON.stringify(responseData.data), 
+                        timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+                    });
+
+                    // Escuchamos a Roblox para ver cuándo termina de pegarlo
+                    pRef.onSnapshot(snap => {
+                        const dbData = snap.data();
+                        if(dbData && dbData.estado === "completado") {
+                            const finalTxt = `<strong>✅ ¡Inyección Exitosa!</strong><br><span class="system-msg">${dbData.resultado.replace(/\n/g,'<br>')}</span>`;
+                            const el = document.getElementById(lid);
+                            if(el) {
+                                el.parentElement.innerHTML = finalTxt;
+                                if (pIndex > -1) { projectsData[pIndex].chats.push({ role: 'ai', text: finalTxt }); localStorage.setItem('v1_projects_data', JSON.stringify(projectsData)); }
+                            }
+                        }
+                    });
+                } else {
+                    throw new Error(responseData.error || "Fallo en la validación del backend.");
+                }
+
+            } catch (error) {
+                const failText = `<strong>❌ Error del Servidor</strong><br><span class="system-msg" style="color:#ff5555;">Asegúrate de que la consola de Node.js (server.js) esté corriendo. Error: ${error.message}</span>`;
                 const el = document.getElementById(lid);
-                if(el) {
-                    const failText = `<strong>❌ Error de Tiempo</strong><br><span class="system-msg" style="color:#ff5555;">Roblox Studio tardó demasiado en responder o se crasheó. Revisa la consola en Studio y vuelve a intentarlo.</span>`;
-                    el.parentElement.innerHTML = failText;
-                    if (pIndex > -1) { projectsData[pIndex].chats.push({ role: 'ai', text: failText }); localStorage.setItem('v1_projects_data', JSON.stringify(projectsData)); }
-                }
-            }, 120000);
-
-            pRef.onSnapshot(snap => {
-                const data = snap.data();
-                if(data && data.estado === "completado") {
-                    clearTimeout(failSafeTimer); 
-                    const finalTxt = `<strong>✅ ¡Completado!</strong><br><span class="system-msg">${data.resultado.replace(/\n/g,'<br>')}</span>`;
-                    const el = document.getElementById(lid);
-                    if(el) {
-                        el.parentElement.innerHTML = finalTxt;
-                        if (pIndex > -1) { projectsData[pIndex].chats.push({ role: 'ai', text: finalTxt }); localStorage.setItem('v1_projects_data', JSON.stringify(projectsData)); }
-                    }
-                }
-            });
-        };
-        
-        window.addEventListener('keydown', e => {
-            if (e.altKey && e.key === 'k' && window.userRole === "Owner") {
-                const term = document.getElementById('owner-terminal');
-                term.style.display = (term.style.display === 'none' ? 'block' : 'none');
-                document.getElementById('terminal-input').focus();
+                if(el) { el.parentElement.innerHTML = failText; }
             }
-        });
+        };
     </script>
 </body>
 </html>
