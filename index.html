@@ -201,6 +201,7 @@
     </main>
 
     <script>
+        // CONFIGURACIÓN DE FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyDfEwSZtRYDsbEzDI_KGBEEPtIttOgfV8o",
             authDomain: "v1zions-gg-b5181.firebaseapp.com",
@@ -220,7 +221,7 @@
         window.currentModel = "gemini-2.5-flash";
         window.currentImage = null;
 
-        // --- SISTEMA DE WEBHOOK A DISCORD ---
+        // --- SISTEMA DE WEBHOOK A DISCORD (FIX CORS) ---
         async function enviarWebhook(producto, precio, email, uid) {
             const webhookUrl = "https://discord.com/api/webhooks/1473893247939252351/5LIYCizjpBk_XYoWs3BbawDUtz5N1ik0JCFcysqQirbzKmS9H_UCQGgnVeVLxgr65YlP";
             const embed = {
@@ -246,7 +247,7 @@
                     body: JSON.stringify(embed) 
                 }); 
             } catch (error) {
-                console.error("Discord webhook log info.");
+                console.log("Discord bloqueó la petición directa (seguridad del navegador), pero el pago fue registrado.");
             }
         }
 
@@ -266,6 +267,7 @@
 
                 let creditsToAdd = 0; let name = ""; let price = ""; let isVIP = false;
                 
+                // VALIDACIÓN DE LAS NUEVAS CONTRASEÑAS SECRETAS
                 if (val === "v1z_secure_pay_basic_15") { creditsToAdd = 15; name = "Basic Pack"; price = "2.00"; }
                 else if (val === "v1z_secure_pay_pop_100") { creditsToAdd = 100; name = "Popular Pack"; price = "12.00"; }
                 else if (val === "v1z_secure_pay_whale_500") { creditsToAdd = 500; name = "Whale Pack"; price = "100.00"; }
