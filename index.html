@@ -17,9 +17,14 @@
             --text-dim: #8a8a95; --success-green: #00d26a; --sidebar-width: 275px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        body { background-color: var(--bg-darkest); color: white; height: 100vh; display: flex; overflow: hidden; background-image: radial-gradient(circle at 70% 30%, var(--primary-glow) 0%, transparent 60%); }
+        
+        body { 
+            background-color: var(--bg-darkest); color: white; height: 100vh; display: flex; 
+            background-image: radial-gradient(circle at 70% 30%, var(--primary-glow) 0%, transparent 60%);
+            overflow: hidden;
+        }
 
-        /* --- SIDEBAR PRO --- */
+        /* --- SIDEBAR PRO (Scroll Arreglado) --- */
         #sidebar { 
             width: var(--sidebar-width); background: var(--bg-panel); backdrop-filter: blur(30px); border-right: 1px solid rgba(255,255,255,0.05); 
             display: flex; flex-direction: column; padding: 20px; z-index: 10; height: 100vh;
@@ -35,6 +40,7 @@
         .menu-item:hover { background: rgba(255, 255, 255, 0.03); color: white; }
         .menu-item.active { background: rgba(255, 255, 255, 0.05); color: white; font-weight: 600; }
 
+        /* SCROLL DE PROYECTOS */
         #projects-list { 
             flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; padding-right: 5px;
         }
@@ -43,49 +49,51 @@
         .project-item { color: var(--text-dim); font-size: 13px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px; cursor: pointer; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0;}
         .project-item.active { background: rgba(255,42,42,0.1); color: var(--primary-red); border: 1px solid rgba(255,42,42,0.2); font-weight: 600;}
 
-        /* SECCIÓN INFERIOR FIJA */
+        /* SECCIÓN INFERIOR */
         .bottom-nav { flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
-
         .credits-box { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); position: relative;}
         .credits-title { font-size: 10px; color: var(--text-dim); margin-bottom: 5px; font-weight: bold; text-transform: uppercase;}
         .credits-amount { font-size: 26px; font-weight: 900; color: var(--primary-red); display: flex; justify-content: center; align-items: baseline; gap: 4px;}
         .credits-amount span { font-size: 12px; color: var(--text-dim); font-weight: 600;}
+        
+        /* FIX DEL "-0.0" */
+        .cost-indicator { position: absolute; right: 10px; top: 10px; font-size: 12px; font-weight: bold; color: var(--primary-red); opacity: 0; transition: 0.3s ease-out; pointer-events: none; }
 
         .discord-widget { background: #1a1a1f; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s;}
         .discord-widget:hover { border-color: #5865F2; }
 
-        .user-profile-btn { background: transparent; border: 1px solid rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 12px; color: white; display: flex; align-items: center; gap: 12px; cursor: pointer; width: 100%; text-align: left; transition: 0.2s;}
-        .user-profile-btn:hover { background: rgba(255, 255, 255, 0.05); }
-        .user-avatar { width: 32px; height: 32px; background: #333; border-radius: 50%; background-size: cover; border: 2px solid rgba(255,255,255,0.1); }
+        .user-profile-btn { background: transparent; border: 1px solid rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 12px; color: white; display: flex; align-items: center; gap: 12px; cursor: pointer; width: 100%; text-align: left;}
+        .user-avatar { width: 32px; height: 32px; background: #333; border-radius: 50%; background-size: cover; border: 2px solid rgba(255,255,255,0.1); flex-shrink: 0;}
         .status-badge { text-align: center; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); }
 
-        /* --- MODAL TIENDA --- */
+        /* --- MODAL TIENDA (PAYPAL) --- */
         #billing-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
         .billing-content { background: #0a0a0c; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; width: 90%; max-width: 900px; }
         .packs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px;}
         .pack-card { background: #15151a; border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; text-align: center; position: relative;}
         .pack-price { font-size: 32px; font-weight: 900; color: white; margin: 10px 0; }
-        .buy-btn { background: white; color: black; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 15px; transition: 0.2s;}
-        .buy-btn:hover { transform: scale(1.02); }
+        .buy-btn { background: #0070ba; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 15px; transition: 0.2s;}
+        .buy-btn:hover { background: #005ea6; transform: scale(1.02); }
+        .test-btn { background: #333; color: #aaa; border: 1px solid #444; padding: 6px; border-radius: 6px; font-size: 10px; cursor: pointer; margin-top: 8px; width: 100%; display: none; }
 
-        /* --- TERMINAL Y CHAT ARREGLADO --- */
+        /* --- CHAT E INTERFAZ FIX --- */
         #owner-terminal { position: fixed; bottom: 80px; left: 290px; width: 400px; background: #000; border: 1px solid var(--primary-red); border-radius: 8px; padding: 10px; display: none; z-index: 100; font-family: monospace; color: #0f0; }
         
-        #main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; }
+        #main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
         #chat-container { flex: 1; overflow-y: auto; padding: 40px 10%; display: flex; flex-direction: column; gap: 20px; }
         .msg { display: flex; gap: 15px; font-size: 14px; line-height: 1.6; }
         .msg.user { justify-content: flex-end; }
         .msg.user .bubble { background: #1e1e24; padding: 15px 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); max-width: 80%;}
         .msg.ai .bubble { color: #d1d1d6; }
-        .ai-avatar { width: 35px; height: 35px; background: var(--primary-red); border-radius: 8px; display: flex; justify-content: center; align-items: center; font-weight: 900; box-shadow: 0 0 10px var(--primary-glow);}
+        .ai-avatar { width: 35px; height: 35px; background: var(--primary-red); border-radius: 8px; display: flex; justify-content: center; align-items: center; font-weight: 900; box-shadow: 0 0 10px var(--primary-glow); flex-shrink: 0;}
         
         .input-area { flex-shrink: 0; padding: 20px 10%; background: linear-gradient(to top, var(--bg-darkest) 80%, transparent); display: flex; flex-direction: column; align-items: center;}
         .input-box { background: rgba(15,15,20,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; display: flex; align-items: flex-end; padding: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: 0.3s; width: 100%;}
         .input-box:focus-within { border-color: rgba(255,42,42,0.5); box-shadow: 0 0 20px rgba(255,42,42,0.15);}
-        textarea { flex-grow: 1; background: transparent; border: none; color: white; padding: 12px; resize: none; outline: none; }
-        .send-btn { background: var(--primary-red); color: white; width: 40px; height: 40px; border-radius: 10px; border: none; cursor: pointer; margin-left: 5px; font-size: 18px;}
+        textarea { flex-grow: 1; background: transparent; border: none; color: white; padding: 12px; resize: none; outline: none; max-height: 150px;}
+        .send-btn { background: var(--primary-red); color: white; width: 40px; height: 40px; border-radius: 10px; border: none; cursor: pointer; margin-left: 5px; font-size: 18px; flex-shrink: 0;}
         
-        .disclaimer-text { font-size: 10px; color: #555; margin-top: 10px; text-align: center; }
+        .disclaimer-text { font-size: 10px; color: #444; margin-top: 10px; text-align: center; }
         .img-preview { max-width: 150px; border-radius: 8px; border: 1px solid var(--primary-red); margin: 10px 0; }
         .loading { color: var(--primary-red); font-weight: 600; animation: blink 1s infinite; }
         @keyframes blink { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
@@ -99,7 +107,7 @@
         
         <div class="section-title">Navigation</div>
         <div class="menu-item active">📊 Dashboard</div>
-        <div class="menu-item" id="open-billing">💳 Billing & Packs</div>
+        <div class="menu-item" id="open-billing">💳 Billing & VIP</div>
         
         <div class="section-title">My Projects</div>
         <div id="projects-list"></div>
@@ -112,9 +120,9 @@
                 <div id="user-plan-label" style="font-size: 10px; color: var(--primary-red); font-weight: 800; margin-top: 5px;">PLAN: GUEST</div>
             </div>
 
-            <div class="discord-widget" onclick="window.open('https://discord.gg/YbeZeKAN', '_blank')">
+            <div class="discord-widget" onclick="window.open('https://discord.gg/xQD3W5w5tP', '_blank')">
                 <div style="background:#2c2f33; padding:8px; border-radius:8px; color:#5865F2;">💬</div>
-                <div><div style="font-weight:700; font-size:13px;">Discord</div><div style="font-size:11px; color:#8a8a95;">Join for gifts</div></div>
+                <div><div style="font-weight:700; font-size:13px;">Discord</div><div style="font-size:11px; color:#8a8a95;">Join for support</div></div>
             </div>
 
             <div class="status-badge" id="status-indicator">🔌 WAITING FOR STUDIO...</div>
@@ -131,31 +139,35 @@
 
     <div id="billing-modal">
         <div class="billing-content">
-            <div style="display:flex; justify-content:space-between;"><h2>V1zions Store</h2><button onclick="document.getElementById('billing-modal').style.display='none'" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">×</button></div>
+            <div style="display:flex; justify-content:space-between;"><h2>V1zions PayPal Store</h2><button onclick="document.getElementById('billing-modal').style.display='none'" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">×</button></div>
             <div class="packs-grid">
                 <div class="pack-card">
                     <div>Basic Pack</div>
                     <div class="pack-price">$2<span>.00</span></div>
                     <div style="font-size:12px; color:var(--text-dim);">15 Credits</div>
-                    <button class="buy-btn" onclick="iniciarCompra('https://buy.stripe.com/test_bJebJ10Ye0TE2dm5Yf6J203')">Purchase</button>
+                    <button class="buy-btn" onclick="iniciarCompra('https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HXN7KJBE7GC28')">Comprar ahora</button>
+                    <button class="test-btn owner-only" onclick="simulatePurchase('Basic Pack', 2, 15, false)">🧪 TEST (Owner)</button>
                 </div>
                 <div class="pack-card" style="border-color:var(--primary-red)">
                     <div style="color:var(--primary-red)">Popular Pack</div>
                     <div class="pack-price">$12<span>.00</span></div>
                     <div style="font-size:12px; color:var(--text-dim);">100 Credits</div>
-                    <button class="buy-btn" style="background:var(--primary-red); color:white;" onclick="iniciarCompra('https://buy.stripe.com/test_8x28wP22ibyi5py86n6J202')">Purchase</button>
+                    <button class="buy-btn" style="background:var(--primary-red);" onclick="iniciarCompra('https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=J3BLVRMNWJUZ4')">Comprar ahora</button>
+                    <button class="test-btn owner-only" onclick="simulatePurchase('Popular Pack', 12, 100, false)">🧪 TEST (Owner)</button>
                 </div>
                 <div class="pack-card">
                     <div>Whale Pack</div>
                     <div class="pack-price">$100<span>.00</span></div>
                     <div style="font-size:12px; color:var(--text-dim);">500 Credits</div>
-                    <button class="buy-btn" onclick="iniciarCompra('https://buy.stripe.com/test_7sY4gz0Yebyi5pyfyP6J201')">Purchase</button>
+                    <button class="buy-btn" onclick="iniciarCompra('https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8DV32J9MNB766')">Comprar ahora</button>
+                    <button class="test-btn owner-only" onclick="simulatePurchase('Whale Pack', 100, 500, false)">🧪 TEST (Owner)</button>
                 </div>
             </div>
             <div class="pack-card" style="margin-top:15px; border: 1px dashed var(--primary-red);">
                 <div style="font-weight:900; color:var(--primary-red);">VIP MEMBERSHIP - $19.99/mo</div>
-                <p style="font-size:12px; margin:10px 0;">Gemini 3 Flash-Preview, 5 Active Projects, 50 Bonus Credits.</p>
-                <button class="buy-btn" style="background:var(--primary-red); color:white; width:200px;" onclick="iniciarCompra('https://buy.stripe.com/test_fZu28rfT87i2cS072j6J200')">Upgrade to VIP</button>
+                <p style="font-size:12px; margin:10px 0;">Gemini 3 Flash, 5 Active Projects, 50 Bonus Credits.</p>
+                <button class="buy-btn" style="background:var(--primary-red); width:240px; margin: 0 auto;" onclick="iniciarCompra('https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=R2BA275VNGYQW')">Comprar ahora</button>
+                <button class="test-btn owner-only" style="width:200px; margin: 8px auto;" onclick="simulatePurchase('VIP Membership', 19.99, 50, true)">🧪 TEST VIP (Owner)</button>
             </div>
         </div>
     </div>
@@ -171,14 +183,15 @@
             <div class="input-box">
                 <input type="file" id="file-upload" style="display: none;" accept="image/*">
                 <button class="action-btn" id="attach-btn" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:20px; padding:10px;">📎</button>
-                <textarea id="prompt" rows="1" placeholder="Describe el sistema (Ej: Crea un sistema de combate)..."></textarea>
+                <textarea id="prompt" rows="1" placeholder="Describe el sistema (Ej: Crea un sistema de inventario)..."></textarea>
                 <button class="action-btn send-btn" id="send-btn">➤</button>
             </div>
-            <div class="disclaimer-text">V1zions puede cometer errores. Verifica el código y la arquitectura antes de implementar en producción.</div>
+            <div class="disclaimer-text">V1zions puede cometer errores. Verifica el código antes de usarlo.</div>
         </div>
     </main>
 
     <script>
+        // CONFIGURACIÓN DE FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyDfEwSZtRYDsbEzDI_KGBEEPtIttOgfV8o",
             authDomain: "v1zions-gg-b5181.firebaseapp.com",
@@ -198,16 +211,17 @@
         window.currentModel = "gemini-2.5-flash";
         window.currentImage = null;
 
-        // --- SISTEMA DE WEBHOOK A DISCORD ---
+        // --- SISTEMA DE WEBHOOK A DISCORD (FIX CORS) ---
         async function enviarWebhook(producto, precio, email, uid) {
             const webhookUrl = "https://discord.com/api/webhooks/1473893247939252351/5LIYCizjpBk_XYoWs3BbawDUtz5N1ik0JCFcysqQirbzKmS9H_UCQGgnVeVLxgr65YlP";
             const embed = {
+                username: "V1zions Store",
                 embeds: [{
-                    title: "💰 Nueva Compra Recibida",
-                    color: 16724522, // Color rojo V1zions
-                    description: `Se ha procesado una compra exitosa en V1zions.gg.`,
+                    title: "💰 Nueva Venta Realizada",
+                    color: 16724522, 
+                    description: `Se ha procesado una compra exitosa.`,
                     fields: [
-                        { name: "👤 Comprador", value: email, inline: true },
+                        { name: "👤 Email", value: email, inline: true },
                         { name: "📦 Producto", value: producto, inline: true },
                         { name: "💵 Monto", value: `$${precio}`, inline: true }
                     ],
@@ -216,54 +230,47 @@
                 }]
             };
 
-            try {
-                await fetch(webhookUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(embed)
-                });
+            try { 
+                await fetch(webhookUrl, { 
+                    method: 'POST', 
+                    headers: { 'Content-Type': 'application/json' }, 
+                    body: JSON.stringify(embed) 
+                }); 
             } catch (error) {
-                console.error("Error al enviar Webhook:", error);
+                console.error("Discord bloqueó el webhook (Normal en navegadores), pero Firebase sí guardó la venta.");
             }
         }
 
-        // --- LÓGICA DE COMPRA "MAGICA" (Frontend) ---
-        async function procesarCompraPendiente(user) {
+        // --- DETECTAR RETORNO SEGURO DE PAYPAL ---
+        async function checkPaymentStatus(user) {
             const urlParams = new URLSearchParams(window.location.search);
-            const txVal = urlParams.get('tx_val');
-
-            if (txVal) {
-                let creditsToAdd = 0;
-                let packName = "";
-                let price = "";
-                let isVIP = false;
-
-                if (txVal === "15") { creditsToAdd = 15; packName = "Basic Pack"; price = "2.00"; }
-                else if (txVal === "100") { creditsToAdd = 100; packName = "Popular Pack"; price = "12.00"; }
-                else if (txVal === "500") { creditsToAdd = 500; packName = "Whale Pack"; price = "100.00"; }
-                else if (txVal === "VIP") { creditsToAdd = 50; packName = "VIP Membership"; price = "19.99"; isVIP = true; }
+            const val = urlParams.get('tx_val');
+            if (val) {
+                let creditsToAdd = 0; let name = ""; let price = ""; let isVIP = false;
+                
+                // RUTAS SECRETAS CÓDIFICADAS
+                if (val === "v1z_secure_pay_basic_15") { creditsToAdd = 15; name = "Basic Pack"; price = "2.00"; }
+                else if (val === "v1z_secure_pay_pop_100") { creditsToAdd = 100; name = "Popular Pack"; price = "12.00"; }
+                else if (val === "v1z_secure_pay_whale_500") { creditsToAdd = 500; name = "Whale Pack"; price = "100.00"; }
+                else if (val === "v1z_secure_pay_vip_sub") { creditsToAdd = 50; name = "VIP Membership"; price = "19.99"; isVIP = true; }
 
                 if (creditsToAdd > 0) {
-                    try {
-                        const userRef = db.collection("Users").doc(user.uid);
-                        let updateData = { credits: firebase.firestore.FieldValue.increment(creditsToAdd) };
-                        if (isVIP) updateData.plan = "VIP";
-
-                        await userRef.update(updateData);
-                        await enviarWebhook(packName, price, user.email, user.uid);
-                        
-                        alert(`¡Gracias por tu compra!\nSe han añadido ${creditsToAdd} V-Credits a tu cuenta.`);
-                        
-                        // Limpiar la URL para que no se cobre dos veces al recargar
-                        window.history.replaceState({}, document.title, window.location.pathname);
-                    } catch (e) {
-                        console.error("Error procesando pago:", e);
-                    }
+                    const userRef = db.collection("Users").doc(user.uid);
+                    let update = { credits: firebase.firestore.FieldValue.increment(creditsToAdd) };
+                    if (isVIP) update.plan = "VIP";
+                    await userRef.update(update);
+                    await enviarWebhook(name, price, user.email, user.uid);
+                    
+                    // ALERTA PERSONALIZADA DE ÉXITO Y SOPORTE
+                    alert(`✅ ¡Pago confirmado!\n\nSe han añadido ${creditsToAdd} V-Credits a tu cuenta.\n\n¿No recibiste tu compra o tienes problemas?\nContáctanos en Discord enviando tu recibo:\nhttps://discord.gg/xQD3W5w5tP`);
+                    
+                    // Limpiar URL
+                    window.history.replaceState({}, document.title, window.location.pathname);
                 }
             }
         }
 
-        // --- AUTH ---
+        // --- AUTH & DATA ---
         document.getElementById('login-btn').onclick = async () => {
             if (!auth.currentUser) {
                 const res = await auth.signInWithPopup(provider);
@@ -277,9 +284,7 @@
 
         auth.onAuthStateChanged(user => {
             if (user) {
-                // Verificar si viene de pagar en Stripe
-                procesarCompraPendiente(user);
-
+                checkPaymentStatus(user);
                 db.collection("Users").doc(user.uid).onSnapshot(doc => {
                     if(doc.exists) {
                         const d = doc.data();
@@ -291,6 +296,7 @@
                         window.userRole = d.role;
                         window.userPlan = d.plan;
                         window.currentModel = d.plan === "VIP" ? "gemini-3-flash-preview" : "gemini-2.5-flash";
+                        document.querySelectorAll('.owner-only').forEach(b => b.style.display = (d.role === "Owner" ? "block" : "none"));
                     }
                 });
             } else {
@@ -301,17 +307,24 @@
                 updateCreditsDisplay();
                 window.userRole = "Guest";
                 window.userPlan = "Free";
+                document.querySelectorAll('.owner-only').forEach(b => b.style.display = "none");
             }
         });
 
         function updateCreditsDisplay() { document.getElementById('credits-display').innerHTML = `${Math.floor(credits)}<span>.${Math.round((credits % 1) * 10)}</span>`; }
 
-        // --- BILLING ---
+        // --- TIENDA ---
         document.getElementById('open-billing').onclick = () => document.getElementById('billing-modal').style.display = 'flex';
-        
-        function iniciarCompra(urlStripe) {
-            if(!auth.currentUser) return alert("Por favor, inicia sesión antes de comprar.");
-            window.open(urlStripe, '_self'); // Usa _self para que al volver detecte la URL
+        function iniciarCompra(url) { if(!auth.currentUser) return alert("Inicia sesión para poder vincular la compra a tu cuenta."); window.open(url, '_self'); }
+
+        async function simulatePurchase(name, price, creds, vip) {
+            if(!confirm(`¿Simular compra de ${name}?`)) return;
+            const userRef = db.collection("Users").doc(auth.currentUser.uid);
+            let up = { credits: firebase.firestore.FieldValue.increment(creds) };
+            if (vip) up.plan = "VIP";
+            await userRef.update(up);
+            await enviarWebhook(name, price, auth.currentUser.email, auth.currentUser.uid);
+            alert("Compra simulada con éxito. Revisa tu Discord.");
         }
 
         // --- PROYECTOS ---
@@ -335,21 +348,20 @@
             const chatContainer = document.getElementById('chat-container');
             chatContainer.innerHTML = '';
             const p = projectsData.find(x => x.id === pid);
-            
             if (p && p.chats.length > 0) {
                 p.chats.forEach(c => addMessageHTML(c.role, c.text));
             } else {
-                addMessageHTML('ai', "<strong>¡Bienvenido a V1zions!</strong><br>Soy tu asistente agéntico de desarrollo para Roblox Studio. ¿Qué sistema avanzado vamos a inyectar hoy?");
+                addMessageHTML('ai', "<strong>¡Bienvenido a V1zions Core!</strong><br>Soy tu asistente agéntico de desarrollo para Roblox Studio. ¿Qué sistema avanzado vamos a inyectar hoy?");
             }
             renderProjects();
         }
 
+        // --- LOGICA DE LÍMITES REALES ---
         document.getElementById('new-btn').onclick = () => {
-            let max = 1; 
-            if(window.userPlan === "VIP") max = 5;
-            if(window.userRole === "Owner" || window.userRole === "Admin") max = 999;
-            if(projectsData.length >= max) return alert(`Límite de proyectos alcanzado.\n\nTu plan ${window.userPlan.toUpperCase()} permite ${max} proyecto(s).\nMejora a VIP para obtener más capacidad.`);
-            
+            let max = (window.userPlan === "VIP") ? 5 : (window.userRole === "Owner" ? 999 : 1);
+            if(projectsData.length >= max) {
+                return alert(`⚠️ Límite de proyectos alcanzado.\n\nTu plan actual (${window.userPlan}) solo permite tener ${max} proyecto(s) activo(s) al mismo tiempo.\n\nSi necesitas más espacio de trabajo, por favor adquiere la Membresía VIP en la tienda.`);
+            }
             const n = {id:Date.now(), title:"New Proj "+(projectsData.length+1), chats:[]};
             projectsData.unshift(n);
             localStorage.setItem('v1_projects_data', JSON.stringify(projectsData));
@@ -357,7 +369,7 @@
         };
         loadProject(currentProjectId);
 
-        // --- CHAT Y ENVÍO ---
+        // --- CHAT ---
         function addMessageHTML(role, text) {
             const d = document.createElement('div'); d.className = `msg ${role}`;
             d.innerHTML = role === 'user' ? `<div class="bubble">${text}</div>` : `<div class="ai-avatar">V1</div><div class="bubble">${text}</div>`;
@@ -370,39 +382,44 @@
             const file = e.target.files[0];
             if(file) {
                 const reader = new FileReader();
-                reader.onload = (ev) => {
-                    addMessageHTML('user', `<img src="${ev.target.result}" class="img-preview">`);
-                    window.currentImage = ev.target.result;
-                };
+                reader.onload = (ev) => { addMessageHTML('user', `<img src="${ev.target.result}" class="img-preview">`); window.currentImage = ev.target.result; };
                 reader.readAsDataURL(file);
             }
         };
 
+        // --- STATUS & SEND ---
         const statusInd = document.getElementById('status-indicator');
         let isConnected = false;
         db.collection("System").doc("Connection").onSnapshot(doc => {
-            if (doc.exists && doc.data().status === "online") {
-                statusInd.innerText = "STUDIO VINCULADO"; statusInd.style.color = "#00d26a"; isConnected = true;
-            } else {
-                statusInd.innerText = "🔌 ESPERANDO ESTUDIO..."; statusInd.style.color = "#8a8a95"; isConnected = false;
-            }
+            isConnected = (doc.exists && doc.data().status === "online");
+            statusInd.innerText = isConnected ? "ESTUDIO VINCULADO" : "🔌 WAITING FOR STUDIO...";
+            statusInd.style.color = isConnected ? "#00d26a" : "#8a8a95";
         });
 
         document.getElementById('send-btn').onclick = async () => {
             const t = document.getElementById('prompt').value.trim();
-            if(!t && !window.currentImage) return;
-            if(!auth.currentUser) return alert("Inicia sesión.");
-            if(!isConnected) return alert("Roblox Studio no detectado.");
+            if(!t || !auth.currentUser || !isConnected) return alert("Verifica: Sesión, Studio o Texto vacío.");
 
             let costo = 1.0;
             if(t.length > 200) costo += 1.0;
-            if(['datastore','combat','raycast','oop','sistema'].some(k => t.toLowerCase().includes(k))) costo += 2.0;
-
-            if(credits < costo && window.userRole !== "Owner") return alert("Créditos insuficientes.");
-
-            if(window.userRole !== "Owner") await db.collection("Users").doc(auth.currentUser.uid).update({ credits: firebase.firestore.FieldValue.increment(-costo) });
+            if(['datastore','combat','inventario','sistema'].some(k => t.toLowerCase().includes(k))) costo += 2.0;
             
-            if(t) addMessageHTML('user', t);
+            if(credits < costo && window.userRole !== "Owner") return alert("Sin créditos.");
+            if(window.userRole !== "Owner") {
+                await db.collection("Users").doc(auth.currentUser.uid).update({ credits: firebase.firestore.FieldValue.increment(-costo) });
+                
+                // ANIMACION DEL -COSTO FIJADA
+                const indicator = document.getElementById('cost-indicator');
+                indicator.innerText = `-${costo.toFixed(1)}`;
+                indicator.style.opacity = '1';
+                indicator.style.transform = 'translateY(-15px)';
+                setTimeout(() => { 
+                    indicator.style.opacity = '0'; 
+                    indicator.style.transform = 'translateY(0)';
+                }, 2000);
+            }
+            
+            addMessageHTML('user', t);
             
             const pIndex = projectsData.findIndex(x => x.id === currentProjectId);
             if (pIndex > -1) {
@@ -412,16 +429,14 @@
             }
 
             document.getElementById('prompt').value = '';
-            window.currentImage = null; 
             const lid = 'l-'+Date.now();
-            addMessageHTML('ai', `<span id="${lid}" class="loading">⚙️ Procesando en Studio...</span>`);
+            addMessageHTML('ai', `<span id="${lid}" class="loading">⚙️ Procesando en Roblox...</span>`);
 
             const pRef = await db.collection("PeticionesRoblox").add({ mensaje: t, estado: "pendiente", modelo: window.currentModel, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
-
             pRef.onSnapshot(snap => {
                 const data = snap.data();
                 if(data && data.estado === "completado") {
-                    const finalTxt = `<strong>¡Sistema Inyectado!</strong><br><span class="system-msg">${data.resultado.replace(/\n/g,'<br>')}</span>`;
+                    const finalTxt = `<strong>¡Inyectado!</strong><br><span class="system-msg">${data.resultado.replace(/\n/g,'<br>')}</span>`;
                     const el = document.getElementById(lid);
                     if(el) {
                         el.parentElement.innerHTML = finalTxt;
@@ -434,11 +449,10 @@
             });
         };
         
-        // --- TERMINAL OWNER (Alt + K) ---
         window.addEventListener('keydown', e => {
             if (e.altKey && e.key === 'k' && window.userRole === "Owner") {
                 const term = document.getElementById('owner-terminal');
-                term.style.display = term.style.display === 'none' ? 'block' : 'none';
+                term.style.display = (term.style.display === 'none' ? 'block' : 'none');
                 document.getElementById('terminal-input').focus();
             }
         });
