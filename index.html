@@ -3,405 +3,168 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>V1zions.gg | Workspace Pro</title>
+    <title>Roblox AI - Generador de Scripts Pro</title>
     
-    <script>
-        const params = new URLSearchParams(window.location.search);
-        const secretVal = params.get('tx_val');
-        if (secretVal) {
-            sessionStorage.setItem('v1_pending_tx', secretVal);
-            window.history.replaceState({}, document.title, window.location.pathname);
-        }
-    </script>
-
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
     
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-
-    <style>
-        :root {
-            --primary-red: #ff2a2a; --primary-glow: rgba(255, 42, 42, 0.35);
-            --bg-darkest: #050505; --bg-panel: rgba(20, 20, 25, 0.85); 
-            --text-dim: #8a8a95; --success-green: #00d26a; --sidebar-width: 275px;
-        }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        
-        body { 
-            background-color: var(--bg-darkest); color: white; height: 100vh; display: flex; 
-            background-image: radial-gradient(circle at 70% 30%, var(--primary-glow) 0%, transparent 60%);
-            overflow: hidden;
-        }
-
-        #sidebar { 
-            width: var(--sidebar-width); background: var(--bg-panel); backdrop-filter: blur(30px); border-right: 1px solid rgba(255,255,255,0.05); 
-            display: flex; flex-direction: column; padding: 20px; z-index: 10; height: 100vh;
-        }
-        .brand { font-size: 22px; font-weight: 900; margin-bottom: 25px; display: flex; align-items: center; gap: 12px; flex-shrink: 0;}
-        .brand-icon { width: 34px; height: 34px; background: var(--primary-red); border-radius: 8px; box-shadow: 0 0 15px var(--primary-red); display: flex; justify-content: center; align-items: center; font-size: 14px; font-weight: bold;}
-        .beta-badge { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 2px 10px; font-size: 10px; font-weight: 600; color: #8a8a95; margin-left: auto; text-transform: lowercase; }
-
-        .new-btn { background: var(--primary-red); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-bottom: 20px; box-shadow: 0 5px 15px var(--primary-glow); display: flex; justify-content: center; gap: 8px; align-items: center; flex-shrink: 0;}
-        
-        .section-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px; margin-top: 15px; flex-shrink: 0;}
-        .menu-item { color: var(--text-dim); font-size: 13px; padding: 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; flex-shrink: 0;}
-        .menu-item:hover { background: rgba(255, 255, 255, 0.03); color: white; }
-        .menu-item.active { background: rgba(255, 255, 255, 0.05); color: white; font-weight: 600; }
-
-        #projects-list { flex: 1 1 auto; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; padding-right: 5px; }
-        #projects-list::-webkit-scrollbar { width: 4px; }
-        #projects-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-        .project-item { color: var(--text-dim); font-size: 13px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px; cursor: pointer; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-shrink: 0;}
-        .project-item.active { background: rgba(255,42,42,0.1); color: var(--primary-red); border: 1px solid rgba(255,42,42,0.2); font-weight: 600;}
-
-        .bottom-nav { flex-shrink: 0; display: flex; flex-direction: column; gap: 10px; border-top: 1px solid rgba(255,255,255,0.05); padding-top: 15px; }
-        .credits-box { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; text-align: center; border: 1px solid rgba(255,255,255,0.05); position: relative;}
-        .credits-title { font-size: 10px; color: var(--text-dim); margin-bottom: 5px; font-weight: bold; text-transform: uppercase;}
-        .credits-amount { font-size: 26px; font-weight: 900; color: var(--primary-red); display: flex; justify-content: center; align-items: baseline; gap: 4px;}
-        .credits-amount span { font-size: 12px; color: var(--text-dim); font-weight: 600;}
-        
-        .cost-indicator { position: absolute; right: 10px; top: 10px; font-size: 12px; font-weight: bold; color: var(--primary-red); opacity: 0; transition: 0.3s ease-out; pointer-events: none; }
-
-        .discord-widget { background: #1a1a1f; border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; border: 1px solid rgba(255,255,255,0.05); transition: 0.3s;}
-        .discord-widget:hover { border-color: #5865F2; }
-
-        .user-profile-btn { background: transparent; border: 1px solid rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 12px; color: white; display: flex; align-items: center; gap: 12px; cursor: pointer; width: 100%; text-align: left;}
-        .user-avatar { width: 32px; height: 32px; background: #333; border-radius: 50%; background-size: cover; border: 2px solid rgba(255,255,255,0.1); flex-shrink: 0;}
-        .status-badge { text-align: center; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); transition: 0.3s;}
-
-        #billing-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.95); display: none; z-index: 1000; justify-content: center; align-items: center; backdrop-filter: blur(10px); }
-        .billing-content { background: #0a0a0c; border: 1px solid rgba(255,255,255,0.1); border-radius: 20px; padding: 30px; width: 90%; max-width: 900px; }
-        .packs-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-top: 20px;}
-        .pack-card { background: #15151a; border: 1px solid rgba(255,255,255,0.05); padding: 20px; border-radius: 15px; text-align: center; position: relative;}
-        .pack-price { font-size: 32px; font-weight: 900; color: white; margin: 10px 0; }
-        .buy-btn { background: #0070ba; color: white; border: none; padding: 12px; width: 100%; border-radius: 8px; font-weight: 700; cursor: pointer; margin-top: 15px; transition: 0.2s;}
-        .buy-btn:hover { background: #005ea6; transform: scale(1.02); }
-        .test-btn { background: #333; color: #aaa; border: 1px solid #444; padding: 6px; border-radius: 6px; font-size: 10px; cursor: pointer; margin-top: 8px; width: 100%; display: none; }
-
-        #owner-terminal { position: fixed; bottom: 80px; left: 290px; width: 400px; background: #000; border: 1px solid var(--primary-red); border-radius: 8px; padding: 10px; display: none; z-index: 100; font-family: monospace; color: #0f0; }
-        
-        #main-content { flex: 1; display: flex; flex-direction: column; height: 100vh; overflow: hidden; }
-        #chat-container { flex: 1; overflow-y: auto; padding: 40px 10%; display: flex; flex-direction: column; gap: 20px; }
-        .msg { display: flex; gap: 15px; font-size: 14px; line-height: 1.6; }
-        .msg.user { justify-content: flex-end; }
-        .msg.user .bubble { background: #1e1e24; padding: 15px 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.05); max-width: 80%;}
-        .msg.ai .bubble { color: #d1d1d6; }
-        .ai-avatar { width: 35px; height: 35px; background: var(--primary-red); border-radius: 8px; display: flex; justify-content: center; align-items: center; font-weight: 900; box-shadow: 0 0 10px var(--primary-glow); flex-shrink: 0;}
-        
-        .input-area { flex-shrink: 0; padding: 20px 10%; background: linear-gradient(to top, var(--bg-darkest) 80%, transparent); display: flex; flex-direction: column; align-items: center;}
-        .input-box { background: rgba(15,15,20,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; display: flex; align-items: flex-end; padding: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: 0.3s; width: 100%;}
-        .input-box:focus-within { border-color: rgba(255,42,42,0.5); box-shadow: 0 0 20px rgba(255,42,42,0.15);}
-        textarea { flex-grow: 1; background: transparent; border: none; color: white; padding: 12px; resize: none; outline: none; max-height: 150px;}
-        .send-btn { background: var(--primary-red); color: white; width: 40px; height: 40px; border-radius: 10px; border: none; cursor: pointer; margin-left: 5px; font-size: 18px; flex-shrink: 0;}
-        
-        .disclaimer-text { font-size: 10px; color: #444; margin-top: 10px; text-align: center; }
-        .img-preview { max-width: 150px; border-radius: 8px; border: 1px solid var(--primary-red); margin: 10px 0; }
-        .loading { color: var(--primary-red); font-weight: 600; animation: blink 1s infinite; }
-        @keyframes blink { 0% { opacity: 0.5; } 50% { opacity: 1; } 100% { opacity: 0.5; } }
-    </style>
+    <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-    <aside id="sidebar">
-        <div class="brand"><div class="brand-icon">V1</div> V1zions <span class="beta-badge">Titan</span></div>
-        <button class="new-btn" id="new-btn">➕ New Project</button>
-        
-        <div class="section-title">Navigation</div>
-        <div class="menu-item active">📊 Dashboard</div>
-        <div class="menu-item" id="open-billing">💳 Billing & VIP</div>
-        
-        <div class="section-title">My Projects</div>
-        <div id="projects-list"></div>
-        
-        <div class="bottom-nav">
-            <div class="credits-box">
-                <span class="cost-indicator" id="cost-indicator">-0.0</span>
-                <div class="credits-title">V-CREDITS</div>
-                <div class="credits-amount" id="credits-display">0<span>.0</span></div>
-                <div id="user-plan-label" style="font-size: 10px; color: var(--primary-red); font-weight: 800; margin-top: 5px;">PLAN: GUEST</div>
+    <div class="app-container">
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h2><i class="fa-solid fa-robot"></i> BloxAI</h2>
+                <button id="close-sidebar-btn" class="mobile-only"><i class="fa-solid fa-xmark"></i></button>
             </div>
-
-            <div class="discord-widget" onclick="window.open('https://discord.gg/xQD3W5w5tP', '_blank')">
-                <div style="background:#2c2f33; padding:8px; border-radius:8px; color:#5865F2;">💬</div>
-                <div><div style="font-weight:700; font-size:13px;">Discord</div><div style="font-size:11px; color:#8a8a95;">Join for support</div></div>
-            </div>
-
-            <div class="status-badge" id="status-indicator">🔌 WAITING FOR STUDIO...</div>
-
-            <button class="user-profile-btn" id="login-btn">
-                <div class="user-avatar" id="user-avatar"></div>
-                <div>
-                    <div id="user-name-label" style="font-size: 13px; font-weight: 700;">Sign In</div>
-                    <div id="user-email-label" style="font-size: 10px; color: var(--text-dim);">Cloud Sync Active</div>
-                </div>
+            
+            <button id="new-chat-btn" class="action-btn new-chat-btn">
+                <i class="fa-solid fa-plus"></i> Nuevo Chat
             </button>
-        </div>
-    </aside>
-
-    <div id="billing-modal">
-        <div class="billing-content">
-            <div style="display:flex; justify-content:space-between;"><h2>V1zions PayPal Store</h2><button onclick="document.getElementById('billing-modal').style.display='none'" style="background:none; border:none; color:white; font-size:24px; cursor:pointer;">×</button></div>
-            <div class="packs-grid">
-                <div class="pack-card">
-                    <div>Basic Pack</div>
-                    <div class="pack-price">$2<span>.00</span></div>
-                    <div style="font-size:12px; color:var(--text-dim);">15 Credits</div>
-                    <button class="buy-btn" onclick="iniciarCompra('https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=HXN7KJBE7GC28')">Comprar ahora</button>
-                    <button class="test-btn owner-only" onclick="simulatePurchase('Basic Pack', 2, 15, false)">🧪 TEST (Owner)</button>
-                </div>
-                <div class="pack-card" style="border-color:var(--primary-red)">
-                    <div style="color:var(--primary-red)">Popular Pack</div>
-                    <div class="pack-price">$12<span>.00</span></div>
-                    <div style="font-size:12px; color:var(--text-dim);">100 Credits</div>
-                    <button class="buy-btn" style="background:var(--primary-red);" onclick="iniciarCompra('https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=J3BLVRMNWJUZ4')">Comprar ahora</button>
-                    <button class="test-btn owner-only" onclick="simulatePurchase('Popular Pack', 12, 100, false)">🧪 TEST (Owner)</button>
-                </div>
-                <div class="pack-card">
-                    <div>Whale Pack</div>
-                    <div class="pack-price">$100<span>.00</span></div>
-                    <div style="font-size:12px; color:var(--text-dim);">500 Credits</div>
-                    <button class="buy-btn" onclick="iniciarCompra('https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=8DV32J9MNB766')">Comprar ahora</button>
-                    <button class="test-btn owner-only" onclick="simulatePurchase('Whale Pack', 100, 500, false)">🧪 TEST (Owner)</button>
+            
+            <div class="chat-history">
+                <p class="history-title">Hoy</p>
+                <ul id="history-list-today" class="history-list">
+                    <li class="history-item active">
+                        <i class="fa-regular fa-message"></i> 
+                        <span class="history-text">Script de Leaderboard</span>
+                        <button class="delete-chat-btn"><i class="fa-solid fa-trash-can"></i></button>
+                    </li>
+                    <li class="history-item">
+                        <i class="fa-regular fa-message"></i> 
+                        <span class="history-text">DataStore de Dinero</span>
+                        <button class="delete-chat-btn"><i class="fa-solid fa-trash-can"></i></button>
+                    </li>
+                </ul>
+            </div>
+            
+            <div class="sidebar-footer">
+                <button id="open-vip-modal" class="vip-button">
+                    <i class="fa-solid fa-crown"></i> Mejorar a VIP
+                </button>
+                <button id="open-settings-modal" class="settings-btn">
+                    <i class="fa-solid fa-gear"></i> Configuración
+                </button>
+                <div class="user-profile" id="open-login-modal">
+                    <img src="https://ui-avatars.com/api/?name=Usuario&background=2d2d2d&color=fff" alt="Avatar" class="avatar-img">
+                    <span id="username-display">Iniciar Sesión</span>
                 </div>
             </div>
-            <div class="pack-card" style="margin-top:15px; border: 1px dashed var(--primary-red);">
-                <div style="font-weight:900; color:var(--primary-red);">VIP MEMBERSHIP - $19.99/mo</div>
-                <p style="font-size:12px; margin:10px 0;">Gemini 3 Flash, 5 Active Projects, 50 Bonus Credits.</p>
-                <button class="buy-btn" style="background:var(--primary-red); width:240px; margin: 0 auto;" onclick="iniciarCompra('https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=R2BA275VNGYQW')">Comprar ahora</button>
-                <button class="test-btn owner-only" style="width:200px; margin: 8px auto;" onclick="simulatePurchase('VIP Membership', 19.99, 50, true)">🧪 TEST VIP (Owner)</button>
+        </aside>
+
+        <main class="chat-main">
+            <header class="chat-header">
+                <button id="mobile-menu-btn" class="mobile-only"><i class="fa-solid fa-bars"></i></button>
+                <div class="model-selector">
+                    <select id="model-select">
+                        <option value="normal">⚡ BloxAI Estándar</option>
+                        <option value="vip">💎 BloxAI Pro (Luau 2026)</option>
+                    </select>
+                    <span id="model-badge" class="badge normal-badge">Gratis</span>
+                </div>
+                <div class="header-actions">
+                    <button class="icon-btn" title="Exportar Chat"><i class="fa-solid fa-download"></i></button>
+                </div>
+            </header>
+
+            <div class="chat-messages" id="chat-messages">
+                <div class="message ai-message">
+                    <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                    <div class="message-content">
+                        <p>¡Hola! Soy tu asistente experto en Luau y Roblox Studio. ¿Qué script necesitas crear hoy? Te entregaré el código completo, verificado y listo para funcionar en tu juego.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-input-container">
+                <form id="chat-form" class="input-form">
+                    <div class="input-wrapper">
+                        <textarea id="user-input" placeholder="Ej: Crea un sistema de combate básico con animaciones..." rows="1" required></textarea>
+                        <button type="submit" id="send-btn" class="send-button"><i class="fa-solid fa-arrow-up"></i></button>
+                    </div>
+                </form>
+                <p class="disclaimer">La IA puede cometer errores. Verifica siempre los scripts en Roblox Studio. Prohibido usar para explotar o romper términos de servicio.</p>
+            </div>
+        </main>
+    </div>
+
+    <div id="vip-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-crown"></i> Suscripción VIP</h3>
+                <button class="close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <p>Desbloquea el poder total de la IA para Roblox. Obtén respuestas más rápidas, cero límites de uso y acceso al modelo Pro Luau 2026.</p>
+                <div class="pricing-card">
+                    <h4>Membresía Mensual</h4>
+                    <p class="price">$9.99 <span>/ mes</span></p>
+                    <ul class="benefits-list">
+                        <li><i class="fa-solid fa-check"></i> Acceso a Gemini Pro (Sin recortes)</li>
+                        <li><i class="fa-solid fa-check"></i> Análisis avanzado de scripts</li>
+                        <li><i class="fa-solid fa-check"></i> Prioridad en el servidor</li>
+                    </ul>
+                    <button id="paypal-subscribe-btn" class="payment-btn paypal-btn">
+                        <i class="fa-brands fa-paypal"></i> Suscribirse con PayPal
+                    </button>
+                </div>
             </div>
         </div>
     </div>
 
-    <div id="owner-terminal">
-        <div style="font-size:9px; margin-bottom:5px;">V1ZIONS CMDRE TERMINAL</div>
-        <input type="text" id="terminal-input" style="background:none; border:none; color:#0f0; width:100%; outline:none;" placeholder="comando...">
+    <div id="login-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Iniciar Sesión</h3>
+                <button class="close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body">
+                <form id="login-form">
+                    <div class="form-group">
+                        <label for="email">Correo Electrónico</label>
+                        <input type="email" id="email" placeholder="tu@correo.com" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">Contraseña</label>
+                        <input type="password" id="password" placeholder="••••••••" required>
+                    </div>
+                    <button type="submit" class="auth-btn">Entrar</button>
+                </form>
+                <p class="auth-switch">¿No tienes cuenta? <a href="#" id="switch-to-register">Regístrate</a></p>
+            </div>
+        </div>
     </div>
 
-    <main id="main-content">
-        <div id="chat-container"></div>
-        <div class="input-area">
-            <div class="input-box">
-                <input type="file" id="file-upload" style="display: none;" accept="image/*">
-                <button class="action-btn" id="attach-btn" style="background:none; border:none; color:var(--text-dim); cursor:pointer; font-size:20px; padding:10px;">📎</button>
-                <textarea id="prompt" rows="1" placeholder="Describe el sistema (Ej: Crea un sistema de inventario)..."></textarea>
-                <button class="action-btn send-btn" id="send-btn">➤</button>
+    <div id="settings-modal" class="modal-overlay hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3><i class="fa-solid fa-gear"></i> Configuración</h3>
+                <button class="close-modal-btn"><i class="fa-solid fa-xmark"></i></button>
             </div>
-            <div class="disclaimer-text">V1zions Server valida todo el código antes de enviarlo.</div>
+            <div class="modal-body">
+                <div class="settings-group">
+                    <label>Tema Visual</label>
+                    <select id="theme-select">
+                        <option value="dark">Oscuro (Por defecto)</option>
+                        <option value="light">Claro</option>
+                    </select>
+                </div>
+                <div class="settings-group">
+                    <label>Comportamiento de la IA</label>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="auto-scroll" checked>
+                        <span class="slider"></span>
+                        Desplazamiento automático al responder
+                    </label>
+                </div>
+                <button id="save-settings-btn" class="action-btn">Guardar Cambios</button>
+            </div>
         </div>
-    </main>
+    </div>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDfEwSZtRYDsbEzDI_KGBEEPtIttOgfV8o",
-            authDomain: "v1zions-gg-b5181.firebaseapp.com",
-            projectId: "v1zions-gg-b5181",
-            storageBucket: "v1zions-gg-b5181.firebasestorage.app",
-            messagingSenderId: "886732747989",
-            appId: "1:886732747989:web:1e00ec9a4a3ff5b3711e5c"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-        const auth = firebase.auth();
-        const provider = new firebase.auth.GoogleAuthProvider();
-
-        let credits = 0;
-        window.userRole = "Guest";
-        window.userPlan = "Free";
-        window.currentModel = "gemini-2.5-flash"; 
-        window.currentImage = null;
-
-        // Compras y utilidades (mantenidas exactas)
-        document.getElementById('open-billing').onclick = () => { document.getElementById('billing-modal').style.display = 'flex'; };
-        function iniciarCompra(url) { window.location.href = url; }
-        function simulatePurchase(packName, price, creditsToAdd, isVIP) {
-            if (confirm(`[TEST OWNER] ¿Simular compra de ${packName}?`)) {
-                let txVal = "";
-                if (creditsToAdd === 15) txVal = "v1z_secure_pay_basic_15";
-                else if (creditsToAdd === 100) txVal = "v1z_secure_pay_pop_100";
-                else if (creditsToAdd === 500) txVal = "v1z_secure_pay_whale_500";
-                else if (isVIP) txVal = "v1z_secure_pay_vip_sub";
-                window.location.href = window.location.pathname + "?tx_val=" + txVal;
-            }
-        }
-
-        async function checkPaymentStatus(user, userData) {
-            const val = sessionStorage.getItem('v1_pending_tx');
-            if (val) {
-                sessionStorage.removeItem('v1_pending_tx'); 
-                const now = Date.now();
-                if (userData.lastPurchaseTime && (now - userData.lastPurchaseTime < 120000)) return alert("⚠️ Espera 2 minutos.");
-                let creditsToAdd = 0; let name = ""; let price = ""; let isVIP = false;
-                if (val === "v1z_secure_pay_basic_15") { creditsToAdd = 15; name = "Basic Pack"; price = "2.00"; }
-                else if (val === "v1z_secure_pay_pop_100") { creditsToAdd = 100; name = "Popular Pack"; price = "12.00"; }
-                else if (val === "v1z_secure_pay_whale_500") { creditsToAdd = 500; name = "Whale Pack"; price = "100.00"; }
-                else if (val === "v1z_secure_pay_vip_sub") { creditsToAdd = 50; name = "VIP Membership"; price = "19.99"; isVIP = true; }
-                if (creditsToAdd > 0) {
-                    const userRef = db.collection("Users").doc(user.uid);
-                    let update = { credits: firebase.firestore.FieldValue.increment(creditsToAdd), lastPurchaseTime: now };
-                    if (isVIP) update.plan = "VIP";
-                    await userRef.update(update);
-                    alert(`✅ ¡Pago confirmado! Se han añadido ${creditsToAdd} V-Credits.`);
-                }
-            }
-        }
-
-        document.getElementById('login-btn').onclick = async () => {
-            if (!auth.currentUser) {
-                const res = await auth.signInWithPopup(provider);
-                const userRef = db.collection("Users").doc(res.user.uid);
-                const doc = await userRef.get();
-                if (!doc.exists) await userRef.set({ name: res.user.displayName, email: res.user.email, role: "User", credits: 5.0, plan: "Free", joinedAt: firebase.firestore.FieldValue.serverTimestamp() });
-            } else { if(confirm("¿Cerrar sesión?")) auth.signOut(); }
-        };
-
-        auth.onAuthStateChanged(user => {
-            if (user) {
-                db.collection("Users").doc(user.uid).onSnapshot(doc => {
-                    if(doc.exists) {
-                        const d = doc.data(); checkPaymentStatus(user, d);
-                        document.getElementById('user-name-label').innerText = d.name.split(' ')[0];
-                        document.getElementById('user-avatar').style.backgroundImage = `url(${user.photoURL})`;
-                        document.getElementById('user-plan-label').innerText = `PLAN: ${d.plan.toUpperCase()} (${d.role})`;
-                        credits = d.credits; updateCreditsDisplay();
-                        window.userRole = d.role; window.userPlan = d.plan;
-                        window.currentModel = (d.plan === "VIP" || d.role === "Owner" || d.role === "Admin") ? "gemini-3-flash" : "gemini-2.5-flash";
-                        document.querySelectorAll('.owner-only').forEach(b => b.style.display = (d.role === "Owner" ? "block" : "none"));
-                    }
-                });
-            } else {
-                document.getElementById('user-name-label').innerText = "Sign In";
-                document.getElementById('user-plan-label').innerText = "PLAN: GUEST";
-                document.getElementById('user-avatar').style.backgroundImage = "none";
-                credits = parseFloat(localStorage.getItem('v1_credits_float')) || 5.0; updateCreditsDisplay();
-                window.userRole = "Guest"; window.userPlan = "Free"; window.currentModel = "gemini-2.5-flash";
-                document.querySelectorAll('.owner-only').forEach(b => b.style.display = "none");
-            }
-        });
-
-        function updateCreditsDisplay() { document.getElementById('credits-display').innerHTML = `${Math.floor(credits)}<span>.${Math.round((credits % 1) * 10)}</span>`; }
-
-        let projectsData = JSON.parse(localStorage.getItem('v1_projects_data')) || [{id:Date.now(), title:"Proyecto Inicial", chats:[]}];
-        let currentProjectId = projectsData[0].id;
-
-        function renderProjects() {
-            const list = document.getElementById('projects-list'); list.innerHTML = '';
-            projectsData.forEach(p => {
-                const d = document.createElement('div'); d.className = `project-item ${p.id === currentProjectId ? 'active' : ''}`;
-                d.innerHTML = `📄 ${p.title}`; d.onclick = () => loadProject(p.id); list.appendChild(d);
-            });
-        }
-
-        function loadProject(pid) {
-            currentProjectId = pid;
-            const chatContainer = document.getElementById('chat-container'); chatContainer.innerHTML = '';
-            const p = projectsData.find(x => x.id === pid);
-            if (p && p.chats.length > 0) { p.chats.forEach(c => addMessageHTML(c.role, c.text)); } 
-            else { addMessageHTML('ai', "<strong>¡Conectado al Servidor Titan!</strong><br>El código ahora se verifica localmente antes de ir a Studio."); }
-            renderProjects();
-        }
-
-        document.getElementById('new-btn').onclick = () => {
-            let max = (window.userPlan === "VIP") ? 5 : (window.userRole === "Owner" || window.userRole === "Admin" ? 999 : 1);
-            if(projectsData.length >= max) return alert(`⚠️ Límite de proyectos alcanzado.`);
-            const n = {id:Date.now(), title:"New Proj "+(projectsData.length+1), chats:[]};
-            projectsData.unshift(n); localStorage.setItem('v1_projects_data', JSON.stringify(projectsData)); loadProject(n.id);
-        };
-        loadProject(currentProjectId);
-
-        function addMessageHTML(role, text) {
-            const d = document.createElement('div'); d.className = `msg ${role}`;
-            d.innerHTML = role === 'user' ? `<div class="bubble">${text}</div>` : `<div class="ai-avatar">V1</div><div class="bubble">${text}</div>`;
-            document.getElementById('chat-container').appendChild(d);
-            document.getElementById('chat-container').scrollTop = document.getElementById('chat-container').scrollHeight;
-        }
-
-        // HEARTBEAT
-        const statusInd = document.getElementById('status-indicator');
-        let isConnected = false; let lastPingTime = 0;
-        db.collection("System").doc("Connection").onSnapshot(doc => {
-            if(doc.exists) { const d = doc.data(); lastPingTime = (d.status === "online" && d.lastPing) ? parseInt(d.lastPing) : 0; evaluarConexion(); }
-        });
-        function evaluarConexion() {
-            isConnected = (lastPingTime > 0 && (Math.floor(Date.now() / 1000) - lastPingTime) <= 15);
-            statusInd.innerText = isConnected ? "ESTUDIO VINCULADO" : "🔌 WAITING FOR STUDIO...";
-            statusInd.style.color = isConnected ? "#00d26a" : "#8a8a95";
-        }
-        setInterval(evaluarConexion, 3000);
-
-        // NUEVO SISTEMA DE ENVÍO (APUNTA AL BACKEND LOCAL)
-        document.getElementById('send-btn').onclick = async () => {
-            const t = document.getElementById('prompt').value.trim();
-            if(!t || !auth.currentUser || !isConnected) return alert("Verifica: Sesión iniciada, Studio vinculado o Texto vacío.");
-
-            let costo = 1.0; if(t.length > 200) costo += 1.0;
-            if(credits < costo && window.userRole !== "Owner") return alert("Sin créditos suficientes.");
-            if(window.userRole !== "Owner") {
-                await db.collection("Users").doc(auth.currentUser.uid).update({ credits: firebase.firestore.FieldValue.increment(-costo) });
-            }
-            
-            addMessageHTML('user', t);
-            const pIndex = projectsData.findIndex(x => x.id === currentProjectId);
-            
-            let historyContext = "";
-            if (pIndex > -1) {
-                if (projectsData[pIndex].chats.length === 0) { projectsData[pIndex].title = t.substring(0, 15) + "..."; renderProjects(); }
-                const recentChats = projectsData[pIndex].chats.slice(-5);
-                if (recentChats.length > 0) {
-                    historyContext = "--- HISTORIAL RECIENTE ---\n";
-                    recentChats.forEach(msg => { historyContext += `${msg.role === 'user' ? 'Usuario' : 'IA'}: ${msg.text.replace(/<[^>]*>?/gm, '').trim()}\n\n`; });
-                    historyContext += "--- FIN HISTORIAL ---\n\nNUEVA INSTRUCCIÓN:\n";
-                }
-                projectsData[pIndex].chats.push({ role: 'user', text: t }); localStorage.setItem('v1_projects_data', JSON.stringify(projectsData));
-            }
-
-            document.getElementById('prompt').value = '';
-            const lid = 'l-'+Date.now();
-            addMessageHTML('ai', `<span id="${lid}" class="loading">⚙️ El Servidor Backend está diseñando y validando el código...</span>`);
-
-            try {
-                // LLAMADA AL SERVIDOR NODE.JS
-                const response = await fetch('http://localhost:3000/api/generate', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ prompt: historyContext + t, modelType: window.currentModel })
-                });
-                
-                const responseData = await response.json();
-
-                if (responseData.success) {
-                    document.getElementById(lid).innerHTML = "⚙️ ¡Código validado por el Servidor! Inyectando en Roblox...";
-
-                    // Mandamos el JSON ya perfecto a Firebase para que el plugin lo inyecte
-                    const pRef = await db.collection("PeticionesRoblox").add({ 
-                        estado: "inyectar", 
-                        sistemaData: JSON.stringify(responseData.data), 
-                        timestamp: firebase.firestore.FieldValue.serverTimestamp() 
-                    });
-
-                    // Escuchamos a Roblox para ver cuándo termina de pegarlo
-                    pRef.onSnapshot(snap => {
-                        const dbData = snap.data();
-                        if(dbData && dbData.estado === "completado") {
-                            const finalTxt = `<strong>✅ ¡Inyección Exitosa!</strong><br><span class="system-msg">${dbData.resultado.replace(/\n/g,'<br>')}</span>`;
-                            const el = document.getElementById(lid);
-                            if(el) {
-                                el.parentElement.innerHTML = finalTxt;
-                                if (pIndex > -1) { projectsData[pIndex].chats.push({ role: 'ai', text: finalTxt }); localStorage.setItem('v1_projects_data', JSON.stringify(projectsData)); }
-                            }
-                        }
-                    });
-                } else {
-                    throw new Error(responseData.error || "Fallo en la validación del backend.");
-                }
-
-            } catch (error) {
-                const failText = `<strong>❌ Error del Servidor</strong><br><span class="system-msg" style="color:#ff5555;">Asegúrate de que la consola de Node.js (server.js) esté corriendo. Error: ${error.message}</span>`;
-                const el = document.getElementById(lid);
-                if(el) { el.parentElement.innerHTML = failText; }
-            }
-        };
-    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-lua.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
