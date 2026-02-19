@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>V1zions.gg | Workspace Pro</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
+    
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <style>
+        :root {
+            --primary-red: #ff2a2a; --primary-glow: rgba(255, 42, 42, 0.35);
+            --bg-darkest: #050505; --bg-panel: rgba(20, 20, 25, 0.85); 
+            --text-dim: #8a8a95; --success-green: #00d26a; --sidebar-width: 270px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
+        
+        body { 
+            background-color: var(--bg-darkest); color: white; height: 100vh; display: flex; 
+            background-image: radial-gradient(circle at 70% 30%, var(--primary-glow) 0%, transparent 60%), 
+                              radial-gradient(circle at 20% 80%, rgba(255, 0, 0, 0.15) 0%, transparent 50%);
+            overflow: hidden;
+        }
+
+        /* SIDEBAR */
+        #sidebar { width: var(--sidebar-width); background: var(--bg-panel); backdrop-filter: blur(30px); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; padding: 20px; z-index: 10; }
+        .brand { font-size: 22px; font-weight: 900; margin-bottom: 25px; display: flex; align-items: center; gap: 12px; }
+        .brand-icon { width: 34px; height: 34px; background: var(--primary-red); border-radius: 8px; box-shadow: 0 0 15px var(--primary-red); display: flex; justify-content: center; align-items: center; font-size: 14px; font-weight: bold;}
+        
+        .new-btn { background: var(--primary-red); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-bottom: 20px; box-shadow: 0 5px 15px var(--primary-glow); display: flex; justify-content: center; gap: 8px; align-items: center;}
+        .new-btn:hover { transform: translateY(-2px); background: #ff4040; }
+
+        .section-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px;}
+        #projects-list { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; padding-right: 5px;}
+        #projects-list::-webkit-scrollbar { width: 4px; }
+        #projects-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        
+        .project-item { color: var(--text-dim); font-size: 13px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px; cursor: pointer; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        .project-item:hover { background: rgba(255,255,255,0.05); color: white;}
+        .project-item.active { background: rgba(255,42,42,0.1); color: var(--primary-red); border: 1px solid rgba(255,42,42,0.2); font-weight: 600;}
+        
+        /* CREDITOS */
+        .credits-box { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative;}
+        .credits-title { font-size: 10px; color: var(--text-dim); margin-bottom: 5px; font-weight: bold; text-transform: uppercase;}
+        .credits-amount { font-size: 26px; font-weight: 900; color: var(--primary-red); display: flex; justify-content: center; align-items: baseline; gap: 4px;}
+        .credits-amount span { font-size: 12px; color: var(--text-dim); font-weight: 600;}
+        .cost-indicator { position: absolute; right: 10px; top: 10px; font-size: 10px; color: var(--primary-red); opacity: 0; transition: 0.3s;}
+
+        .status-badge { text-align: center; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); }
+        .status-badge.online { background: rgba(0, 210, 106, 0.1); color: var(--success-green); border-color: var(--success-green); box-shadow: 0 0 10px rgba(0,210,106,0.1);}
+
+        /* MAIN CHAT */
+        #main-content { flex-grow: 1; display: flex; flex-direction: column; }
+        #chat-container { flex-grow: 1; overflow-y: auto; padding: 40px 10%; display: flex; flex-direction: column; gap: 20px; }
+        
+        .msg { display: flex; gap: 15px; font-size: 14px; line-height: 1.6; animation: fadeIn 0.3s ease-out; }
+        .msg.user { justify-content: flex-end; }
+        .msg.user .bubble { background: #1e1e24; padding: 15px 20px; border-radius: 15px; border-bottom-right-radius: 4px; border: 1px solid rgba(255,255,255,0.05); max-width: 80%;}
+        .msg.ai .bubble { padding: 10px 0; max-width: 90%; color: #d1d1d6; }
+        .ai-avatar { width: 35px; height: 35px; background: var(--primary-red); border-radius: 8px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 13px; flex-shrink: 0; box-shadow: 0 0 10px var(--primary-glow);}
+        
+        /* INPUT AREA */
+        .input-area { padding: 20px 10%; background: linear-gradient(to top, var(--bg-darkest) 80%, transparent); }
+        .input-box { background: rgba(15,15,20,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; display: flex; align-items: flex-end; padding: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: 0.3s;}
+        .input-box:focus-within { border-color: rgba(255,42,42,0.5); box-shadow: 0 0 20px rgba(255,42,42,0.15);}
+        
+        textarea { flex-grow: 1; background: transparent; border: none; color: white; padding: 12px; font-size: 14px; resize: none; outline: none; max-height: 120px; min-height: 24px; }
+        textarea::placeholder { color: #555; }
+        
+        .action-btn { background: transparent; border: none; color: var(--text-dim); width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
+        .action-btn:hover { color: white; background: rgba(255,255,255,0.05); }
+        .send-btn { background: var(--primary-red); color: white; margin-left: 5px;}
+        .send-btn:hover { background: #ff4040; box-shadow: 0 0 15px var(--primary-glow);}
+
+        .loading { color: var(--primary-red); font-weight: 600; animation: pulse 1.5s infinite; }
+        .system-msg { color: var(--success-green); font-weight: 600; font-size: 13px; margin-top: 5px; display: block;}
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+    </style>
+</head>
+<body>
+
+    <aside id="sidebar">
+        <div class="brand"><div class="brand-icon">V1</div> V1zions</div>
+        <button class="new-btn" id="new-btn">➕ Crear Proyecto</button>
+        
+        <div class="section-title">Mis Proyectos</div>
+        <div id="projects-list"></div>
+        
+        <div class="credits-box">
+            <span class="cost-indicator" id="cost-indicator">-0.0</span>
+            <div class="credits-title">V-CREDITS (1 cada 5 min)</div>
+            <div class="credits-amount" id="credits-display">0<span>.0</span></div>
+        </div>
+        
+        <div class="status-badge" id="status-indicator">🔌 ESPERANDO ESTUDIO...</div>
+    </aside>
+
+    <main id="main-content">
+        <div id="chat-container"></div>
+        
+        <div class="input-area">
+            <div class="input-box">
+                <input type="file" id="file-upload" style="display: none;">
+                <button class="action-btn" id="attach-btn" title="Adjuntar Archivo">📎</button>
+                
+                <textarea id="prompt" rows="1" placeholder="Describe el sistema (Ej: Crea un sistema de correr con shift)..."></textarea>
+                <button class="action-btn send-btn" id="send-btn">➤</button>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // 👇👇 PON TUS DATOS DE FIREBASE AQUÍ (ESTRUCTURA CORRECTA) 👇👇
+        const firebaseConfig = {
+            apiKey: "AIzaSyDfEwSZtRYDsbEzDI_KGBEEPtIttOgfV8o",
+            authDomain: "v1zions-gg-b5181.firebaseapp.com",
+            projectId: "v1zions-gg-b5181",
+            storageBucket: "v1zions-gg-b5181.firebasestorage.app",
+            messagingSenderId: "886732747989",
+            appId: "1:886732747989:web:1e00ec9a4a3ff5b3711e5c"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // --- SISTEMA DE CRÉDITOS DINÁMICO ---
+        // Usamos Float (decimales) para manejar los cobros de 0.1 a 1.0
+        let credits = parseFloat(localStorage.getItem('v1_credits_float')) || 5.0; // Damos 5 de inicio
+        
+        function updateCreditsDisplay() {
+            document.getElementById('credits-display').innerHTML = `${Math.floor(credits)}<span>.${Math.round((credits % 1) * 10)}</span>`;
+            localStorage.setItem('v1_credits_float', credits);
+        }
+        updateCreditsDisplay();
+
+        // Sumar 1 crédito cada 5 minutos (300,000 ms)
+        setInterval(() => {
+            credits += 1.0;
+            updateCreditsDisplay();
+        }, 300000); 
+
+        // Calculadora de Costos
+        function calcularCosto(texto) {
+            let costo = 0.1; // Base mínima
+            let len = texto.length;
+            
+            if (len > 100) costo += 0.1;
+            if (len > 300) costo += 0.2;
+            if (len > 600) costo += 0.3;
+
+            // Palabras clave que indican sistemas avanzados
+            const avanzadas = ['datastore', 'framework', 'oop', 'raycast', 'combat', 'inventario', 'servidor', 'modulo', 'avanzado'];
+            const minText = texto.toLowerCase();
+            avanzadas.forEach(palabra => {
+                if (minText.includes(palabra)) costo += 0.1;
+            });
+
+            return Math.min(1.0, costo); // Tope máximo de 1.0 por tarea
+        }
+
+        // --- SISTEMA DE PROYECTOS (MEMORIA REAL) ---
+        // Estructura: [{ id: 123, title: "Juego", chats: [...] }, ...]
+        let projectsData = JSON.parse(localStorage.getItem('v1_projects_data')) || [];
+        let currentProjectId = null;
+
+        const chatContainer = document.getElementById('chat-container');
+        const projectsList = document.getElementById('projects-list');
+
+        function saveProjectsData() {
+            localStorage.setItem('v1_projects_data', JSON.stringify(projectsData));
+        }
+
+        function loadProject(projectId) {
+            currentProjectId = projectId;
+            const proj = projectsData.find(p => p.id === projectId);
+            
+            chatContainer.innerHTML = '';
+            if (proj && proj.chats.length > 0) {
+                proj.chats.forEach(m => addMessageHTML(m.role, m.text));
+            } else {
+                chatContainer.innerHTML = `
+                    <div style="text-align:center; margin-top: 20vh; opacity:0.6; animation: fadeIn 0.5s;">
+                        <h1 style="font-size: 26px; margin-bottom: 10px;">Nuevo Proyecto</h1>
+                        <p>Escribe tu idea para comenzar a inyectar código.</p>
+                    </div>`;
+            }
+            renderProjectList();
+        }
+
+        function renderProjectList() {
+            projectsList.innerHTML = '';
+            projectsData.forEach(p => {
+                const div = document.createElement('div');
+                div.className = `project-item ${p.id === currentProjectId ? 'active' : ''}`;
+                div.innerHTML = `📄 ${p.title}`;
+                div.onclick = () => loadProject(p.id);
+                projectsList.appendChild(div);
+            });
+        }
+
+        // Inicialización
+        if (projectsData.length === 0) {
+            const newProj = { id: Date.now(), title: "Proyecto Inicial", chats: [] };
+            projectsData.push(newProj);
+            saveProjectsData();
+        }
+        loadProject(projectsData[0].id);
+
+        document.getElementById('new-btn').addEventListener('click', () => {
+            const newProj = { id: Date.now(), title: "Proyecto " + (projectsData.length + 1), chats: [] };
+            projectsData.unshift(newProj); // Añadir al principio
+            saveProjectsData();
+            loadProject(newProj.id);
+        });
+
+        // --- RENDERIZADO DE CHAT ---
+        function addMessageHTML(role, text, id = null) {
+            if(chatContainer.innerHTML.includes("Nuevo Proyecto")) chatContainer.innerHTML = '';
+            
+            const div = document.createElement('div');
+            div.className = `msg ${role}`;
+            if (id) div.id = id;
+            
+            if (role === 'user') {
+                div.innerHTML = `<div class="bubble">${text}</div>`;
+            } else {
+                div.innerHTML = `<div class="ai-avatar">V1</div><div class="bubble">${text}</div>`;
+            }
+            chatContainer.appendChild(div);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        function pushToCurrentProject(role, text) {
+            const proj = projectsData.find(p => p.id === currentProjectId);
+            if (proj) {
+                // Actualizar título si es el primer mensaje
+                if (proj.chats.length === 0 && role === 'user') {
+                    proj.title = text.substring(0, 20) + "...";
+                    renderProjectList();
+                }
+                proj.chats.push({ role, text });
+                saveProjectsData();
+            }
+        }
+
+        // --- BOTÓN DE ADJUNTAR (CLIP) FUNCIONAL ---
+        const attachBtn = document.getElementById('attach-btn');
+        const fileInput = document.getElementById('file-upload');
+        const inputArea = document.getElementById('prompt');
+
+        attachBtn.addEventListener('click', () => {
+            fileInput.click(); // Abre el explorador de archivos
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                const fileName = e.target.files[0].name;
+                // Añade visualmente el nombre del archivo al texto
+                const currentText = inputArea.value;
+                inputArea.value = currentText + (currentText ? "\n" : "") + `[Archivo Referencia: ${fileName}] `;
+                inputArea.style.height = 'auto';
+                inputArea.style.height = inputArea.scrollHeight + 'px';
+                fileInput.value = ""; // Resetear
+            }
+        });
+
+        // --- RADAR DE STUDIO ---
+        const statusInd = document.getElementById('status-indicator');
+        let isConnected = false;
+        
+        db.collection("System").doc("Connection").onSnapshot(doc => {
+            if (doc.exists && doc.data().status === "online") {
+                statusInd.innerText = "ESTUDIO VINCULADO";
+                statusInd.classList.add('online');
+                isConnected = true;
+            } else {
+                statusInd.innerText = "🔌 ESPERANDO ESTUDIO...";
+                statusInd.classList.remove('online');
+                isConnected = false;
+            }
+        });
+
+        // --- ENVIAR COMANDO ---
+        const sendBtn = document.getElementById('send-btn');
+
+        inputArea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+
+        async function enviar() {
+            const texto = inputArea.value.trim();
+            if (!texto) return;
+            if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
+
+            // Calcular costo
+            const costo = calcularCosto(texto);
+            if (credits < costo) {
+                return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits para este sistema. Tienes ${credits.toFixed(1)}.`);
+            }
+
+            // Descontar créditos y mostrar animación
+            credits -= costo;
+            updateCreditsDisplay();
+            const indicator = document.getElementById('cost-indicator');
+            indicator.innerText = `-${costo.toFixed(1)}`;
+            indicator.style.opacity = '1';
+            indicator.style.transform = 'translateY(-10px)';
+            setTimeout(() => { indicator.style.opacity = '0'; indicator.style.transform = 'translateY(0)'; }, 2000);
+
+            addMessageHTML('user', texto);
+            pushToCurrentProject('user', texto);
+
+            inputArea.value = '';
+            inputArea.style.height = 'auto';
+
+            const loadId = 'load-' + Date.now();
+            addMessageHTML('ai', '<span class="loading">⚙️ Procesando arquitectura en Roblox Studio...</span>', loadId);
+
+            try {
+                const docRef = await db.collection("PeticionesRoblox").add({
+                    mensaje: texto,
+                    estado: "pendiente",
+                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                });
+
+                const unsub = docRef.onSnapshot(snap => {
+                    const data = snap.data();
+                    if (!data) return;
+                    
+                    const loadElement = document.getElementById(loadId);
+
+                    if (data.estado === "completado") {
+                        if(loadElement) loadElement.remove();
+                        // Mostrar el resumen enviado por el Plugin Lua (resultado)
+                        const resumen = data.resultado || "Script inyectado correctamente.";
+                        
+                        // Formatear el texto para que se vea como los logs de Lemonade
+                        const finalMsg = `<strong>¡Sistema Completado!</strong><br><br>He inyectado los siguientes scripts en tu Workspace:<br><span class="system-msg">${resumen.replace(/\n/g, '<br>')}</span>`;
+                        
+                        addMessageHTML('ai', finalMsg);
+                        pushToCurrentProject('ai', finalMsg);
+                        unsub();
+                    } else if (data.estado === "error") {
+                        if(loadElement) loadElement.remove();
+                        addMessageHTML('ai', "❌ Ocurrió un error en la inyección de código.");
+                        unsub();
+                    }
+                });
+            } catch (error) {
+                document.getElementById(loadId).remove();
+                addMessageHTML('ai', "❌ Error de red con Firebase.");
+            }
+        }
+
+        sendBtn.addEventListener('click', enviar);
+        inputArea.addEventListener('keydown', e => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                enviar();
+            }
+        });
+    </script>
+</body>
+</html>
