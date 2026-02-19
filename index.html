@@ -218,10 +218,10 @@
         let credits = 0;
         window.userRole = "Guest";
         window.userPlan = "Free";
-        window.currentModel = "gemini-2.5-flash";
+        window.currentModel = "gemini-2.5-flash"; // Modelo por defecto
         window.currentImage = null;
 
-        // --- SISTEMA DE WEBHOOK A DISCORD (FIX CORS) ---
+        // --- SISTEMA DE WEBHOOK A DISCORD ---
         async function enviarWebhook(producto, precio, email, uid) {
             const webhookUrl = "https://discord.com/api/webhooks/1473893247939252351/5LIYCizjpBk_XYoWs3BbawDUtz5N1ik0JCFcysqQirbzKmS9H_UCQGgnVeVLxgr65YlP";
             const embed = {
@@ -247,7 +247,7 @@
                     body: JSON.stringify(embed) 
                 }); 
             } catch (error) {
-                console.log("Discord bloqueó la petición directa (seguridad del navegador), pero el pago fue registrado.");
+                console.log("Discord bloqueó la petición directa (seguridad del navegador), pero el pago fue registrado en Firebase.");
             }
         }
 
@@ -289,7 +289,7 @@
             }
         }
 
-        // --- AUTH & DATA ---
+        // --- AUTH & ASIGNACIÓN DE MODELO ---
         document.getElementById('login-btn').onclick = async () => {
             if (!auth.currentUser) {
                 const res = await auth.signInWithPopup(provider);
@@ -313,11 +313,17 @@
                         document.getElementById('user-name-label').innerText = d.name.split(' ')[0];
                         document.getElementById('user-avatar').style.backgroundImage = `url(${user.photoURL})`;
                         document.getElementById('user-plan-label').innerText = `PLAN: ${d.plan.toUpperCase()} (${d.role})`;
+                        
                         credits = d.credits;
                         updateCreditsDisplay();
+                        
                         window.userRole = d.role;
                         window.userPlan = d.plan;
-                        window.currentModel = d.plan === "VIP" ? "gemini-3-flash-preview" : "gemini-2.5-flash";
+                        
+                        // --- LÓGICA DE INTELIGENCIA ARTIFICIAL SEGÚN RANGO ---
+                        let isPremiumUser = (d.plan === "VIP" || d.role === "Owner" || d.role === "Admin");
+                        window.currentModel = isPremiumUser ? "gemini-3-flash" : "gemini-2.5-flash";
+                        
                         document.querySelectorAll('.owner-only').forEach(b => b.style.display = (d.role === "Owner" ? "block" : "none"));
                     }
                 });
@@ -327,8 +333,11 @@
                 document.getElementById('user-avatar').style.backgroundImage = "none";
                 credits = parseFloat(localStorage.getItem('v1_credits_float')) || 5.0; 
                 updateCreditsDisplay();
+                
                 window.userRole = "Guest";
                 window.userPlan = "Free";
+                window.currentModel = "gemini-2.5-flash"; // Por defecto para los no logueados
+                
                 document.querySelectorAll('.owner-only').forEach(b => b.style.display = "none");
             }
         });
@@ -380,7 +389,7 @@
 
         // --- LOGICA DE LÍMITES REALES ---
         document.getElementById('new-btn').onclick = () => {
-            let max = (window.userPlan === "VIP") ? 5 : (window.userRole === "Owner" ? 999 : 1);
+            let max = (window.userPlan === "VIP") ? 5 : (window.userRole === "Owner" || window.userRole === "Admin" ? 999 : 1);
             if(projectsData.length >= max) {
                 return alert(`⚠️ Límite de proyectos alcanzado.\n\nTu plan actual (${window.userPlan}) solo permite tener ${max} proyecto(s) activo(s) al mismo tiempo.\n\nSi necesitas más espacio de trabajo, por favor adquiere la Membresía VIP en la tienda.`);
             }
@@ -426,7 +435,8 @@
             if(t.length > 200) costo += 1.0;
             if(['datastore','combat','inventario','sistema'].some(k => t.toLowerCase().includes(k))) costo += 2.0;
             
-            if(credits < costo && window.userRole !== "Owner") return alert("Sin créditos.");
+            if(credits < costo && window.userRole !== "Owner") return alert("Sin créditos suficientes para procesar esta solicitud.");
+            
             if(window.userRole !== "Owner") {
                 await db.collection("Users").doc(auth.currentUser.uid).update({ credits: firebase.firestore.FieldValue.increment(-costo) });
                 
@@ -451,9 +461,19 @@
 
             document.getElementById('prompt').value = '';
             const lid = 'l-'+Date.now();
-            addMessageHTML('ai', `<span id="${lid}" class="loading">⚙️ Procesando en Roblox...</span>`);
+            
+            // Mensaje que indica qué modelo se está usando
+            const modelNameUI = window.currentModel === "gemini-3-flash" ? "Gemini 3 Pro" : "Gemini 2.5 Flash";
+            addMessageHTML('ai', `<span id="${lid}" class="loading">⚙️ Procesando con ${modelNameUI} en Roblox Studio...</span>`);
 
-            const pRef = await db.collection("PeticionesRoblox").add({ mensaje: t, estado: "pendiente", modelo: window.currentModel, timestamp: firebase.firestore.FieldValue.serverTimestamp() });
+            // Enviamos la petición a Firebase incluyendo la variable 'modelo'
+            const pRef = await db.collection("PeticionesRoblox").add({ 
+                mensaje: t, 
+                estado: "pendiente", 
+                modelo: window.currentModel, 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+            });
+
             pRef.onSnapshot(snap => {
                 const data = snap.data();
                 if(data && data.estado === "completado") {
