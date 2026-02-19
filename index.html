@@ -379,7 +379,7 @@
             }
         };
 
-        // --- SISTEMA DE LATIDO (HEARTBEAT) PARA ARREGLAR CONEXIÓN FANTASMA ---
+        // --- SISTEMA DE LATIDO (HEARTBEAT) ---
         const statusInd = document.getElementById('status-indicator');
         let isConnected = false;
         let lastPingTime = 0;
@@ -405,7 +405,7 @@
         }
         setInterval(evaluarConexion, 3000);
 
-        // --- ENVÍO DE PETICIÓN CON ANTI-BUGS DE TIEMPO ---
+        // --- ENVÍO DE PETICIÓN CON MÓDULO DE MEMORIA AGÉNTICA V18 ---
         document.getElementById('send-btn').onclick = async () => {
             const t = document.getElementById('prompt').value.trim();
             if(!t || !auth.currentUser || !isConnected) return alert("Verifica: Sesión iniciada, Studio vinculado o Texto vacío.");
@@ -424,21 +424,50 @@
             addMessageHTML('user', t);
             
             const pIndex = projectsData.findIndex(x => x.id === currentProjectId);
+            
+            // --- CONSTRUCCIÓN DE MEMORIA ---
+            let historyContext = "";
             if (pIndex > -1) {
-                if (projectsData[pIndex].chats.length === 0) { projectsData[pIndex].title = t.substring(0, 15) + "..."; renderProjects(); }
-                projectsData[pIndex].chats.push({ role: 'user', text: t }); localStorage.setItem('v1_projects_data', JSON.stringify(projectsData));
+                if (projectsData[pIndex].chats.length === 0) { 
+                    projectsData[pIndex].title = t.substring(0, 15) + "..."; 
+                    renderProjects(); 
+                }
+                
+                // Recolectar últimos 5 mensajes del proyecto actual para que la IA tenga contexto
+                const recentChats = projectsData[pIndex].chats.slice(-5);
+                if (recentChats.length > 0) {
+                    historyContext = "--- HISTORIAL RECIENTE PARA CONTEXTO ---\n";
+                    recentChats.forEach(msg => {
+                        let role = msg.role === 'user' ? 'Usuario' : 'IA';
+                        // Quitar etiquetas HTML (<b>, <span>, etc.) para limpiar el texto a la IA
+                        let cleanText = msg.text.replace(/<[^>]*>?/gm, '').trim();
+                        historyContext += `${role}: ${cleanText}\n\n`;
+                    });
+                    historyContext += "--- FIN DEL HISTORIAL ---\n\nNUEVA INSTRUCCIÓN ACTUAL:\n";
+                }
+
+                // Guardar el mensaje del usuario en el array local
+                projectsData[pIndex].chats.push({ role: 'user', text: t }); 
+                localStorage.setItem('v1_projects_data', JSON.stringify(projectsData));
             }
+
+            // Unir la memoria con el mensaje nuevo
+            let finalMessageForAI = historyContext + t;
 
             document.getElementById('prompt').value = '';
             const lid = 'l-'+Date.now();
             const modelNameUI = window.currentModel === "gemini-3-flash" ? "Gemini 3 Pro" : "Gemini 2.5 Flash";
-            addMessageHTML('ai', '<span id="' + lid + '" class="loading">⚙️ Procesando con ' + modelNameUI + ' en Roblox Studio... (Sistemas masivos pueden tardar hasta 2 minutos)</span>');
+            addMessageHTML('ai', `<span id="${lid}" class="loading">⚙️ Procesando con ${modelNameUI} en Roblox Studio... (Puede tardar hasta 2 minutos)</span>`);
 
+            // Enviar a Firebase con todo el historial incluido
             const pRef = await db.collection("PeticionesRoblox").add({ 
-                mensaje: t, estado: "pendiente", modelo: window.currentModel, timestamp: firebase.firestore.FieldValue.serverTimestamp() 
+                mensaje: finalMessageForAI, 
+                estado: "pendiente", 
+                modelo: window.currentModel, 
+                timestamp: firebase.firestore.FieldValue.serverTimestamp() 
             });
 
-            // TIMEOUT DE SEGURIDAD (Si el plugin tarda más de 60 segundos, desbuguear la interfaz)
+            // TIMEOUT DE SEGURIDAD (120 segundos)
             let failSafeTimer = setTimeout(() => {
                 const el = document.getElementById(lid);
                 if(el) {
@@ -472,4 +501,3 @@
     </script>
 </body>
 </html>
-
