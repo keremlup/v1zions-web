@@ -8,6 +8,7 @@
     
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 
     <style>
         :root {
@@ -24,34 +25,53 @@
             overflow: hidden;
         }
 
-        /* SIDEBAR */
+        /* --- SIDEBAR BASE --- */
         #sidebar { width: var(--sidebar-width); background: var(--bg-panel); backdrop-filter: blur(30px); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; padding: 20px; z-index: 10; }
         .brand { font-size: 22px; font-weight: 900; margin-bottom: 25px; display: flex; align-items: center; gap: 12px; }
         .brand-icon { width: 34px; height: 34px; background: var(--primary-red); border-radius: 8px; box-shadow: 0 0 15px var(--primary-red); display: flex; justify-content: center; align-items: center; font-size: 14px; font-weight: bold;}
-        
+        .beta-badge { background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 20px; padding: 2px 10px; font-size: 10px; font-weight: 600; color: #8a8a95; margin-left: auto; text-transform: lowercase; }
+
         .new-btn { background: var(--primary-red); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-bottom: 20px; box-shadow: 0 5px 15px var(--primary-glow); display: flex; justify-content: center; gap: 8px; align-items: center;}
         .new-btn:hover { transform: translateY(-2px); background: #ff4040; }
 
-        .section-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px;}
+        .section-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px; margin-top: 10px;}
+        
+        /* --- NAVEGACIÓN Y PROYECTOS --- */
+        .menu-item { color: var(--text-dim); font-size: 13px; padding: 12px; border-radius: 8px; cursor: pointer; transition: 0.2s; display: flex; align-items: center; gap: 10px; margin-bottom: 2px; }
+        .menu-item:hover { background: rgba(255, 255, 255, 0.03); color: white; }
+        .menu-item.active { background: rgba(255, 255, 255, 0.05); color: white; font-weight: 600; }
+
         #projects-list { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; padding-right: 5px;}
         #projects-list::-webkit-scrollbar { width: 4px; }
         #projects-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-        
         .project-item { color: var(--text-dim); font-size: 13px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px; cursor: pointer; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
         .project-item:hover { background: rgba(255,255,255,0.05); color: white;}
         .project-item.active { background: rgba(255,42,42,0.1); color: var(--primary-red); border: 1px solid rgba(255,42,42,0.2); font-weight: 600;}
         
-        /* CREDITOS */
+        /* --- CREDITOS Y DISCORD --- */
         .credits-box { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative;}
         .credits-title { font-size: 10px; color: var(--text-dim); margin-bottom: 5px; font-weight: bold; text-transform: uppercase;}
         .credits-amount { font-size: 26px; font-weight: 900; color: var(--primary-red); display: flex; justify-content: center; align-items: baseline; gap: 4px;}
         .credits-amount span { font-size: 12px; color: var(--text-dim); font-weight: 600;}
         .cost-indicator { position: absolute; right: 10px; top: 10px; font-size: 10px; color: var(--primary-red); opacity: 0; transition: 0.3s;}
 
-        .status-badge { text-align: center; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); }
+        .discord-widget { background: #1a1a1f; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 12px; padding: 12px; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.3s; margin-bottom: 10px; }
+        .discord-widget:hover { background: #202028; border-color: #5865F2; }
+        .discord-icon { width: 32px; height: 32px; background: #2c2f33; border-radius: 8px; display: flex; align-items: center; justify-content: center; color: #5865F2; }
+
+        .status-badge { text-align: center; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); margin-bottom: 10px;}
         .status-badge.online { background: rgba(0, 210, 106, 0.1); color: var(--success-green); border-color: var(--success-green); box-shadow: 0 0 10px rgba(0,210,106,0.1);}
 
-        /* MAIN CHAT */
+        /* --- PERFIL DE USUARIO --- */
+        .user-profile-btn { background: transparent; border: 1px solid rgba(255, 255, 255, 0.05); padding: 12px; border-radius: 12px; color: white; display: flex; align-items: center; gap: 12px; cursor: pointer; transition: 0.2s; width: 100%; text-align: left;}
+        .user-profile-btn:hover { background: rgba(255, 255, 255, 0.05); }
+        .user-avatar { width: 32px; height: 32px; background: #333; border-radius: 50%; background-size: cover; border: 2px solid rgba(255, 255, 255, 0.1); flex-shrink: 0;}
+
+        /* --- CMDR TERMINAL (OWNER) --- */
+        #owner-terminal { position: fixed; bottom: 80px; left: 290px; width: 400px; background: #000; border: 1px solid var(--primary-red); border-radius: 8px; padding: 10px; font-family: monospace; display: none; z-index: 100; box-shadow: 0 0 20px rgba(255, 0, 0, 0.2); }
+        #terminal-input { background: transparent; border: none; color: #0f0; width: 100%; outline: none; font-size: 12px; }
+
+        /* --- CHAT E INPUT --- */
         #main-content { flex-grow: 1; display: flex; flex-direction: column; }
         #chat-container { flex-grow: 1; overflow-y: auto; padding: 40px 10%; display: flex; flex-direction: column; gap: 20px; }
         
@@ -61,7 +81,6 @@
         .msg.ai .bubble { padding: 10px 0; max-width: 90%; color: #d1d1d6; }
         .ai-avatar { width: 35px; height: 35px; background: var(--primary-red); border-radius: 8px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 13px; flex-shrink: 0; box-shadow: 0 0 10px var(--primary-glow);}
         
-        /* INPUT AREA */
         .input-area { padding: 20px 10%; background: linear-gradient(to top, var(--bg-darkest) 80%, transparent); }
         .input-box { background: rgba(15,15,20,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; display: flex; align-items: flex-end; padding: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: 0.3s;}
         .input-box:focus-within { border-color: rgba(255,42,42,0.5); box-shadow: 0 0 20px rgba(255,42,42,0.15);}
@@ -84,27 +103,61 @@
 <body>
 
     <aside id="sidebar">
-        <div class="brand"><div class="brand-icon">V1</div> V1zions</div>
-        <button class="new-btn" id="new-btn">➕ Crear Proyecto</button>
+        <div class="brand">
+            <div class="brand-icon">V1</div> 
+            V1zions <span class="beta-badge">beta</span>
+        </div>
         
-        <div class="section-title">Mis Proyectos</div>
+        <button class="new-btn" id="new-btn">➕ New Project</button>
+        
+        <div class="section-title">Navigation</div>
+        <div class="menu-item active">📊 Dashboard</div>
+        <div class="menu-item" onclick="alert('Descarga el plugin desde el link de Discord!')">🔧 Download Plugin</div>
+        <div class="menu-item" id="billing-btn">💳 Billing & VIP</div>
+        
+        <div class="section-title">My Projects</div>
         <div id="projects-list"></div>
         
         <div class="credits-box">
             <span class="cost-indicator" id="cost-indicator">-0.0</span>
-            <div class="credits-title">V-CREDITS (1 cada 5 min)</div>
+            <div class="credits-title">V-CREDITS</div>
             <div class="credits-amount" id="credits-display">0<span>.0</span></div>
+            <div id="user-plan-label" style="font-size: 10px; color: var(--primary-red); font-weight: 800; margin-top: 5px; letter-spacing: 1px;">PLAN: FREE</div>
         </div>
-        
+
+        <div class="discord-widget" onclick="window.open('https://discord.gg/YbeZeKAN', '_blank')">
+            <div class="discord-icon">
+                <svg width="18" height="18" viewBox="0 0 127 96" fill="currentColor"><path d="M107.7 8a105 105 0 0 0-26.2-8 72 72 0 0 0-3.4 6.8 97.7 97.7 0 0 0-29.1 0 72.4 72.4 0 0 0-3.4-6.8 105.9 105.9 0 0 0-26.2 8C2.8 32.6-1.7 56.6.5 80.2a105.7 105.7 0 0 0 32.2 16.2 77.7 77.7 0 0 0 6.9-11.1 68.4 68.4 0 0 1-10.9-5.2c.9-.7 1.8-1.3 2.7-2a75.6 75.6 0 0 0 64.3 0c.9.7 1.8 1.3 2.7 2a67.6 67.6 0 0 1-10.9 5.2 77 77 0 0 0 6.9 11.1 105.3 105.3 0 0 0 32.2-16.1C129.2 52.8 122.1 29.1 107.7 8zM42.5 65.7c-6.3 0-11.4-5.7-11.4-12.7s5.1-12.7 11.4-12.7 11.5 5.7 11.4 12.7c0 7-5 12.7-11.4 12.7zm42.2 0c-6.3 0-11.4-5.7-11.4-12.7s5.1-12.7 11.4-12.7 11.5 5.7 11.4 12.7c0 7-5 12.7-11.4 12.7z"/></svg>
+            </div>
+            <div>
+                <div style="font-weight: 700; font-size: 13px; color: white;">Discord</div>
+                <div style="font-size: 11px; color: #8a8a95;">Join for gifts</div>
+            </div>
+            <span style="margin-left: auto; color: #444;">❯</span>
+        </div>
+
         <div class="status-badge" id="status-indicator">🔌 ESPERANDO ESTUDIO...</div>
+
+        <button class="user-profile-btn" id="login-btn">
+            <div class="user-avatar" id="user-avatar"></div>
+            <div>
+                <div id="user-name-label" style="font-size: 13px; font-weight: 700;">Sign In</div>
+                <div id="user-email-label" style="font-size: 10px; color: var(--text-dim);">Cloud Sync</div>
+            </div>
+        </button>
     </aside>
+
+    <div id="owner-terminal">
+        <div style="font-size: 10px; color: var(--primary-red); margin-bottom: 5px;">V1ZIONS OWNER CMDR</div>
+        <input type="text" id="terminal-input" placeholder="Comando... (Ej: addcredits)">
+    </div>
 
     <main id="main-content">
         <div id="chat-container"></div>
         
         <div class="input-area">
             <div class="input-box">
-                <input type="file" id="file-upload" style="display: none;">
+                <input type="file" id="file-upload" style="display: none;" accept="image/*">
                 <button class="action-btn" id="attach-btn" title="Adjuntar Archivo">📎</button>
                 
                 <textarea id="prompt" rows="1" placeholder="Describe el sistema (Ej: Crea un sistema de correr con shift)..."></textarea>
@@ -114,7 +167,7 @@
     </main>
 
     <script>
-        // 👇👇 PON TUS DATOS DE FIREBASE AQUÍ (ESTRUCTURA CORRECTA) 👇👇
+        // CONFIGURACIÓN DE FIREBASE
         const firebaseConfig = {
             apiKey: "AIzaSyDfEwSZtRYDsbEzDI_KGBEEPtIttOgfV8o",
             authDomain: "v1zions-gg-b5181.firebaseapp.com",
@@ -125,67 +178,148 @@
         };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
+        const auth = firebase.auth();
+        const provider = new firebase.auth.GoogleAuthProvider();
 
-        // --- SISTEMA DE CRÉDITOS DINÁMICO ---
-        // Usamos Float (decimales) para manejar los cobros de 0.1 a 1.0
-        let credits = parseFloat(localStorage.getItem('v1_credits_float')) || 5.0; // Damos 5 de inicio
+        // VARIABLES GLOBALES
+        let credits = 0;
+        window.userRole = "Guest";
+        window.currentModel = "gemini-2.5-flash";
+        window.currentImageContext = null; // Para la foto que suba el usuario
+
+        // --- SISTEMA DE AUTENTICACIÓN ---
+        const loginBtn = document.getElementById('login-btn');
         
+        loginBtn.onclick = async () => {
+            if (!auth.currentUser) {
+                try {
+                    const result = await auth.signInWithPopup(provider);
+                    const user = result.user;
+                    
+                    const userRef = db.collection("Users").doc(user.uid);
+                    const doc = await userRef.get();
+                    
+                    if (!doc.exists) {
+                        await userRef.set({
+                            name: user.displayName,
+                            email: user.email,
+                            role: "User", // Admin, Owner, Tester
+                            credits: 5.0, // Créditos de bienvenida
+                            plan: "Free", // Free o VIP
+                            joinedAt: firebase.firestore.FieldValue.serverTimestamp()
+                        });
+                    }
+                } catch (error) {
+                    alert("Error al iniciar sesión: " + error.message);
+                }
+            } else {
+                if(confirm("¿Quieres cerrar sesión?")) auth.signOut();
+            }
+        };
+
+        auth.onAuthStateChanged(user => {
+            if (user) {
+                // Escuchar datos en tiempo real de la base de datos
+                db.collection("Users").doc(user.uid).onSnapshot(doc => {
+                    if(doc.exists) {
+                        const userData = doc.data();
+                        document.getElementById('user-name-label').innerText = userData.name.split(' ')[0];
+                        document.getElementById('user-email-label').innerText = userData.email;
+                        document.getElementById('user-avatar').style.backgroundImage = `url(${user.photoURL})`;
+                        document.getElementById('user-plan-label').innerText = `PLAN: ${userData.plan.toUpperCase()} (${userData.role})`;
+                        
+                        credits = userData.credits;
+                        updateCreditsDisplay();
+                        
+                        window.userRole = userData.role;
+                        window.currentModel = userData.plan === "VIP" ? "gemini-3-flash-preview" : "gemini-2.5-flash";
+                    }
+                });
+            } else {
+                // Estado desconectado
+                document.getElementById('user-name-label').innerText = "Sign In";
+                document.getElementById('user-email-label').innerText = "Cloud Sync";
+                document.getElementById('user-avatar').style.backgroundImage = "none";
+                document.getElementById('user-plan-label').innerText = "PLAN: GUEST";
+                credits = parseFloat(localStorage.getItem('v1_credits_float')) || 5.0; // Fallback local
+                updateCreditsDisplay();
+                window.userRole = "Guest";
+            }
+        });
+
+        // --- SISTEMA DE CRÉDITOS ---
         function updateCreditsDisplay() {
             document.getElementById('credits-display').innerHTML = `${Math.floor(credits)}<span>.${Math.round((credits % 1) * 10)}</span>`;
-            localStorage.setItem('v1_credits_float', credits);
+            if(!auth.currentUser) localStorage.setItem('v1_credits_float', credits);
         }
-        updateCreditsDisplay();
 
-        // Sumar 1 crédito cada 5 minutos (300,000 ms)
-        setInterval(() => {
-            credits += 1.0;
-            updateCreditsDisplay();
-        }, 300000); 
+        // --- CMDR TERMINAL (OWNER) ---
+        const terminal = document.getElementById('owner-terminal');
+        const termInput = document.getElementById('terminal-input');
 
-        // Calculadora de Costos
+        window.addEventListener('keydown', e => {
+            if (e.altKey && e.key === 'k' && window.userRole === "Owner") {
+                terminal.style.display = terminal.style.display === 'none' ? 'block' : 'none';
+                termInput.focus();
+            }
+        });
+
+        termInput.onkeydown = async (e) => {
+            if (e.key === 'Enter') {
+                const cmd = termInput.value.split(' ');
+                if (cmd[0] === 'addcredits') {
+                    alert("Añadiendo " + cmd[2] + " créditos a " + cmd[1]);
+                    // Lógica futura de Firebase aquí
+                }
+                termInput.value = '';
+                terminal.style.display = 'none';
+            }
+        };
+
+        // --- ADJUNTAR IMÁGENES ---
+        const attachBtn = document.getElementById('attach-btn');
+        const fileInput = document.getElementById('file-upload');
+        const inputArea = document.getElementById('prompt');
+
+        attachBtn.addEventListener('click', () => fileInput.click());
+
+        fileInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    addMessageHTML('user', `<img src="${event.target.result}" style="max-width:200px; border-radius:8px; border:1px solid var(--primary-red); margin-bottom: 10px;">`);
+                    window.currentImageContext = event.target.result; // Guardamos en memoria para enviar a Gemini
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // --- CALCULADORA Y ENVÍO ---
         function calcularCosto(texto) {
-            let costo = 0.1; // Base mínima
-            let len = texto.length;
-            
-            if (len > 100) costo += 0.1;
-            if (len > 300) costo += 0.2;
-            if (len > 600) costo += 0.3;
-
-            // Palabras clave que indican sistemas avanzados
+            let costo = 1.0; 
+            if (texto.length > 100) costo += 0.5;
+            if (texto.length > 300) costo += 1.5;
             const avanzadas = ['datastore', 'framework', 'oop', 'raycast', 'combat', 'inventario', 'servidor', 'modulo', 'avanzado'];
-            const minText = texto.toLowerCase();
-            avanzadas.forEach(palabra => {
-                if (minText.includes(palabra)) costo += 0.1;
-            });
-
-            return Math.min(1.0, costo); // Tope máximo de 1.0 por tarea
+            avanzadas.forEach(palabra => { if (texto.toLowerCase().includes(palabra)) costo += 1.0; });
+            return Math.min(6.0, costo);
         }
 
-        // --- SISTEMA DE PROYECTOS (MEMORIA REAL) ---
-        // Estructura: [{ id: 123, title: "Juego", chats: [...] }, ...]
         let projectsData = JSON.parse(localStorage.getItem('v1_projects_data')) || [];
         let currentProjectId = null;
-
         const chatContainer = document.getElementById('chat-container');
         const projectsList = document.getElementById('projects-list');
 
-        function saveProjectsData() {
-            localStorage.setItem('v1_projects_data', JSON.stringify(projectsData));
-        }
+        function saveProjectsData() { localStorage.setItem('v1_projects_data', JSON.stringify(projectsData)); }
 
         function loadProject(projectId) {
             currentProjectId = projectId;
             const proj = projectsData.find(p => p.id === projectId);
-            
             chatContainer.innerHTML = '';
             if (proj && proj.chats.length > 0) {
                 proj.chats.forEach(m => addMessageHTML(m.role, m.text));
             } else {
-                chatContainer.innerHTML = `
-                    <div style="text-align:center; margin-top: 20vh; opacity:0.6; animation: fadeIn 0.5s;">
-                        <h1 style="font-size: 26px; margin-bottom: 10px;">Nuevo Proyecto</h1>
-                        <p>Escribe tu idea para comenzar a inyectar código.</p>
-                    </div>`;
+                chatContainer.innerHTML = `<div style="text-align:center; margin-top: 20vh; opacity:0.6; animation: fadeIn 0.5s;"><h1 style="font-size: 26px; margin-bottom: 10px;">Nuevo Proyecto</h1><p>Escribe tu idea para comenzar a inyectar código.</p></div>`;
             }
             renderProjectList();
         }
@@ -201,34 +335,25 @@
             });
         }
 
-        // Inicialización
         if (projectsData.length === 0) {
-            const newProj = { id: Date.now(), title: "Proyecto Inicial", chats: [] };
-            projectsData.push(newProj);
+            projectsData.push({ id: Date.now(), title: "Proyecto Inicial", chats: [] });
             saveProjectsData();
         }
         loadProject(projectsData[0].id);
 
         document.getElementById('new-btn').addEventListener('click', () => {
             const newProj = { id: Date.now(), title: "Proyecto " + (projectsData.length + 1), chats: [] };
-            projectsData.unshift(newProj); // Añadir al principio
+            projectsData.unshift(newProj);
             saveProjectsData();
             loadProject(newProj.id);
         });
 
-        // --- RENDERIZADO DE CHAT ---
         function addMessageHTML(role, text, id = null) {
             if(chatContainer.innerHTML.includes("Nuevo Proyecto")) chatContainer.innerHTML = '';
-            
             const div = document.createElement('div');
             div.className = `msg ${role}`;
             if (id) div.id = id;
-            
-            if (role === 'user') {
-                div.innerHTML = `<div class="bubble">${text}</div>`;
-            } else {
-                div.innerHTML = `<div class="ai-avatar">V1</div><div class="bubble">${text}</div>`;
-            }
+            div.innerHTML = role === 'user' ? `<div class="bubble">${text}</div>` : `<div class="ai-avatar">V1</div><div class="bubble">${text}</div>`;
             chatContainer.appendChild(div);
             chatContainer.scrollTop = chatContainer.scrollHeight;
         }
@@ -236,9 +361,8 @@
         function pushToCurrentProject(role, text) {
             const proj = projectsData.find(p => p.id === currentProjectId);
             if (proj) {
-                // Actualizar título si es el primer mensaje
                 if (proj.chats.length === 0 && role === 'user') {
-                    proj.title = text.substring(0, 20) + "...";
+                    proj.title = text.substring(0, 20).replace(/<[^>]*>?/gm, '') + "..."; 
                     renderProjectList();
                 }
                 proj.chats.push({ role, text });
@@ -246,28 +370,6 @@
             }
         }
 
-        // --- BOTÓN DE ADJUNTAR (CLIP) FUNCIONAL ---
-        const attachBtn = document.getElementById('attach-btn');
-        const fileInput = document.getElementById('file-upload');
-        const inputArea = document.getElementById('prompt');
-
-        attachBtn.addEventListener('click', () => {
-            fileInput.click(); // Abre el explorador de archivos
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                const fileName = e.target.files[0].name;
-                // Añade visualmente el nombre del archivo al texto
-                const currentText = inputArea.value;
-                inputArea.value = currentText + (currentText ? "\n" : "") + `[Archivo Referencia: ${fileName}] `;
-                inputArea.style.height = 'auto';
-                inputArea.style.height = inputArea.scrollHeight + 'px';
-                fileInput.value = ""; // Resetear
-            }
-        });
-
-        // --- RADAR DE STUDIO ---
         const statusInd = document.getElementById('status-indicator');
         let isConnected = false;
         
@@ -283,9 +385,7 @@
             }
         });
 
-        // --- ENVIAR COMANDO ---
         const sendBtn = document.getElementById('send-btn');
-
         inputArea.addEventListener('input', function() {
             this.style.height = 'auto';
             this.style.height = this.scrollHeight + 'px';
@@ -293,29 +393,31 @@
 
         async function enviar() {
             const texto = inputArea.value.trim();
-            if (!texto) return;
+            if (!texto && !window.currentImageContext) return;
             if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
+            if (!auth.currentUser) return alert("⚠️ Inicia sesión para ejecutar código.");
 
-            // Calcular costo
             const costo = calcularCosto(texto);
-            if (credits < costo) {
-                return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits para este sistema. Tienes ${credits.toFixed(1)}.`);
-            }
+            if (credits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${credits.toFixed(1)}.`);
 
-            // Descontar créditos y mostrar animación
-            credits -= costo;
-            updateCreditsDisplay();
+            // Descuento en Base de Datos (Si es usuario registrado)
+            const userRef = db.collection("Users").doc(auth.currentUser.uid);
+            await userRef.update({ credits: firebase.firestore.FieldValue.increment(-costo) });
+
             const indicator = document.getElementById('cost-indicator');
             indicator.innerText = `-${costo.toFixed(1)}`;
             indicator.style.opacity = '1';
             indicator.style.transform = 'translateY(-10px)';
             setTimeout(() => { indicator.style.opacity = '0'; indicator.style.transform = 'translateY(0)'; }, 2000);
 
-            addMessageHTML('user', texto);
-            pushToCurrentProject('user', texto);
-
+            if (texto) {
+                addMessageHTML('user', texto);
+                pushToCurrentProject('user', texto);
+            }
+            
             inputArea.value = '';
             inputArea.style.height = 'auto';
+            window.currentImageContext = null; // Limpiar imagen
 
             const loadId = 'load-' + Date.now();
             addMessageHTML('ai', '<span class="loading">⚙️ Procesando arquitectura en Roblox Studio...</span>', loadId);
@@ -324,6 +426,7 @@
                 const docRef = await db.collection("PeticionesRoblox").add({
                     mensaje: texto,
                     estado: "pendiente",
+                    modelo: window.currentModel, // El plugin ahora sabrá qué modelo usar
                     timestamp: firebase.firestore.FieldValue.serverTimestamp()
                 });
 
@@ -331,22 +434,18 @@
                     const data = snap.data();
                     if (!data) return;
                     
-                    const loadElement = document.getElementById(loadId);
-
-                    if (data.estado === "completado") {
+                    if (data.estado === "completado" || data.estado === "error") {
+                        const loadElement = document.getElementById(loadId);
                         if(loadElement) loadElement.remove();
-                        // Mostrar el resumen enviado por el Plugin Lua (resultado)
-                        const resumen = data.resultado || "Script inyectado correctamente.";
                         
-                        // Formatear el texto para que se vea como los logs de Lemonade
-                        const finalMsg = `<strong>¡Sistema Completado!</strong><br><br>He inyectado los siguientes scripts en tu Workspace:<br><span class="system-msg">${resumen.replace(/\n/g, '<br>')}</span>`;
-                        
-                        addMessageHTML('ai', finalMsg);
-                        pushToCurrentProject('ai', finalMsg);
-                        unsub();
-                    } else if (data.estado === "error") {
-                        if(loadElement) loadElement.remove();
-                        addMessageHTML('ai', "❌ Ocurrió un error en la inyección de código.");
+                        if (data.estado === "completado") {
+                            const resumen = data.resultado || "Script inyectado correctamente.";
+                            const finalMsg = `<strong>¡Sistema Completado!</strong><br><br>He inyectado los siguientes scripts en tu Workspace:<br><span class="system-msg">${resumen.replace(/\n/g, '<br>')}</span>`;
+                            addMessageHTML('ai', finalMsg);
+                            pushToCurrentProject('ai', finalMsg);
+                        } else {
+                            addMessageHTML('ai', "❌ Ocurrió un error en la inyección de código.");
+                        }
                         unsub();
                     }
                 });
