@@ -432,7 +432,7 @@
             document.getElementById('prompt').value = '';
             const lid = 'l-'+Date.now();
             const modelNameUI = window.currentModel === "gemini-3-flash" ? "Gemini 3 Pro" : "Gemini 2.5 Flash";
-            addMessageHTML('ai', `<span id="${lid}" class="loading">⚙️ Procesando con ${modelNameUI} en Roblox Studio...</span>`);
+            addMessageHTML('ai', '<span id="' + lid + '" class="loading">⚙️ Procesando con ' + modelNameUI + ' en Roblox Studio... (Sistemas masivos pueden tardar hasta 2 minutos)</span>');
 
             const pRef = await db.collection("PeticionesRoblox").add({ 
                 mensaje: t, estado: "pendiente", modelo: window.currentModel, timestamp: firebase.firestore.FieldValue.serverTimestamp() 
@@ -446,7 +446,7 @@
                     el.parentElement.innerHTML = failText;
                     if (pIndex > -1) { projectsData[pIndex].chats.push({ role: 'ai', text: failText }); localStorage.setItem('v1_projects_data', JSON.stringify(projectsData)); }
                 }
-            }, 60000);
+            }, 120000);
 
             pRef.onSnapshot(snap => {
                 const data = snap.data();
@@ -472,3 +472,4 @@
     </script>
 </body>
 </html>
+
