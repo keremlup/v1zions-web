@@ -3,390 +3,1344 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>V1zions.gg | Workspace Pro</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;900&display=swap" rel="stylesheet">
-    
+    <title>V1zions.gg | Roblox AI Studio</title>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
     <style>
+        /* ═══════════════════════════════════════════
+           TOKENS & RESET
+        ═══════════════════════════════════════════ */
         :root {
-            --primary-red: #ff2a2a; --primary-glow: rgba(255, 42, 42, 0.35);
-            --bg-darkest: #050505; --bg-panel: rgba(20, 20, 25, 0.85); 
-            --text-dim: #8a8a95; --success-green: #00d26a; --sidebar-width: 270px;
+            --red:        #e63030;
+            --red-light:  #ff4545;
+            --red-glow:   rgba(230,48,48,0.35);
+            --red-dim:    rgba(230,48,48,0.1);
+            --red-border: rgba(230,48,48,0.25);
+            --bg:         #07070a;
+            --bg-1:       #0c0c12;
+            --bg-2:       #111118;
+            --bg-3:       #16161f;
+            --panel:      rgba(11,11,17,0.95);
+            --border:     rgba(255,255,255,0.055);
+            --border-2:   rgba(255,255,255,0.09);
+            --text:       #ececf4;
+            --text-2:     #9898b0;
+            --text-3:     #55556a;
+            --green:      #22c55e;
+            --green-dim:  rgba(34,197,94,0.1);
+            --gold:       #f0b429;
+            --discord:    #5865f2;
+            --discord-dim:rgba(88,101,242,0.12);
+            --sidebar-w:  272px;
+            --radius:     12px;
+            --radius-sm:  8px;
+            --font:       'Montserrat', sans-serif;
         }
-        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Inter', sans-serif; }
-        
-        body { 
-            background-color: var(--bg-darkest); color: white; height: 100vh; display: flex; 
-            background-image: radial-gradient(circle at 70% 30%, var(--primary-glow) 0%, transparent 60%), 
-                              radial-gradient(circle at 20% 80%, rgba(255, 0, 0, 0.15) 0%, transparent 50%);
+
+        *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--font);
+            height: 100vh;
+            display: flex;
             overflow: hidden;
         }
 
-        /* SIDEBAR */
-        #sidebar { width: var(--sidebar-width); background: var(--bg-panel); backdrop-filter: blur(30px); border-right: 1px solid rgba(255,255,255,0.05); display: flex; flex-direction: column; padding: 20px; z-index: 10; }
-        .brand { font-size: 22px; font-weight: 900; margin-bottom: 25px; display: flex; align-items: center; gap: 12px; }
-        .brand-icon { width: 34px; height: 34px; background: var(--primary-red); border-radius: 8px; box-shadow: 0 0 15px var(--primary-red); display: flex; justify-content: center; align-items: center; font-size: 14px; font-weight: bold;}
-        
-        .new-btn { background: var(--primary-red); color: white; border: none; padding: 12px; border-radius: 10px; font-weight: 700; cursor: pointer; transition: 0.3s; margin-bottom: 20px; box-shadow: 0 5px 15px var(--primary-glow); display: flex; justify-content: center; gap: 8px; align-items: center;}
-        .new-btn:hover { transform: translateY(-2px); background: #ff4040; }
+        button { font-family: var(--font); cursor: pointer; }
+        input, textarea { font-family: var(--font); }
 
-        .section-title { font-size: 11px; color: var(--text-dim); text-transform: uppercase; font-weight: 700; letter-spacing: 1px; margin-bottom: 10px;}
-        #projects-list { flex-grow: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 5px; margin-bottom: 15px; padding-right: 5px;}
-        #projects-list::-webkit-scrollbar { width: 4px; }
-        #projects-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
-        
-        .project-item { color: var(--text-dim); font-size: 13px; padding: 10px; background: rgba(255,255,255,0.02); border-radius: 8px; cursor: pointer; transition: 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
-        .project-item:hover { background: rgba(255,255,255,0.05); color: white;}
-        .project-item.active { background: rgba(255,42,42,0.1); color: var(--primary-red); border: 1px solid rgba(255,42,42,0.2); font-weight: 600;}
-        
-        /* CREDITOS */
-        .credits-box { background: rgba(255,255,255,0.03); border-radius: 12px; padding: 15px; text-align: center; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05); position: relative;}
-        .credits-title { font-size: 10px; color: var(--text-dim); margin-bottom: 5px; font-weight: bold; text-transform: uppercase;}
-        .credits-amount { font-size: 26px; font-weight: 900; color: var(--primary-red); display: flex; justify-content: center; align-items: baseline; gap: 4px;}
-        .credits-amount span { font-size: 12px; color: var(--text-dim); font-weight: 600;}
-        .cost-indicator { position: absolute; right: 10px; top: 10px; font-size: 10px; color: var(--primary-red); opacity: 0; transition: 0.3s;}
+        /* ═══════════════════════════════════════════
+           ANIMATED BACKGROUND
+        ═══════════════════════════════════════════ */
+        .bg-layer {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+        }
 
-        .status-badge { text-align: center; padding: 12px; border-radius: 8px; font-size: 11px; font-weight: 700; border: 1px solid rgba(255,255,255,0.1); color: var(--text-dim); }
-        .status-badge.online { background: rgba(0, 210, 106, 0.1); color: var(--success-green); border-color: var(--success-green); box-shadow: 0 0 10px rgba(0,210,106,0.1);}
+        /* Tech grid */
+        .bg-grid {
+            position: fixed; inset: 0; z-index: 0; pointer-events: none;
+            background-image:
+                linear-gradient(rgba(255,60,60,0.028) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(255,60,60,0.028) 1px, transparent 1px);
+            background-size: 44px 44px;
+            mask-image: radial-gradient(ellipse 80% 80% at 60% 40%, transparent 40%, black 100%);
+        }
 
-        /* MAIN CHAT */
-        #main-content { flex-grow: 1; display: flex; flex-direction: column; }
-        #chat-container { flex-grow: 1; overflow-y: auto; padding: 40px 10%; display: flex; flex-direction: column; gap: 20px; }
-        
-        .msg { display: flex; gap: 15px; font-size: 14px; line-height: 1.6; animation: fadeIn 0.3s ease-out; }
+        /* Moving red ambient light */
+        .bg-orb {
+            position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
+        }
+
+        .bg-orb-1 {
+            width: 700px; height: 700px;
+            background: radial-gradient(circle, rgba(220,40,40,0.09) 0%, transparent 68%);
+            top: -160px; right: 5%;
+            animation: orbFloat 14s ease-in-out infinite;
+        }
+
+        .bg-orb-2 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(200,30,30,0.055) 0%, transparent 68%);
+            bottom: -80px; left: 15%;
+            animation: orbFloat 18s ease-in-out infinite reverse;
+        }
+
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33%       { transform: translate(25px, -35px) scale(1.06); }
+            66%       { transform: translate(-15px, 20px) scale(0.96); }
+        }
+
+        /* ═══════════════════════════════════════════
+           SIDEBAR
+        ═══════════════════════════════════════════ */
+        #sidebar {
+            width: var(--sidebar-w);
+            flex-shrink: 0;
+            background: var(--panel);
+            backdrop-filter: blur(40px) saturate(180%);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            z-index: 20;
+            position: relative;
+        }
+
+        /* Accent line on right edge */
+        #sidebar::after {
+            content: '';
+            position: absolute; right: -1px; top: 10%; bottom: 10%;
+            width: 1px;
+            background: linear-gradient(to bottom, transparent, rgba(230,48,48,0.5), transparent);
+        }
+
+        /* ── Logo ── */
+        .logo-area {
+            padding: 22px 20px 18px;
+            border-bottom: 1px solid var(--border);
+        }
+
+        .logo {
+            display: flex; align-items: center; gap: 11px;
+        }
+
+        .logo-mark {
+            width: 34px; height: 34px;
+            background: var(--red);
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 900;
+            color: white;
+            flex-shrink: 0;
+            box-shadow: 0 0 22px rgba(230,48,48,0.5), 0 0 6px rgba(230,48,48,0.3);
+            position: relative;
+        }
+
+        .logo-mark::after {
+            content: '';
+            position: absolute; inset: -4px;
+            border-radius: 12px;
+            border: 1px solid rgba(230,48,48,0.3);
+            animation: ringPulse 3s ease-in-out infinite;
+        }
+
+        @keyframes ringPulse {
+            0%,100% { opacity:.25; transform: scale(1); }
+            50%      { opacity:.7;  transform: scale(1.08); }
+        }
+
+        .logo-text {
+            display: flex; flex-direction: column; gap: 1px;
+        }
+
+        .logo-name {
+            font-size: 15px; font-weight: 800;
+            letter-spacing: -0.3px;
+            line-height: 1;
+        }
+
+        .logo-badge {
+            display: inline-flex; align-items: center;
+            background: rgba(230,48,48,0.12);
+            border: 1px solid rgba(230,48,48,0.2);
+            border-radius: 4px;
+            padding: 1px 6px;
+            font-size: 9px; font-weight: 700;
+            color: var(--red);
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            width: fit-content;
+            margin-top: 2px;
+        }
+
+        /* ── New project btn ── */
+        .sidebar-section { padding: 16px 16px 8px; }
+
+        .new-btn {
+            width: 100%;
+            background: var(--red);
+            color: white;
+            border: none;
+            padding: 11px 16px;
+            border-radius: var(--radius-sm);
+            font-size: 13px; font-weight: 700;
+            letter-spacing: 0.2px;
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            transition: all .2s;
+            box-shadow: 0 4px 18px rgba(230,48,48,0.28);
+            position: relative; overflow: hidden;
+        }
+
+        .new-btn::before {
+            content: '';
+            position: absolute; top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
+            transition: left .5s;
+        }
+
+        .new-btn:hover::before { left: 100%; }
+        .new-btn:hover { background: var(--red-light); box-shadow: 0 6px 24px rgba(230,48,48,0.42); transform: translateY(-1px); }
+        .new-btn:active { transform: translateY(0); }
+
+        /* ── Section headers ── */
+        .sidebar-label {
+            font-size: 10px; font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            padding: 14px 20px 7px;
+        }
+
+        /* ── Projects list ── */
+        .projects-scroll {
+            flex: 1;
+            overflow-y: auto;
+            padding: 0 10px;
+            min-height: 0;
+        }
+
+        .projects-scroll::-webkit-scrollbar { width: 3px; }
+        .projects-scroll::-webkit-scrollbar-thumb { background: rgba(230,48,48,0.2); border-radius: 3px; }
+
+        .project-item {
+            display: flex; align-items: center; gap: 9px;
+            padding: 9px 10px;
+            border-radius: 8px;
+            cursor: pointer;
+            color: var(--text-2);
+            font-size: 12.5px; font-weight: 500;
+            transition: all .15s;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            border: 1px solid transparent;
+            margin-bottom: 2px;
+        }
+
+        .project-item .proj-icon { font-size: 13px; flex-shrink: 0; opacity: .7; }
+        .project-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
+        .project-item.active {
+            background: var(--red-dim);
+            color: var(--red);
+            border-color: var(--red-border);
+            font-weight: 600;
+        }
+        .project-item.active .proj-icon { opacity: 1; }
+
+        /* ── Divider ── */
+        .sidebar-divider {
+            height: 1px;
+            background: var(--border);
+            margin: 8px 16px;
+        }
+
+        /* ── Credits panel ── */
+        .credits-panel {
+            margin: 0 14px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 14px 15px 12px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .credits-panel::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(230,48,48,0.5), transparent);
+        }
+
+        .credits-top {
+            display: flex; justify-content: space-between; align-items: flex-start;
+            margin-bottom: 10px;
+        }
+
+        .credits-label {
+            font-size: 10px; font-weight: 700;
+            color: var(--text-3);
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        .credits-value {
+            font-size: 24px; font-weight: 800;
+            color: var(--text);
+            line-height: 1;
+            margin-top: 2px;
+        }
+
+        .credits-sub {
+            font-size: 11px; color: var(--text-3); font-weight: 500;
+            margin-top: 2px;
+        }
+
+        .credits-refill {
+            display: flex; align-items: center; gap: 5px;
+            font-size: 10px; color: var(--green);
+            font-weight: 600; margin-top: 1px;
+        }
+
+        .credits-refill-dot {
+            width: 5px; height: 5px; border-radius: 50%;
+            background: var(--green);
+            animation: blink 1.4s ease-in-out infinite;
+        }
+
+        @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
+
+        /* Progress bar */
+        .credits-bar-bg {
+            height: 4px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 4px;
+            margin: 10px 0 10px;
+            overflow: hidden;
+        }
+
+        .credits-bar-fill {
+            height: 100%;
+            border-radius: 4px;
+            background: linear-gradient(90deg, var(--red), var(--red-light));
+            transition: width .6s cubic-bezier(.34,1.56,.64,1);
+            box-shadow: 0 0 8px rgba(230,48,48,0.4);
+        }
+
+        .get-credits-btn {
+            width: 100%;
+            background: transparent;
+            border: 1px solid var(--border-2);
+            color: var(--text-2);
+            padding: 8px;
+            border-radius: 7px;
+            font-size: 12px; font-weight: 600;
+            transition: all .15s;
+            display: flex; align-items: center; justify-content: center; gap: 6px;
+        }
+
+        .get-credits-btn:hover {
+            border-color: var(--red-border);
+            color: var(--red);
+            background: var(--red-dim);
+        }
+
+        /* Cost indicator */
+        .cost-flash {
+            position: absolute; top: 10px; right: 12px;
+            font-size: 11px; font-weight: 700;
+            color: var(--red);
+            opacity: 0;
+            transition: all .3s;
+            pointer-events: none;
+        }
+
+        /* ── Discord section ── */
+        .discord-section {
+            margin: 10px 14px 14px;
+            background: var(--discord-dim);
+            border: 1px solid rgba(88,101,242,0.2);
+            border-radius: var(--radius);
+            padding: 13px 14px;
+            cursor: pointer;
+            transition: all .2s;
+            text-decoration: none;
+            display: block;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .discord-section::before {
+            content: '';
+            position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(88,101,242,0.5), transparent);
+        }
+
+        .discord-section:hover {
+            background: rgba(88,101,242,0.18);
+            border-color: rgba(88,101,242,0.35);
+            transform: translateY(-1px);
+        }
+
+        .discord-top {
+            display: flex; align-items: center; gap: 10px; margin-bottom: 7px;
+        }
+
+        .discord-icon {
+            width: 30px; height: 30px;
+            background: var(--discord);
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            font-size: 15px;
+        }
+
+        .discord-name {
+            font-size: 12.5px; font-weight: 700;
+            color: var(--text);
+        }
+
+        .discord-members {
+            font-size: 10px; color: rgba(88,101,242,0.9);
+            font-weight: 600; margin-top: 1px;
+        }
+
+        .discord-desc {
+            font-size: 11px; color: var(--text-2); line-height: 1.5;
+        }
+
+        .discord-reward {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(240,180,41,0.1);
+            border: 1px solid rgba(240,180,41,0.2);
+            border-radius: 5px;
+            padding: 3px 8px;
+            font-size: 10px; font-weight: 700;
+            color: var(--gold);
+            margin-top: 8px;
+        }
+
+        /* ── Studio status ── */
+        .studio-status {
+            margin: 0 14px 10px;
+            padding: 9px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            display: flex; align-items: center; gap: 9px;
+            font-size: 11px; font-weight: 600;
+            color: var(--text-3);
+            background: transparent;
+            transition: all .2s;
+        }
+
+        .studio-status.online {
+            background: var(--green-dim);
+            border-color: rgba(34,197,94,0.25);
+            color: var(--green);
+        }
+
+        .status-dot {
+            width: 7px; height: 7px; border-radius: 50%;
+            background: var(--text-3); flex-shrink: 0;
+        }
+
+        .studio-status.online .status-dot {
+            background: var(--green);
+            box-shadow: 0 0 6px var(--green);
+            animation: blink 1.5s infinite;
+        }
+
+        /* ═══════════════════════════════════════════
+           MAIN CONTENT
+        ═══════════════════════════════════════════ */
+        #main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+            position: relative;
+            z-index: 1;
+        }
+
+        /* ── Chat container ── */
+        #chat-container {
+            flex: 1;
+            overflow-y: auto;
+            padding: 32px 9%;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        #chat-container::-webkit-scrollbar { width: 4px; }
+        #chat-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 4px; }
+
+        /* ── Welcome screen ── */
+        .welcome {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 65vh;
+            gap: 28px;
+            animation: fadeUp .5s ease-out;
+        }
+
+        @keyframes fadeUp {
+            from { opacity:0; transform:translateY(18px); }
+            to   { opacity:1; transform:translateY(0); }
+        }
+
+        .welcome-eyebrow {
+            display: flex; align-items: center; gap: 8px;
+            font-size: 11px; font-weight: 700;
+            color: var(--red);
+            text-transform: uppercase; letter-spacing: 1.5px;
+        }
+
+        .eyebrow-line {
+            width: 28px; height: 1px; background: var(--red); opacity: .5;
+        }
+
+        .welcome-headline {
+            font-size: clamp(26px, 3.5vw, 40px);
+            font-weight: 800;
+            letter-spacing: -1px;
+            text-align: center;
+            line-height: 1.15;
+            min-height: 1.3em;
+        }
+
+        .typewriter-cursor {
+            display: inline-block;
+            width: 2px; height: .9em;
+            background: var(--red);
+            margin-left: 4px;
+            vertical-align: middle;
+            animation: cursor .8s step-end infinite;
+        }
+
+        @keyframes cursor { 0%,100%{opacity:1;} 50%{opacity:0;} }
+
+        .welcome-desc {
+            font-size: 14px;
+            color: var(--text-2);
+            text-align: center;
+            max-width: 440px;
+            line-height: 1.65;
+        }
+
+        /* Stats row */
+        .welcome-stats {
+            display: flex; gap: 12px;
+        }
+
+        .stat-pill {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 6px 16px;
+            font-size: 12px; font-weight: 600;
+            color: var(--text-2);
+            display: flex; align-items: center; gap: 7px;
+            transition: all .15s;
+        }
+
+        .stat-pill:hover { border-color: var(--red-border); color: var(--text); }
+        .stat-pill .stat-num { color: var(--text); font-weight: 800; }
+
+        /* Quick prompts */
+        .welcome-chips {
+            display: flex; flex-wrap: wrap; gap: 8px;
+            justify-content: center;
+            max-width: 520px;
+        }
+
+        .chip {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            padding: 7px 15px;
+            font-size: 12px; font-weight: 600;
+            color: var(--text-2);
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .chip:hover {
+            border-color: var(--red-border);
+            color: var(--text);
+            background: var(--red-dim);
+            transform: translateY(-1px);
+        }
+
+        /* Disclaimer */
+        .disclaimer {
+            font-size: 11px;
+            color: var(--text-3);
+            text-align: center;
+            max-width: 380px;
+            line-height: 1.5;
+        }
+
+        /* ═══════════════════════════════════════════
+           MESSAGES
+        ═══════════════════════════════════════════ */
+        .msg {
+            display: flex; gap: 12px;
+            font-size: 13.5px; line-height: 1.65;
+            animation: fadeUp .22s ease-out;
+        }
+
         .msg.user { justify-content: flex-end; }
-        .msg.user .bubble { background: #1e1e24; padding: 15px 20px; border-radius: 15px; border-bottom-right-radius: 4px; border: 1px solid rgba(255,255,255,0.05); max-width: 80%;}
-        .msg.ai .bubble { padding: 10px 0; max-width: 90%; color: #d1d1d6; }
-        .ai-avatar { width: 35px; height: 35px; background: var(--primary-red); border-radius: 8px; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 13px; flex-shrink: 0; box-shadow: 0 0 10px var(--primary-glow);}
-        
-        /* ROADMAP BUTTONS */
-        .roadmap-container { background: rgba(20,20,25,0.8); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 15px; margin-top: 10px; }
-        .roadmap-title { font-size: 15px; font-weight: bold; color: white; margin-bottom: 12px; }
-        .roadmap-btn { display: block; width: 100%; text-align: left; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: white; padding: 12px; border-radius: 8px; margin-bottom: 8px; cursor: pointer; transition: 0.2s; }
-        .roadmap-btn:hover { background: rgba(255,42,42,0.15); border-color: rgba(255,42,42,0.4); }
-        .roadmap-btn strong { color: var(--primary-red); display: block; margin-bottom: 3px; }
-        .roadmap-btn span { font-size: 12px; color: var(--text-dim); }
 
-        /* INPUT AREA */
-        .input-area { padding: 20px 10%; background: linear-gradient(to top, var(--bg-darkest) 80%, transparent); }
-        .input-box { background: rgba(15,15,20,0.95); border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; display: flex; align-items: flex-end; padding: 8px; box-shadow: 0 10px 30px rgba(0,0,0,0.5); transition: 0.3s;}
-        .input-box:focus-within { border-color: rgba(255,42,42,0.5); box-shadow: 0 0 20px rgba(255,42,42,0.15);}
-        
-        textarea { flex-grow: 1; background: transparent; border: none; color: white; padding: 12px; font-size: 14px; resize: none; outline: none; max-height: 120px; min-height: 24px; }
-        textarea::placeholder { color: #555; }
-        
-        .action-btn { background: transparent; border: none; color: var(--text-dim); width: 40px; height: 40px; border-radius: 10px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: 0.2s;}
-        .action-btn:hover { color: white; background: rgba(255,255,255,0.05); }
-        .send-btn { background: var(--primary-red); color: white; margin-left: 5px;}
-        .send-btn:hover { background: #ff4040; box-shadow: 0 0 15px var(--primary-glow);}
+        .msg.user .bubble {
+            background: var(--bg-2);
+            border: 1px solid var(--border-2);
+            padding: 13px 18px;
+            border-radius: 14px 14px 4px 14px;
+            max-width: 78%;
+        }
 
-        .loading { color: #ff2a2a; font-weight: 600; animation: pulse 1.5s infinite; background: rgba(255,42,42,0.1); padding: 8px 15px; border-radius: 8px; border: 1px solid rgba(255,42,42,0.2); display: inline-block;}
-        .system-msg { color: var(--success-green); font-weight: 600; font-size: 13px; margin-top: 5px; display: block;}
-        
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0% { opacity: 0.6; box-shadow: 0 0 0 rgba(255,42,42,0); } 50% { opacity: 1; box-shadow: 0 0 10px rgba(255,42,42,0.3); } 100% { opacity: 0.6; box-shadow: 0 0 0 rgba(255,42,42,0); } }
+        .msg.ai .bubble {
+            color: #b4b4cc;
+            padding: 4px 0;
+            max-width: 88%;
+        }
+
+        .ai-ava {
+            width: 32px; height: 32px;
+            background: var(--red);
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 12px; font-weight: 800;
+            flex-shrink: 0;
+            margin-top: 2px;
+            box-shadow: 0 0 14px rgba(230,48,48,0.4);
+        }
+
+        /* Loading */
+        .loading-bubble {
+            display: inline-flex; align-items: center; gap: 10px;
+            background: var(--bg-2);
+            border: 1px solid var(--red-border);
+            border-radius: 10px;
+            padding: 10px 16px;
+            color: var(--red);
+            font-size: 12.5px; font-weight: 600;
+        }
+
+        .dots { display: flex; gap: 4px; }
+        .dots span {
+            width: 5px; height: 5px;
+            border-radius: 50%; background: var(--red);
+            animation: dotBounce 1.2s infinite;
+        }
+        .dots span:nth-child(2) { animation-delay:.2s; }
+        .dots span:nth-child(3) { animation-delay:.4s; }
+
+        @keyframes dotBounce { 0%,100%{transform:translateY(0);opacity:.4;} 50%{transform:translateY(-5px);opacity:1;} }
+
+        /* System msg */
+        .sys-msg {
+            display: inline-block;
+            background: var(--green-dim);
+            border: 1px solid rgba(34,197,94,0.2);
+            border-radius: 6px;
+            padding: 5px 10px;
+            font-size: 12px; font-weight: 600;
+            color: var(--green);
+            margin-top: 7px;
+        }
+
+        /* Roadmap */
+        .roadmap-box {
+            background: var(--bg-2);
+            border: 1px solid var(--border-2);
+            border-radius: var(--radius);
+            padding: 16px;
+            margin-top: 10px;
+        }
+
+        .roadmap-box-title {
+            font-size: 13px; font-weight: 700;
+            color: var(--text); margin-bottom: 12px;
+        }
+
+        .roadmap-step {
+            display: block; width: 100%; text-align: left;
+            background: rgba(255,255,255,0.025);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 11px 14px;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .roadmap-step:hover { background: var(--red-dim); border-color: var(--red-border); }
+        .roadmap-step strong { color: var(--red); display: block; font-size: 12.5px; margin-bottom: 2px; }
+        .roadmap-step span { font-size: 11.5px; color: var(--text-2); }
+
+        /* ═══════════════════════════════════════════
+           INPUT AREA
+        ═══════════════════════════════════════════ */
+        .input-area {
+            padding: 14px 9% 20px;
+            background: linear-gradient(to top, var(--bg) 65%, transparent);
+        }
+
+        .input-chips {
+            display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;
+        }
+
+        .input-chip {
+            background: transparent;
+            border: 1px solid var(--border);
+            border-radius: 5px;
+            padding: 4px 10px;
+            font-size: 11px; font-weight: 600;
+            color: var(--text-3);
+            cursor: pointer;
+            transition: all .15s;
+        }
+
+        .input-chip:hover { border-color: var(--red-border); color: var(--red); }
+
+        .input-box {
+            background: rgba(10,10,16,0.97);
+            border: 1px solid var(--border);
+            border-radius: 14px;
+            display: flex; align-items: flex-end;
+            padding: 6px;
+            box-shadow: 0 6px 30px rgba(0,0,0,0.5);
+            transition: border-color .2s, box-shadow .2s;
+        }
+
+        .input-box:focus-within {
+            border-color: rgba(230,48,48,0.35);
+            box-shadow: 0 6px 30px rgba(0,0,0,0.5), 0 0 0 3px rgba(230,48,48,0.06);
+        }
+
+        textarea#prompt {
+            flex: 1;
+            background: transparent;
+            border: none;
+            color: var(--text);
+            padding: 11px 12px;
+            font-size: 13.5px;
+            resize: none; outline: none;
+            max-height: 120px; min-height: 24px;
+            line-height: 1.55;
+        }
+
+        textarea#prompt::placeholder { color: var(--text-3); }
+
+        .action-btn {
+            background: transparent; border: none;
+            color: var(--text-3);
+            width: 38px; height: 38px;
+            border-radius: 8px;
+            font-size: 15px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all .15s; flex-shrink: 0;
+        }
+
+        .action-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
+
+        .send-btn {
+            background: var(--red);
+            color: white;
+            margin-left: 4px;
+            box-shadow: 0 3px 12px rgba(230,48,48,0.3);
+        }
+
+        .send-btn:hover { background: var(--red-light); box-shadow: 0 4px 18px rgba(230,48,48,0.48); color: white; }
+
+        .input-footer {
+            text-align: center;
+            font-size: 11px; color: var(--text-3);
+            margin-top: 9px;
+        }
+
+        /* ═══════════════════════════════════════════
+           CREDITS MODAL
+        ═══════════════════════════════════════════ */
+        .modal-overlay {
+            position: fixed; inset: 0;
+            background: rgba(0,0,0,0.72);
+            backdrop-filter: blur(8px);
+            z-index: 100;
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; pointer-events: none;
+            transition: opacity .25s;
+        }
+
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+
+        .modal {
+            background: var(--bg-1);
+            border: 1px solid var(--border-2);
+            border-radius: 18px;
+            padding: 32px;
+            width: 480px;
+            max-width: 92vw;
+            transform: translateY(20px) scale(0.97);
+            transition: all .3s cubic-bezier(.34,1.2,.64,1);
+            position: relative;
+        }
+
+        .modal-overlay.open .modal { transform: translateY(0) scale(1); }
+
+        .modal-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
+
+        .modal-title { font-size: 20px; font-weight: 800; letter-spacing: -.3px; }
+
+        .modal-close {
+            background: transparent; border: none;
+            color: var(--text-3); font-size: 20px;
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex; align-items: center; justify-content: center;
+            transition: all .15s;
+        }
+
+        .modal-close:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+
+        .modal-sub { font-size: 13px; color: var(--text-2); margin-bottom: 24px; }
+
+        .plans { display: flex; flex-direction: column; gap: 10px; }
+
+        .plan-card {
+            background: var(--bg-2);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 16px 18px;
+            cursor: pointer;
+            transition: all .15s;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+
+        .plan-card:hover { border-color: var(--red-border); background: var(--red-dim); transform: translateX(3px); }
+
+        .plan-card.featured {
+            border-color: var(--red-border);
+            background: var(--red-dim);
+            position: relative;
+        }
+
+        .plan-badge {
+            position: absolute; top: -10px; left: 16px;
+            background: var(--red);
+            color: white;
+            font-size: 9px; font-weight: 700;
+            padding: 2px 8px; border-radius: 4px;
+            text-transform: uppercase; letter-spacing: .8px;
+        }
+
+        .plan-info { }
+        .plan-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
+        .plan-desc { font-size: 12px; color: var(--text-2); }
+        .plan-right { text-align: right; }
+        .plan-credits { font-size: 20px; font-weight: 800; color: var(--red); line-height: 1; }
+        .plan-price { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+
+        .modal-note {
+            margin-top: 18px;
+            font-size: 11px; color: var(--text-3);
+            text-align: center; line-height: 1.5;
+        }
+
+        /* ═══════════════════════════════════════════
+           UTILS
+        ═══════════════════════════════════════════ */
+        @keyframes creditsPop {
+            0%   { transform: scale(1); }
+            50%  { transform: scale(1.12); color: var(--green); }
+            100% { transform: scale(1); }
+        }
+
+        .credits-pop { animation: creditsPop .4s ease-out; }
     </style>
 </head>
 <body>
 
+    <!-- Background layers -->
+    <div class="bg-grid"></div>
+    <div class="bg-orb bg-orb-1"></div>
+    <div class="bg-orb bg-orb-2"></div>
+
+    <!-- ── SIDEBAR ── -->
     <aside id="sidebar">
-        <div class="brand"><div class="brand-icon">V1</div> V1zions</div>
-        <button class="new-btn" id="new-btn">➕ Crear Proyecto</button>
-        
-        <div class="section-title">Mis Proyectos</div>
-        <div id="projects-list"></div>
-        
-        <div class="credits-box">
-            <span class="cost-indicator" id="cost-indicator">-0.0</span>
-            <div class="credits-title">V-CREDITS (1 cada 5 min)</div>
-            <div class="credits-amount" id="credits-display">0<span>.0</span></div>
+        <div class="logo-area">
+            <div class="logo">
+                <div class="logo-mark">V1</div>
+                <div class="logo-text">
+                    <span class="logo-name">V1zions.gg</span>
+                    <span class="logo-badge">Beta</span>
+                </div>
+            </div>
         </div>
-        
-        <div class="status-badge" id="status-indicator">🔌 ESPERANDO ESTUDIO...</div>
+
+        <div class="sidebar-section">
+            <button class="new-btn" id="new-btn">
+                <span style="font-size:16px;line-height:1">+</span> Nuevo Proyecto
+            </button>
+        </div>
+
+        <div class="sidebar-label">Proyectos</div>
+        <div class="projects-scroll" id="projects-list"></div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- Credits -->
+        <div class="credits-panel" id="credits-panel">
+            <div class="cost-flash" id="cost-flash"></div>
+            <div class="credits-top">
+                <div>
+                    <div class="credits-label">V-Credits</div>
+                    <div class="credits-value" id="credits-value">0</div>
+                    <div class="credits-sub">Daily credits: <strong id="daily-credits">1.00</strong></div>
+                    <div class="credits-refill" id="refill-timer">
+                        <div class="credits-refill-dot"></div>
+                        <span>Refills in 22h 16m · +1 credit</span>
+                    </div>
+                </div>
+            </div>
+            <div class="credits-bar-bg">
+                <div class="credits-bar-fill" id="credits-bar" style="width:20%"></div>
+            </div>
+            <button class="get-credits-btn" id="get-credits-btn">
+                ⚡ Obtener más V-Credits
+            </button>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <!-- Studio status -->
+        <div class="studio-status" id="studio-status">
+            <div class="status-dot"></div>
+            <span id="status-text">Esperando Studio...</span>
+        </div>
+
+        <!-- Discord -->
+        <a class="discord-section" href="https://discord.gg/TU_INVITE" target="_blank" title="Únete al Discord de V1zions">
+            <div class="discord-top">
+                <div class="discord-icon">💬</div>
+                <div>
+                    <div class="discord-name">V1zions Community</div>
+                    <div class="discord-members">● Comunidad activa</div>
+                </div>
+            </div>
+            <div class="discord-desc">Soporte, novedades y recursos exclusivos para desarrolladores.</div>
+            <div class="discord-reward">🎁 +5 V-Credits al unirte</div>
+        </a>
     </aside>
 
+    <!-- ── MAIN ── -->
     <main id="main-content">
         <div id="chat-container"></div>
-        
+
         <div class="input-area">
+            <div class="input-chips">
+                <button class="input-chip" onclick="setPrompt('Sistema de DataStore con session locking')">💾 DataStore</button>
+                <button class="input-chip" onclick="setPrompt('GUI de menú principal con animaciones')">🎨 GUI</button>
+                <button class="input-chip" onclick="setPrompt('Sistema de combate melee con hitbox server-side')">⚔️ Combat</button>
+                <button class="input-chip" onclick="setPrompt('NPC con pathfinding y comportamiento AI')">🤖 NPC</button>
+                <button class="input-chip" onclick="setPrompt('Sistema de admin commands')">🔧 Admin</button>
+            </div>
             <div class="input-box">
-                <input type="file" id="file-upload" style="display: none;">
-                <button class="action-btn" id="attach-btn" title="Adjuntar Archivo">📎</button>
-                
-                <textarea id="prompt" rows="1" placeholder="Describe el sistema (Ej: Crea un sistema de correr con shift)..."></textarea>
+                <input type="file" id="file-upload" style="display:none">
+                <button class="action-btn" id="attach-btn" title="Adjuntar archivo">📎</button>
+                <textarea id="prompt" rows="1" placeholder="Describe el sistema que necesitas..."></textarea>
                 <button class="action-btn send-btn" id="send-btn">➤</button>
+            </div>
+            <div class="input-footer">
+                ⚠️ V1zions puede cometer errores. Revisa el código antes de usarlo en producción.
             </div>
         </div>
     </main>
 
+    <!-- ── CREDITS MODAL ── -->
+    <div class="modal-overlay" id="credits-modal">
+        <div class="modal">
+            <div class="modal-top">
+                <div class="modal-title">Obtener V-Credits</div>
+                <button class="modal-close" id="modal-close">✕</button>
+            </div>
+            <div class="modal-sub">Desbloquea más capacidad para generar sistemas avanzados.</div>
+            <div class="plans">
+                <div class="plan-card" onclick="alert('Próximamente disponible.')">
+                    <div class="plan-info">
+                        <div class="plan-name">Starter</div>
+                        <div class="plan-desc">Para proyectos pequeños y aprendizaje</div>
+                    </div>
+                    <div class="plan-right">
+                        <div class="plan-credits">10</div>
+                        <div class="plan-price">credits · Gratis</div>
+                    </div>
+                </div>
+                <div class="plan-card featured" onclick="alert('Próximamente disponible.')">
+                    <div class="plan-badge">Popular</div>
+                    <div class="plan-info">
+                        <div class="plan-name">Developer</div>
+                        <div class="plan-desc">Para proyectos activos y equipos pequeños</div>
+                    </div>
+                    <div class="plan-right">
+                        <div class="plan-credits">50</div>
+                        <div class="plan-price">credits · $4.99</div>
+                    </div>
+                </div>
+                <div class="plan-card" onclick="alert('Próximamente disponible.')">
+                    <div class="plan-info">
+                        <div class="plan-name">Studio Pro</div>
+                        <div class="plan-desc">Sin límites para estudios profesionales</div>
+                    </div>
+                    <div class="plan-right">
+                        <div class="plan-credits">∞</div>
+                        <div class="plan-price">ilimitado · $14.99/mes</div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-note">
+                También puedes ganar créditos uniéndote al Discord y participando en la comunidad. 💬
+            </div>
+        </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────
+         JAVASCRIPT
+    ───────────────────────────────────────── -->
     <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyDfEwSZtRYDsbEzDI_KGBEEPtIttOgfV8o",
-            authDomain: "v1zions-gg-b5181.firebaseapp.com",
-            projectId: "v1zions-gg-b5181",
-            storageBucket: "v1zions-gg-b5181.firebasestorage.app",
-            messagingSenderId: "886732747989",
-            appId: "1:886732747989:web:1e00ec9a4a3ff5b3711e5c"
-        };
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
+    // ── FIREBASE CONFIG ──
+    const firebaseConfig = {
+        apiKey: "TU_API_KEY_AQUI",
+        authDomain: "TU_PROYECTO.firebaseapp.com",
+        projectId: "TU_PROYECTO_ID",
+        storageBucket: "TU_PROYECTO.firebasestorage.app",
+        messagingSenderId: "TU_SENDER_ID",
+        appId: "TU_APP_ID"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
 
-        // --- SISTEMA DE CRÉDITOS DINÁMICO ---
-        let credits = parseFloat(localStorage.getItem('v1_credits_float')) || 5.0; 
-        
-        function updateCreditsDisplay() {
-            document.getElementById('credits-display').innerHTML = `${Math.floor(credits)}<span>.${Math.round((credits % 1) * 10)}</span>`;
-            localStorage.setItem('v1_credits_float', credits);
+    // ── CREDITS ──
+    const MAX_CREDITS = 10;
+    let credits = parseFloat(localStorage.getItem('v1_credits_float')) || 5.0;
+
+    function updateCreditsDisplay(animate = false) {
+        const val = document.getElementById('credits-value');
+        val.textContent = credits.toFixed(1);
+        if (animate) { val.classList.remove('credits-pop'); void val.offsetWidth; val.classList.add('credits-pop'); }
+        const pct = Math.min((credits / MAX_CREDITS) * 100, 100);
+        document.getElementById('credits-bar').style.width = pct + '%';
+        localStorage.setItem('v1_credits_float', credits);
+    }
+
+    updateCreditsDisplay();
+
+    // Refill every 5 min
+    setInterval(() => {
+        credits = Math.min(credits + 1.0, MAX_CREDITS);
+        updateCreditsDisplay(true);
+    }, 300000);
+
+    function calcularCosto(txt) {
+        let c = 0.1;
+        if (txt.length > 100) c += .1;
+        if (txt.length > 300) c += .2;
+        if (txt.length > 600) c += .3;
+        ['datastore','framework','oop','raycast','combat','inventario','servidor','modulo','avanzado']
+            .forEach(w => { if (txt.toLowerCase().includes(w)) c += .1; });
+        return Math.min(1.0, c);
+    }
+
+    function flashCost(cost) {
+        const el = document.getElementById('cost-flash');
+        el.textContent = `-${cost.toFixed(1)}`;
+        el.style.opacity = '1'; el.style.transform = 'translateY(-8px)';
+        setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(0)'; }, 1800);
+    }
+
+    // ── CREDITS MODAL ──
+    document.getElementById('get-credits-btn').addEventListener('click', () => {
+        document.getElementById('credits-modal').classList.add('open');
+    });
+
+    document.getElementById('modal-close').addEventListener('click', () => {
+        document.getElementById('credits-modal').classList.remove('open');
+    });
+
+    document.getElementById('credits-modal').addEventListener('click', e => {
+        if (e.target === document.getElementById('credits-modal')) {
+            document.getElementById('credits-modal').classList.remove('open');
         }
+    });
+
+    // ── PROJECTS ──
+    let projectsData = JSON.parse(localStorage.getItem('v1_projects_data')) || [];
+    let currentProjectId = null;
+    const chatContainer = document.getElementById('chat-container');
+    const projectsList  = document.getElementById('projects-list');
+
+    function saveData() { localStorage.setItem('v1_projects_data', JSON.stringify(projectsData)); }
+
+    function showWelcome() {
+        chatContainer.innerHTML = `
+            <div class="welcome" id="welcome-screen">
+                <div class="welcome-eyebrow">
+                    <div class="eyebrow-line"></div>
+                    Roblox AI Studio
+                    <div class="eyebrow-line"></div>
+                </div>
+                <h1 class="welcome-headline" id="typewriter-el">&nbsp;</h1>
+                <p class="welcome-desc">
+                    Describe cualquier sistema de Roblox en lenguaje natural y lo generaré en Luau de producción, listo para inyectar directamente en tu Studio en segundos.
+                </p>
+                <div class="welcome-stats">
+                    <div class="stat-pill"><span class="stat-num">105K</span> tokens de contexto</div>
+                    <div class="stat-pill"><span class="stat-num">2.5s</span> tiempo promedio</div>
+                    <div class="stat-pill"><span class="stat-num">Gemini</span> 2.5 Flash</div>
+                </div>
+                <div class="welcome-chips">
+                    <div class="chip" onclick="setPrompt('Sistema de leaderstats con monedas y gemas persistentes')">💰 LeaderStats</div>
+                    <div class="chip" onclick="setPrompt('GUI de tienda con productos, precios y botones de compra')">🏪 Tienda GUI</div>
+                    <div class="chip" onclick="setPrompt('Sistema de anti-cheat con detección de speed hack y teleport')">🛡️ Anti-Cheat</div>
+                    <div class="chip" onclick="setPrompt('Sistema de correr con Shift, animación y sonido')">🏃 Sprinting</div>
+                    <div class="chip" onclick="setPrompt('Sistema de cofre con animación de apertura y partículas')">📦 Cofre</div>
+                    <div class="chip" onclick="setPrompt('Sistema de pets con movimiento orbital y multiplicadores')">🐾 Pets</div>
+                </div>
+                <div class="disclaimer">
+                    ⚠️ V1zions puede cometer errores. Revisa siempre el código generado antes de usarlo en producción.
+                </div>
+            </div>
+        `;
+        startTypewriter();
+    }
+
+    // Typewriter effect
+    const PHRASES = [
+        "What will you build today?",
+        "Inject powerful systems into your game.",
+        "From idea to Luau in seconds.",
+        "Production-ready Roblox code, instantly.",
+        "Build smarter. Ship faster.",
+    ];
+
+    let twPhrase = 0, twChar = 0, twDeleting = false, twTimeout = null;
+
+    function startTypewriter() {
+        clearTimeout(twTimeout);
+        twPhrase = 0; twChar = 0; twDeleting = false;
+        typeStep();
+    }
+
+    function typeStep() {
+        const el = document.getElementById('typewriter-el');
+        if (!el) return;
+        const phrase = PHRASES[twPhrase];
+        if (!twDeleting) {
+            twChar++;
+            el.innerHTML = phrase.slice(0, twChar) + '<span class="typewriter-cursor"></span>';
+            if (twChar === phrase.length) {
+                twDeleting = true;
+                twTimeout = setTimeout(typeStep, 2200);
+            } else {
+                twTimeout = setTimeout(typeStep, 52);
+            }
+        } else {
+            twChar--;
+            el.innerHTML = phrase.slice(0, twChar) + '<span class="typewriter-cursor"></span>';
+            if (twChar === 0) {
+                twDeleting = false;
+                twPhrase = (twPhrase + 1) % PHRASES.length;
+                twTimeout = setTimeout(typeStep, 300);
+            } else {
+                twTimeout = setTimeout(typeStep, 30);
+            }
+        }
+    }
+
+    function loadProject(id) {
+        currentProjectId = id;
+        const proj = projectsData.find(p => p.id === id);
+        chatContainer.innerHTML = '';
+        if (proj && proj.chats.length > 0) {
+            proj.chats.forEach(m => addMsg(m.role, m.text));
+        } else {
+            showWelcome();
+        }
+        renderProjects();
+    }
+
+    function renderProjects() {
+        projectsList.innerHTML = '';
+        projectsData.forEach(p => {
+            const d = document.createElement('div');
+            d.className = 'project-item' + (p.id === currentProjectId ? ' active' : '');
+            d.innerHTML = `<span class="proj-icon">📄</span> ${p.title}`;
+            d.onclick = () => loadProject(p.id);
+            projectsList.appendChild(d);
+        });
+    }
+
+    if (projectsData.length === 0) {
+        projectsData.push({ id: Date.now(), title: "Mi Primer Proyecto", chats: [] });
+        saveData();
+    }
+    loadProject(projectsData[0].id);
+
+    document.getElementById('new-btn').addEventListener('click', () => {
+        const p = { id: Date.now(), title: "Proyecto " + (projectsData.length + 1), chats: [] };
+        projectsData.unshift(p); saveData(); loadProject(p.id);
+    });
+
+    // ── CHAT RENDER ──
+    function addMsg(role, html, id = null) {
+        const welcome = chatContainer.querySelector('.welcome');
+        if (welcome) { chatContainer.innerHTML = ''; clearTimeout(twTimeout); }
+        const d = document.createElement('div');
+        d.className = 'msg ' + role;
+        if (id) d.id = id;
+        if (role === 'user') {
+            d.innerHTML = `<div class="bubble">${html}</div>`;
+        } else {
+            d.innerHTML = `<div class="ai-ava">V1</div><div class="bubble">${html}</div>`;
+        }
+        chatContainer.appendChild(d);
+        chatContainer.scrollTop = chatContainer.scrollHeight;
+    }
+
+    function saveMsg(role, html) {
+        const p = projectsData.find(x => x.id === currentProjectId);
+        if (!p) return;
+        if (p.chats.length === 0 && role === 'user') {
+            p.title = html.substring(0, 24) + "…";
+            renderProjects();
+        }
+        p.chats.push({ role, html }); saveData();
+    }
+
+    // ── ATTACH ──
+    document.getElementById('attach-btn').addEventListener('click', () => document.getElementById('file-upload').click());
+    document.getElementById('file-upload').addEventListener('change', e => {
+        if (!e.target.files.length) return;
+        const ta = document.getElementById('prompt');
+        ta.value += (ta.value ? '\n' : '') + `[Archivo: ${e.target.files[0].name}] `;
+        ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
+        e.target.value = '';
+    });
+
+    // ── QUICK PROMPTS ──
+    function setPrompt(txt) {
+        const ta = document.getElementById('prompt');
+        ta.value = txt;
+        ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
+        ta.focus();
+    }
+
+    // ── STUDIO STATUS ──
+    const studioEl = document.getElementById('studio-status');
+    const statusTxt = document.getElementById('status-text');
+    let isConnected = false;
+
+    db.collection("System").doc("Connection").onSnapshot(doc => {
+        if (doc.exists && doc.data().status === "online") {
+            studioEl.classList.add('online');
+            statusTxt.textContent = 'Studio Vinculado';
+            isConnected = true;
+        } else {
+            studioEl.classList.remove('online');
+            statusTxt.textContent = 'Esperando Studio...';
+            isConnected = false;
+        }
+    });
+
+    // ── ROADMAP ──
+    window.lanzarPasoRoadmap = function(titulo, desc, sistema) {
+        setPrompt(`Del sistema "${sistema}", genera el código completo para:\n**${titulo}**\nDetalles: ${desc}\n\nGenera ÚNICAMENTE los scripts de esta parte.`);
+        enviar();
+    };
+
+    // ── SEND ──
+    const ta = document.getElementById('prompt');
+    ta.addEventListener('input', function() {
+        this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
+    });
+
+    async function enviar() {
+        const txt = ta.value.trim();
+        if (!txt) return;
+        if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
+        const costo = calcularCosto(txt);
+        if (credits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${credits.toFixed(1)}.`);
+
+        credits -= costo;
         updateCreditsDisplay();
+        flashCost(costo);
 
-        setInterval(() => {
-            credits += 1.0;
-            updateCreditsDisplay();
-        }, 300000); 
+        addMsg('user', txt);
+        saveMsg('user', txt);
+        ta.value = ''; ta.style.height = 'auto';
 
-        function calcularCosto(texto) {
-            let costo = 0.1; 
-            let len = texto.length;
-            
-            if (len > 100) costo += 0.1;
-            if (len > 300) costo += 0.2;
-            if (len > 600) costo += 0.3;
+        const lid = 'load-' + Date.now();
+        addMsg('ai', `
+            <div class="loading-bubble">
+                <div class="dots"><span></span><span></span><span></span></div>
+                Generando código...
+            </div>
+        `, lid);
 
-            const avanzadas = ['datastore', 'framework', 'oop', 'raycast', 'combat', 'inventario', 'servidor', 'modulo', 'avanzado'];
-            const minText = texto.toLowerCase();
-            avanzadas.forEach(palabra => {
-                if (minText.includes(palabra)) costo += 0.1;
+        try {
+            const ref = await db.collection("PeticionesRoblox").add({
+                mensaje: txt, estado: "pendiente", esVip: true,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            return Math.min(1.0, costo); 
-        }
+            const unsub = ref.onSnapshot(snap => {
+                const data = snap.data(); if (!data) return;
+                const loadEl = document.getElementById(lid);
 
-        // --- SISTEMA DE PROYECTOS (MEMORIA REAL) ---
-        let projectsData = JSON.parse(localStorage.getItem('v1_projects_data')) || [];
-        let currentProjectId = null;
+                if (data.estado === "completado" || data.estado === "inyectar") {
+                    if (loadEl) loadEl.remove();
+                    const resumen = data.resultado || "Scripts inyectados correctamente.";
+                    const m = `<strong>Sistema inyectado ✓</strong><br><span class="sys-msg">${resumen.replace(/\n/g,'<br>')}</span>`;
+                    addMsg('ai', m); saveMsg('ai', m);
+                    unsub();
 
-        const chatContainer = document.getElementById('chat-container');
-        const projectsList = document.getElementById('projects-list');
+                } else if (data.estado === "roadmap_pendiente") {
+                    if (loadEl) loadEl.remove();
+                    let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
+                    html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
+                    data.pasos.forEach(p => {
+                        html += `<button class="roadmap-step" onclick='window.lanzarPasoRoadmap(${JSON.stringify(p.titulo)},${JSON.stringify(p.descripcion)},${JSON.stringify(data.tituloSistema)})'>
+                            <strong>${p.titulo}</strong><span>${p.descripcion}</span>
+                        </button>`;
+                    });
+                    html += `</div>`;
+                    addMsg('ai', html); saveMsg('ai', "Roadmap generado.");
+                    unsub();
 
-        function saveProjectsData() {
-            localStorage.setItem('v1_projects_data', JSON.stringify(projectsData));
-        }
-
-        function loadProject(projectId) {
-            currentProjectId = projectId;
-            const proj = projectsData.find(p => p.id === projectId);
-            
-            chatContainer.innerHTML = '';
-            if (proj && proj.chats.length > 0) {
-                proj.chats.forEach(m => addMessageHTML(m.role, m.text));
-            } else {
-                chatContainer.innerHTML = `
-                    <div style="text-align:center; margin-top: 20vh; opacity:0.6; animation: fadeIn 0.5s;">
-                        <h1 style="font-size: 26px; margin-bottom: 10px;">Nuevo Proyecto</h1>
-                        <p>Escribe tu idea para comenzar a inyectar código.</p>
-                    </div>`;
-            }
-            renderProjectList();
-        }
-
-        function renderProjectList() {
-            projectsList.innerHTML = '';
-            projectsData.forEach(p => {
-                const div = document.createElement('div');
-                div.className = `project-item ${p.id === currentProjectId ? 'active' : ''}`;
-                div.innerHTML = `📄 ${p.title}`;
-                div.onclick = () => loadProject(p.id);
-                projectsList.appendChild(div);
-            });
-        }
-
-        if (projectsData.length === 0) {
-            const newProj = { id: Date.now(), title: "Proyecto Inicial", chats: [] };
-            projectsData.push(newProj);
-            saveProjectsData();
-        }
-        loadProject(projectsData[0].id);
-
-        document.getElementById('new-btn').addEventListener('click', () => {
-            const newProj = { id: Date.now(), title: "Proyecto " + (projectsData.length + 1), chats: [] };
-            projectsData.unshift(newProj); 
-            saveProjectsData();
-            loadProject(newProj.id);
-        });
-
-        // --- RENDERIZADO DE CHAT ---
-        function addMessageHTML(role, text, id = null) {
-            if(chatContainer.innerHTML.includes("Nuevo Proyecto")) chatContainer.innerHTML = '';
-            
-            const div = document.createElement('div');
-            div.className = `msg ${role}`;
-            if (id) div.id = id;
-            
-            if (role === 'user') {
-                div.innerHTML = `<div class="bubble">${text}</div>`;
-            } else {
-                div.innerHTML = `<div class="ai-avatar">V1</div><div class="bubble">${text}</div>`;
-            }
-            chatContainer.appendChild(div);
-            chatContainer.scrollTop = chatContainer.scrollHeight;
-        }
-
-        function pushToCurrentProject(role, text) {
-            const proj = projectsData.find(p => p.id === currentProjectId);
-            if (proj) {
-                if (proj.chats.length === 0 && role === 'user') {
-                    proj.title = text.substring(0, 20) + "...";
-                    renderProjectList();
+                } else if (data.estado === "error") {
+                    if (loadEl) loadEl.remove();
+                    addMsg('ai', `❌ ${data.resultado || "Error en la inyección."}`);
+                    unsub();
                 }
-                proj.chats.push({ role, text });
-                saveProjectsData();
-            }
+            });
+        } catch(e) {
+            const loadEl = document.getElementById(lid);
+            if (loadEl) loadEl.remove();
+            addMsg('ai', "❌ Error de conexión con Firebase.");
         }
+    }
 
-        // --- BOTÓN DE ADJUNTAR FUNCIONAL ---
-        const attachBtn = document.getElementById('attach-btn');
-        const fileInput = document.getElementById('file-upload');
-        const inputArea = document.getElementById('prompt');
-
-        attachBtn.addEventListener('click', () => {
-            fileInput.click(); 
-        });
-
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                const fileName = e.target.files[0].name;
-                const currentText = inputArea.value;
-                inputArea.value = currentText + (currentText ? "\n" : "") + `[Archivo Referencia: ${fileName}] `;
-                inputArea.style.height = 'auto';
-                inputArea.style.height = inputArea.scrollHeight + 'px';
-                fileInput.value = ""; 
-            }
-        });
-
-        // --- RADAR DE STUDIO ---
-        const statusInd = document.getElementById('status-indicator');
-        let isConnected = false;
-        
-        db.collection("System").doc("Connection").onSnapshot(doc => {
-            if (doc.exists && doc.data().status === "online") {
-                statusInd.innerText = "ESTUDIO VINCULADO";
-                statusInd.classList.add('online');
-                isConnected = true;
-            } else {
-                statusInd.innerText = "🔌 ESPERANDO ESTUDIO...";
-                statusInd.classList.remove('online');
-                isConnected = false;
-            }
-        });
-
-        // --- FUNCIONES PARA MANDAR ROADMAP ---
-        window.lanzarPasoRoadmap = function(tituloPaso, descripcionPaso, tituloSistema) {
-            const textoComando = `Del sistema "${tituloSistema}", genera AHORA el código completo para este paso:\n**${tituloPaso}**\nDetalles: ${descripcionPaso}\n\nNota: Genera ÚNICAMENTE los scripts de esta parte, sin usar el Roadmap esta vez.`;
-            inputArea.value = textoComando;
-            enviar();
-        };
-
-        // --- ENVIAR COMANDO ---
-        const sendBtn = document.getElementById('send-btn');
-
-        inputArea.addEventListener('input', function() {
-            this.style.height = 'auto';
-            this.style.height = this.scrollHeight + 'px';
-        });
-
-        async function enviar() {
-            const texto = inputArea.value.trim();
-            if (!texto) return;
-            if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
-
-            const costo = calcularCosto(texto);
-            if (credits < costo) {
-                return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits para este sistema. Tienes ${credits.toFixed(1)}.`);
-            }
-
-            credits -= costo;
-            updateCreditsDisplay();
-            const indicator = document.getElementById('cost-indicator');
-            indicator.innerText = `-${costo.toFixed(1)}`;
-            indicator.style.opacity = '1';
-            indicator.style.transform = 'translateY(-10px)';
-            setTimeout(() => { indicator.style.opacity = '0'; indicator.style.transform = 'translateY(0)'; }, 2000);
-
-            addMessageHTML('user', texto);
-            pushToCurrentProject('user', texto);
-
-            inputArea.value = '';
-            inputArea.style.height = 'auto';
-
-            const loadId = 'load-' + Date.now();
-            // --- AQUÍ EL NUEVO MENSAJE DE PENSAMIENTO ---
-            addMessageHTML('ai', '<span class="loading">🧠 V1zions está analizando y diseñando el código...</span>', loadId);
-
-            try {
-                const docRef = await db.collection("PeticionesRoblox").add({
-                    mensaje: texto,
-                    estado: "pendiente",
-                    esVip: true, 
-                    timestamp: firebase.firestore.FieldValue.serverTimestamp()
-                });
-
-                const unsub = docRef.onSnapshot(snap => {
-                    const data = snap.data();
-                    if (!data) return;
-                    
-                    const loadElement = document.getElementById(loadId);
-
-                    if (data.estado === "completado" || data.estado === "inyectar") { // <-- Pequeña corrección aquí para captar ambos
-                        if(loadElement) loadElement.remove();
-                        const resumen = data.resultado || "Script inyectado correctamente.";
-                        const finalMsg = `<strong>¡Sistema Inyectado!</strong><br><br>He inyectado los siguientes scripts en tu Workspace:<br><span class="system-msg">${resumen.replace(/\n/g, '<br>')}</span>`;
-                        addMessageHTML('ai', finalMsg);
-                        pushToCurrentProject('ai', finalMsg);
-                        unsub();
-                    } 
-                    else if (data.estado === "roadmap_pendiente") {
-                        if(loadElement) loadElement.remove();
-                        
-                        let roadmapHTML = `<strong>¡Sistema Complejo Detectado!</strong><br>He diseñado la arquitectura para "${data.tituloSistema}". Selecciona qué parte quieres inyectar primero:<br><br>`;
-                        roadmapHTML += `<div class="roadmap-container">`;
-                        
-                        data.pasos.forEach(paso => {
-                            roadmapHTML += `
-                                <button class="roadmap-btn" onclick='window.lanzarPasoRoadmap(${JSON.stringify(paso.titulo)}, ${JSON.stringify(paso.descripcion)}, ${JSON.stringify(data.tituloSistema)})'>
-                                    <strong>${paso.titulo}</strong>
-                                    <span>${paso.descripcion}</span>
-                                </button>
-                            `;
-                        });
-                        
-                        roadmapHTML += `</div>`;
-                        
-                        addMessageHTML('ai', roadmapHTML);
-                        pushToCurrentProject('ai', "Menú de sistema avanzado generado.");
-                        unsub();
-                    }
-                    else if (data.estado === "error") {
-                        if(loadElement) loadElement.remove();
-                        addMessageHTML('ai', "❌ " + (data.resultado || "Ocurrió un error en la inyección de código."));
-                        unsub();
-                    }
-                });
-            } catch (error) {
-                document.getElementById(loadId).remove();
-                addMessageHTML('ai', "❌ Error de red con Firebase.");
-            }
-        }
-
-        sendBtn.addEventListener('click', enviar);
-        inputArea.addEventListener('keydown', e => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                enviar();
-            }
-        });
+    document.getElementById('send-btn').addEventListener('click', enviar);
+    ta.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); }
+    });
     </script>
 </body>
 </html>
