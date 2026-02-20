@@ -32,6 +32,9 @@
             --green:      #22c55e;
             --green-dim:  rgba(34,197,94,0.1);
             --gold:       #f0b429;
+            --purple:     #b464ff;
+            --purple-dim: rgba(180,100,255,0.1);
+            --purple-border: rgba(180,100,255,0.25);
             --discord:    #5865f2;
             --discord-dim:rgba(88,101,242,0.12);
             --sidebar-w:  272px;
@@ -215,6 +218,35 @@
             text-transform: uppercase;
             letter-spacing: 1.5px;
             padding: 14px 20px 7px;
+        }
+
+        /* ── Context badge en sidebar ── */
+        .context-badge {
+            margin: 0 14px 8px;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid var(--purple-border);
+            background: var(--purple-dim);
+            display: flex; align-items: center; gap: 8px;
+            font-size: 11px; font-weight: 600;
+            color: var(--purple);
+            cursor: pointer;
+            transition: all .2s;
+        }
+        .context-badge:hover { background: rgba(180,100,255,0.18); }
+        .context-badge.inactive {
+            border-color: var(--border);
+            background: transparent;
+            color: var(--text-3);
+        }
+        .context-dot {
+            width: 6px; height: 6px; border-radius: 50%;
+            background: var(--purple); flex-shrink: 0;
+        }
+        .context-badge.inactive .context-dot { background: var(--text-3); }
+        .context-badge.active .context-dot {
+            animation: blink 1.5s infinite;
+            box-shadow: 0 0 5px var(--purple);
         }
 
         /* ── Projects list ── */
@@ -551,6 +583,16 @@
         .stat-pill:hover { border-color: var(--red-border); color: var(--text); }
         .stat-pill .stat-num { color: var(--text); font-weight: 800; }
 
+        /* ── Context callout en welcome ── */
+        .context-callout {
+            display: flex; align-items: center; gap: 10px;
+            background: var(--purple-dim); border: 1px solid var(--purple-border);
+            border-radius: 10px; padding: 10px 16px;
+            font-size: 12px; font-weight: 600; color: var(--purple);
+            max-width: 420px; text-align: left;
+        }
+        .context-callout.active { background: rgba(34,197,94,0.08); border-color: rgba(34,197,94,0.25); color: var(--green); }
+
         /* Quick prompts */
         .welcome-chips {
             display: flex; flex-wrap: wrap; gap: 8px;
@@ -709,6 +751,9 @@
         }
 
         .input-chip:hover { border-color: var(--red-border); color: var(--red); }
+        .input-chip.context-chip { border-color: var(--purple-border); color: var(--purple); }
+        .input-chip.context-chip:hover { background: var(--purple-dim); color: var(--purple); }
+        .input-chip.context-chip.context-active { border-color: rgba(34,197,94,0.35); color: var(--green); background: rgba(34,197,94,0.07); }
 
         .input-box {
             background: rgba(10,10,16,0.97);
@@ -894,6 +939,11 @@
 
         <div class="sidebar-divider"></div>
 
+        <div class="context-badge inactive" id="context-badge" title="El plugin escanea tus scripts y la IA los entiende">
+            <div class="context-dot"></div>
+            <span id="context-badge-text">Sin contexto del proyecto</span>
+        </div>
+
         <div class="credits-panel" id="credits-panel">
             <div class="cost-flash" id="cost-flash"></div>
             <div class="credits-top">
@@ -945,6 +995,7 @@
                 <button class="input-chip" onclick="setPrompt('Sistema de combate melee con hitbox server-side')">⚔️ Combat</button>
                 <button class="input-chip" onclick="setPrompt('NPC con pathfinding y comportamiento AI')">🤖 NPC</button>
                 <button class="input-chip" onclick="setPrompt('Sistema de admin commands')">🔧 Admin</button>
+                <button class="input-chip context-chip" id="context-chip" onclick="mostrarInfoContexto()">🗂️ Sin contexto</button>
             </div>
             <div class="input-box">
                 <input type="file" id="file-upload" style="display:none">
@@ -1077,6 +1128,68 @@
         }
     });
 
+    // ── CONTEXTO DEL PROYECTO ─────────────────────────────────────────────────
+    // La web lee el contexto que el plugin subió a Firebase
+    let contextoProyectoActual = "";
+    let numScriptsContexto = 0;
+
+    function actualizarUIContexto(numScripts) {
+        numScriptsContexto = numScripts;
+        const chip   = document.getElementById('context-chip');
+        const badge  = document.getElementById('context-badge');
+        const badgeTxt = document.getElementById('context-badge-text');
+
+        if (numScripts > 0) {
+            chip.textContent = `🗂️ ${numScripts} scripts`;
+            chip.classList.add('context-active');
+            badge.classList.remove('inactive');
+            badge.classList.add('active');
+            badgeTxt.textContent = `Contexto: ${numScripts} scripts activos`;
+        } else {
+            chip.textContent = '🗂️ Sin contexto';
+            chip.classList.remove('context-active');
+            badge.classList.add('inactive');
+            badge.classList.remove('active');
+            badgeTxt.textContent = 'Sin contexto del proyecto';
+        }
+    }
+
+    // Escucha en tiempo real cuando el plugin sube el contexto
+    db.collection("System").doc("ProjectContext").onSnapshot(doc => {
+        if (doc.exists && doc.data().contexto) {
+            contextoProyectoActual = doc.data().contexto;
+            const n = parseInt(doc.data().numScripts) || 0;
+            actualizarUIContexto(n);
+            console.log(`🗂️ Contexto del proyecto actualizado: ${n} scripts`);
+        } else {
+            contextoProyectoActual = "";
+            actualizarUIContexto(0);
+        }
+    });
+
+    function mostrarInfoContexto() {
+        if (contextoProyectoActual) {
+            alert(
+                `✅ CONTEXTO ACTIVO\n\n` +
+                `La IA conoce ${numScriptsContexto} scripts de tu proyecto.\n` +
+                `Genera código compatible con tu arquitectura.\n\n` +
+                `Para actualizar: abre el plugin V35 en Studio\n` +
+                `y vuelve a hacer clic en 🧠 ESCANEAR PROYECTO.`
+            );
+        } else {
+            alert(
+                `🗂️ SIN CONTEXTO DEL PROYECTO\n\n` +
+                `Sin contexto la IA genera código genérico.\n` +
+                `Con contexto genera código compatible con TU juego.\n\n` +
+                `CÓMO ACTIVARLO:\n` +
+                `1. Abre Roblox Studio con tu juego\n` +
+                `2. Conecta el plugin V1zions V35\n` +
+                `3. Haz clic en 🧠 ESCANEAR PROYECTO\n\n` +
+                `Esto es exactamente lo que hace lemonade.gg.`
+            );
+        }
+    }
+
     // ── PROJECTS ──
     let projectsData = JSON.parse(localStorage.getItem('v1_projects_data')) || [];
     let currentProjectId = null;
@@ -1086,6 +1199,7 @@
     function saveData() { localStorage.setItem('v1_projects_data', JSON.stringify(projectsData)); }
 
     function showWelcome() {
+        const tieneContexto = contextoProyectoActual.length > 0;
         chatContainer.innerHTML = `
             <div class="welcome" id="welcome-screen">
                 <div class="welcome-eyebrow">
@@ -1101,6 +1215,12 @@
                     <div class="stat-pill"><span class="stat-num">105K</span> tokens de contexto</div>
                     <div class="stat-pill"><span class="stat-num">2.5s</span> tiempo promedio</div>
                     <div class="stat-pill"><span class="stat-num">Gemini</span> 2.5 Flash</div>
+                </div>
+                <div class="context-callout ${tieneContexto ? 'active' : ''}" onclick="mostrarInfoContexto()" style="cursor:pointer;">
+                    ${tieneContexto
+                        ? `✅ Contexto activo — ${numScriptsContexto} scripts de tu proyecto cargados. La IA entiende tu juego.`
+                        : `🗂️ Sin contexto del proyecto. Escanea con el plugin V35 para que la IA entienda tu juego como lemonade.gg.`
+                    }
                 </div>
                 <div class="welcome-chips">
                     <div class="chip" onclick="setPrompt('Sistema de leaderstats con monedas y gemas persistentes')">💰 LeaderStats</div>
@@ -1166,7 +1286,7 @@
         const proj = projectsData.find(p => p.id === id);
         chatContainer.innerHTML = '';
         if (proj && proj.chats.length > 0) {
-            proj.chats.forEach(m => addMsg(m.role, m.text));
+            proj.chats.forEach(m => addMsg(m.role, m.text || m.html)); // Soporte para html o text
         } else {
             showWelcome();
         }
@@ -1185,13 +1305,13 @@
     }
 
     if (projectsData.length === 0) {
-        projectsData.push({ id: Date.now(), title: "Mi Primer Proyecto", chats: [] });
+        projectsData.push({ id: Date.now(), title: "Mi Primer Proyecto", chats: [], lastCode: null });
         saveData();
     }
     loadProject(projectsData[0].id);
 
     document.getElementById('new-btn').addEventListener('click', () => {
-        const p = { id: Date.now(), title: "Proyecto " + (projectsData.length + 1), chats: [] };
+        const p = { id: Date.now(), title: "Proyecto " + (projectsData.length + 1), chats: [], lastCode: null };
         projectsData.unshift(p); saveData(); loadProject(p.id);
     });
 
@@ -1268,81 +1388,89 @@
         this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
     });
 
-async function enviar() {
-    const txt = ta.value.trim();
-    if (!txt) return;
-    if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
-    const costo = calcularCosto(txt);
-    if (credits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${credits.toFixed(1)}.`);
+    async function enviar() {
+        const txt = ta.value.trim();
+        if (!txt) return;
+        if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
+        const costo = calcularCosto(txt);
+        if (credits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${credits.toFixed(1)}.`);
 
-    credits -= costo;
-    updateCreditsDisplay();
-    flashCost(costo);
+        credits -= costo;
+        updateCreditsDisplay();
+        flashCost(costo);
 
-    addMsg('user', txt);
-    saveMsg('user', txt);
-    ta.value = ''; ta.style.height = 'auto';
+        addMsg('user', txt);
+        saveMsg('user', txt);
+        ta.value = ''; ta.style.height = 'auto';
 
-    // ✅ NUEVO: detectar si es una edición e inyectar contexto
-    const PALABRAS_EDICION = [
-        'cambia','cambialo','cambiar','modifica','modificalo','modificar',
-        'ponlo','hazlo','quítale','quitale','añade','añadir','agrega',
-        'agregar','edita','editar','actualiza','actualizar','ahora ponle',
-        'ahora cambia','ahora hazlo','ahora modifica','mismo script',
-        'ese script','el script','el mismo'
-    ];
-    const txtMin = txt.toLowerCase();
-    const esEdicion = PALABRAS_EDICION.some(p => txtMin.includes(p));
-    const proj = projectsData.find(p => p.id === currentProjectId);
+        // ✅ NUEVO: detectar si es una edición e inyectar contexto
+        const PALABRAS_EDICION = [
+            'cambia','cambialo','cambiar','modifica','modificalo','modificar',
+            'ponlo','hazlo','quítale','quitale','añade','añadir','agrega',
+            'agregar','edita','editar','actualiza','actualizar','ahora ponle',
+            'ahora cambia','ahora hazlo','ahora modifica','mismo script',
+            'ese script','el script','el mismo'
+        ];
+        const txtMin = txt.toLowerCase();
+        const esEdicion = PALABRAS_EDICION.some(p => txtMin.includes(p));
+        const proj = projectsData.find(p => p.id === currentProjectId);
 
-    let mensajeFinal = txt;
+        let mensajeFinal = txt;
 
-    if (esEdicion && proj?.lastCode) {
-        mensajeFinal = 
+        if (esEdicion && proj?.lastCode) {
+            mensajeFinal = 
 `INSTRUCCIÓN CRÍTICA: El usuario quiere EDITAR el código que ya generaste. NO crees scripts nuevos. NO cambies el "name" ni el "parent". MODIFICA únicamente lo que se pide y devuelve el script COMPLETO corregido.
 
 CÓDIGO EXISTENTE QUE DEBES EDITAR:
 ${proj.lastCode}
 
 INSTRUCCIÓN DEL USUARIO: ${txt}`;
-        
-        console.log('📝 Modo edición activado — contexto adjuntado');
-    }
+            
+            console.log('📝 Modo edición activado — contexto adjuntado');
+        }
 
-    const lid = 'load-' + Date.now();
-    addMsg('ai', `
-        <div class="loading-bubble">
-            <div class="dots"><span></span><span></span><span></span></div>
-            ${esEdicion && proj?.lastCode ? 'Editando script existente...' : 'Generando código...'}
-        </div>
-    `, lid);
+        const tieneContexto = contextoProyectoActual.length > 100;
+        const textoLoading = esEdicion && proj?.lastCode 
+            ? 'Editando script existente...' 
+            : tieneContexto 
+                ? 'Analizando tu proyecto y generando código...' 
+                : 'Generando código...';
 
-    try {
-        const ref = await db.collection("PeticionesRoblox").add({
-            mensaje: mensajeFinal,   // ← usa mensajeFinal, no txt
-            estado: "pendiente",
-            esVip: true,
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        const lid = 'load-' + Date.now();
+        addMsg('ai', `
+            <div class="loading-bubble">
+                <div class="dots"><span></span><span></span><span></span></div>
+                ${textoLoading}
+            </div>
+        `, lid);
+
+        try {
+            const ref = await db.collection("PeticionesRoblox").add({
+                mensaje: mensajeFinal,   // ← usa mensajeFinal, no txt
+                contextoProyecto: contextoProyectoActual,  // ← EL SECRETO DE LEMONADE.GG
+                estado: "pendiente",
+                esVip: true,
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
 
             const unsub = ref.onSnapshot(snap => {
                 const data = snap.data(); if (!data) return;
                 const loadEl = document.getElementById(lid);
 
-if (data.estado === "completado" || data.estado === "inyectar") {
-    if (loadEl) loadEl.remove();
+                if (data.estado === "completado" || data.estado === "inyectar") {
+                    if (loadEl) loadEl.remove();
 
-    
-    const proj = projectsData.find(p => p.id === currentProjectId);
-    if (proj && data.sistemaData) {
-        proj.lastCode = data.sistemaData;
-        saveData();
-    }
+                    
+                    const proj = projectsData.find(p => p.id === currentProjectId);
+                    if (proj && data.sistemaData) {
+                        proj.lastCode = data.sistemaData;
+                        saveData();
+                    }
 
-    const resumen = data.resultado || "Scripts inyectados correctamente.";
-    const m = `<strong>Sistema inyectado ✓</strong><br><span class="sys-msg">${resumen.replace(/\n/g,'<br>')}</span>`;
-    addMsg('ai', m); saveMsg('ai', m);
-    unsub();
+                    const resumen = data.resultado || "Scripts inyectados correctamente.";
+                    const m = `<strong>Sistema inyectado ✓</strong><br><span class="sys-msg">${resumen.replace(/\n/g,'<br>')}</span>`;
+                    addMsg('ai', m); saveMsg('ai', m);
+                    unsub();
                 } else if (data.estado === "roadmap_pendiente") {
                     if (loadEl) loadEl.remove();
                     let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
@@ -1376,4 +1504,3 @@ if (data.estado === "completado" || data.estado === "inyectar") {
     </script>
 </body>
 </html>
-
