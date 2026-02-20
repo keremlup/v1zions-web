@@ -1268,46 +1268,81 @@
         this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
     });
 
-    async function enviar() {
-        const txt = ta.value.trim();
-        if (!txt) return;
-        if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
-        const costo = calcularCosto(txt);
-        if (credits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${credits.toFixed(1)}.`);
+async function enviar() {
+    const txt = ta.value.trim();
+    if (!txt) return;
+    if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
+    const costo = calcularCosto(txt);
+    if (credits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${credits.toFixed(1)}.`);
 
-        credits -= costo;
-        updateCreditsDisplay();
-        flashCost(costo);
+    credits -= costo;
+    updateCreditsDisplay();
+    flashCost(costo);
 
-        addMsg('user', txt);
-        saveMsg('user', txt);
-        ta.value = ''; ta.style.height = 'auto';
+    addMsg('user', txt);
+    saveMsg('user', txt);
+    ta.value = ''; ta.style.height = 'auto';
 
-        const lid = 'load-' + Date.now();
-        addMsg('ai', `
-            <div class="loading-bubble">
-                <div class="dots"><span></span><span></span><span></span></div>
-                Generando código...
-            </div>
-        `, lid);
+    // ✅ NUEVO: detectar si es una edición e inyectar contexto
+    const PALABRAS_EDICION = [
+        'cambia','cambialo','cambiar','modifica','modificalo','modificar',
+        'ponlo','hazlo','quítale','quitale','añade','añadir','agrega',
+        'agregar','edita','editar','actualiza','actualizar','ahora ponle',
+        'ahora cambia','ahora hazlo','ahora modifica','mismo script',
+        'ese script','el script','el mismo'
+    ];
+    const txtMin = txt.toLowerCase();
+    const esEdicion = PALABRAS_EDICION.some(p => txtMin.includes(p));
+    const proj = projectsData.find(p => p.id === currentProjectId);
 
-        try {
-            const ref = await db.collection("PeticionesRoblox").add({
-                mensaje: txt, estado: "pendiente", esVip: true,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
+    let mensajeFinal = txt;
+
+    if (esEdicion && proj?.lastCode) {
+        mensajeFinal = 
+`INSTRUCCIÓN CRÍTICA: El usuario quiere EDITAR el código que ya generaste. NO crees scripts nuevos. NO cambies el "name" ni el "parent". MODIFICA únicamente lo que se pide y devuelve el script COMPLETO corregido.
+
+CÓDIGO EXISTENTE QUE DEBES EDITAR:
+${proj.lastCode}
+
+INSTRUCCIÓN DEL USUARIO: ${txt}`;
+        
+        console.log('📝 Modo edición activado — contexto adjuntado');
+    }
+
+    const lid = 'load-' + Date.now();
+    addMsg('ai', `
+        <div class="loading-bubble">
+            <div class="dots"><span></span><span></span><span></span></div>
+            ${esEdicion && proj?.lastCode ? 'Editando script existente...' : 'Generando código...'}
+        </div>
+    `, lid);
+
+    try {
+        const ref = await db.collection("PeticionesRoblox").add({
+            mensaje: mensajeFinal,   // ← usa mensajeFinal, no txt
+            estado: "pendiente",
+            esVip: true,
+            timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
 
             const unsub = ref.onSnapshot(snap => {
                 const data = snap.data(); if (!data) return;
                 const loadEl = document.getElementById(lid);
 
-                if (data.estado === "completado" || data.estado === "inyectar") {
-                    if (loadEl) loadEl.remove();
-                    const resumen = data.resultado || "Scripts inyectados correctamente.";
-                    const m = `<strong>Sistema inyectado ✓</strong><br><span class="sys-msg">${resumen.replace(/\n/g,'<br>')}</span>`;
-                    addMsg('ai', m); saveMsg('ai', m);
-                    unsub();
+if (data.estado === "completado" || data.estado === "inyectar") {
+    if (loadEl) loadEl.remove();
 
+    
+    const proj = projectsData.find(p => p.id === currentProjectId);
+    if (proj && data.sistemaData) {
+        proj.lastCode = data.sistemaData;
+        saveData();
+    }
+
+    const resumen = data.resultado || "Scripts inyectados correctamente.";
+    const m = `<strong>Sistema inyectado ✓</strong><br><span class="sys-msg">${resumen.replace(/\n/g,'<br>')}</span>`;
+    addMsg('ai', m); saveMsg('ai', m);
+    unsub();
                 } else if (data.estado === "roadmap_pendiente") {
                     if (loadEl) loadEl.remove();
                     let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
@@ -1341,3 +1376,4 @@
     </script>
 </body>
 </html>
+
