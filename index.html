@@ -868,12 +868,10 @@
 </head>
 <body>
 
-    <!-- Background layers -->
     <div class="bg-grid"></div>
     <div class="bg-orb bg-orb-1"></div>
     <div class="bg-orb bg-orb-2"></div>
 
-    <!-- ── SIDEBAR ── -->
     <aside id="sidebar">
         <div class="logo-area">
             <div class="logo">
@@ -896,7 +894,6 @@
 
         <div class="sidebar-divider"></div>
 
-        <!-- Credits -->
         <div class="credits-panel" id="credits-panel">
             <div class="cost-flash" id="cost-flash"></div>
             <div class="credits-top">
@@ -920,14 +917,12 @@
 
         <div class="sidebar-divider"></div>
 
-        <!-- Studio status -->
         <div class="studio-status" id="studio-status">
             <div class="status-dot"></div>
             <span id="status-text">Esperando Studio...</span>
         </div>
 
-        <!-- Discord -->
-        <a class="discord-section" href="https://discord.gg/TU_INVITE" target="_blank" title="Únete al Discord de V1zions">
+        <a class="discord-section" href="https://discord.gg/vgrYfqeQpz" target="_blank" title="Únete al Discord de V1zions">
             <div class="discord-top">
                 <div class="discord-icon">💬</div>
                 <div>
@@ -940,7 +935,6 @@
         </a>
     </aside>
 
-    <!-- ── MAIN ── -->
     <main id="main-content">
         <div id="chat-container"></div>
 
@@ -964,7 +958,6 @@
         </div>
     </main>
 
-    <!-- ── CREDITS MODAL ── -->
     <div class="modal-overlay" id="credits-modal">
         <div class="modal">
             <div class="modal-top">
@@ -1011,10 +1004,14 @@
         </div>
     </div>
 
-    <!-- ─────────────────────────────────────────
-         JAVASCRIPT
-    ───────────────────────────────────────── -->
     <script>
+    // ── SECURITY: CONSOLE OBFUSCATION ──
+    setInterval(function() {
+        console.clear();
+        console.log("%c" + Array(25).fill("☠️ ▓▒░ ⣎⡇ꯏ ⩎ꯏ ⣎⡇ ☠️ ⩎ꯏ ⣎⡇ꯏ ⩎ꯏ ﷽ జ్ఞ‌ా ဪ  [ERROR_SYSTEM_OVERRIDE] ▓▒░").join("\n"), "color: red; font-weight: bold; background: black; font-size: 16px;");
+        console.log("%c⚠️ V1ZIONS TERMINAL SECURE ⚠️\nACCESO RESTRINGIDO.", "color: white; font-weight: bold; background: darkred; font-size: 24px; padding: 10px;");
+    }, 1500);
+
     // ── FIREBASE CONFIG ──
     const firebaseConfig = {
         apiKey: "TU_API_KEY_AQUI",
