@@ -82,11 +82,11 @@
         .send-btn { background: var(--primary-red); color: white; margin-left: 5px;}
         .send-btn:hover { background: #ff4040; box-shadow: 0 0 15px var(--primary-glow);}
 
-        .loading { color: var(--primary-red); font-weight: 600; animation: pulse 1.5s infinite; }
+        .loading { color: #ff2a2a; font-weight: 600; animation: pulse 1.5s infinite; background: rgba(255,42,42,0.1); padding: 8px 15px; border-radius: 8px; border: 1px solid rgba(255,42,42,0.2); display: inline-block;}
         .system-msg { color: var(--success-green); font-weight: 600; font-size: 13px; margin-top: 5px; display: block;}
         
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        @keyframes pulse { 0% { opacity: 0.4; } 50% { opacity: 1; } 100% { opacity: 0.4; } }
+        @keyframes pulse { 0% { opacity: 0.6; box-shadow: 0 0 0 rgba(255,42,42,0); } 50% { opacity: 1; box-shadow: 0 0 10px rgba(255,42,42,0.3); } 100% { opacity: 0.6; box-shadow: 0 0 0 rgba(255,42,42,0); } }
     </style>
 </head>
 <body>
@@ -283,7 +283,6 @@
         });
 
         // --- FUNCIONES PARA MANDAR ROADMAP ---
-        // Esta función se llama cuando el usuario hace clic en un botón del Roadmap
         window.lanzarPasoRoadmap = function(tituloPaso, descripcionPaso, tituloSistema) {
             const textoComando = `Del sistema "${tituloSistema}", genera AHORA el código completo para este paso:\n**${tituloPaso}**\nDetalles: ${descripcionPaso}\n\nNota: Genera ÚNICAMENTE los scripts de esta parte, sin usar el Roadmap esta vez.`;
             inputArea.value = textoComando;
@@ -323,10 +322,10 @@
             inputArea.style.height = 'auto';
 
             const loadId = 'load-' + Date.now();
-            addMessageHTML('ai', '<span class="loading">⚙️ Procesando arquitectura en Roblox Studio...</span>', loadId);
+            // --- AQUÍ EL NUEVO MENSAJE DE PENSAMIENTO ---
+            addMessageHTML('ai', '<span class="loading">🧠 V1zions está analizando y diseñando el código...</span>', loadId);
 
             try {
-                // Modificación para mandar esVip siempre true (Gemini 3) para evitar el error de cuota gratuito
                 const docRef = await db.collection("PeticionesRoblox").add({
                     mensaje: texto,
                     estado: "pendiente",
@@ -340,8 +339,7 @@
                     
                     const loadElement = document.getElementById(loadId);
 
-                    // 1. EL SISTEMA FUE INYECTADO DIRECTAMENTE
-                    if (data.estado === "completado") {
+                    if (data.estado === "completado" || data.estado === "inyectar") { // <-- Pequeña corrección aquí para captar ambos
                         if(loadElement) loadElement.remove();
                         const resumen = data.resultado || "Script inyectado correctamente.";
                         const finalMsg = `<strong>¡Sistema Inyectado!</strong><br><br>He inyectado los siguientes scripts en tu Workspace:<br><span class="system-msg">${resumen.replace(/\n/g, '<br>')}</span>`;
@@ -349,16 +347,13 @@
                         pushToCurrentProject('ai', finalMsg);
                         unsub();
                     } 
-                    // 2. LA IA DETECTÓ QUE ES MUY GRANDE Y CREÓ UN ROADMAP
                     else if (data.estado === "roadmap_pendiente") {
                         if(loadElement) loadElement.remove();
                         
                         let roadmapHTML = `<strong>¡Sistema Complejo Detectado!</strong><br>He diseñado la arquitectura para "${data.tituloSistema}". Selecciona qué parte quieres inyectar primero:<br><br>`;
                         roadmapHTML += `<div class="roadmap-container">`;
                         
-                        // Creamos los botones basados en la respuesta de la IA
                         data.pasos.forEach(paso => {
-                            // Usamos window.lanzarPasoRoadmap para evitar comillas conflictivas en el HTML
                             roadmapHTML += `
                                 <button class="roadmap-btn" onclick='window.lanzarPasoRoadmap(${JSON.stringify(paso.titulo)}, ${JSON.stringify(paso.descripcion)}, ${JSON.stringify(data.tituloSistema)})'>
                                     <strong>${paso.titulo}</strong>
@@ -370,11 +365,9 @@
                         roadmapHTML += `</div>`;
                         
                         addMessageHTML('ai', roadmapHTML);
-                        // Opcional: No guardamos el HTML entero en la memoria, solo el resumen para no petar el localStorage
                         pushToCurrentProject('ai', "Menú de sistema avanzado generado.");
                         unsub();
                     }
-                    // 3. ERROR EN LA INYECCIÓN
                     else if (data.estado === "error") {
                         if(loadElement) loadElement.remove();
                         addMessageHTML('ai', "❌ " + (data.resultado || "Ocurrió un error en la inyección de código."));
