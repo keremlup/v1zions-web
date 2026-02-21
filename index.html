@@ -810,6 +810,45 @@
             font-size: 11px; color: var(--text-3);
             margin-top: 9px;
         }
+        
+        .image-preview-container {
+            display: flex;
+            gap: 8px;
+            padding: 4px 12px;
+            max-width: 100%;
+            overflow-x: auto;
+            display: none;
+        }
+        .image-preview {
+            position: relative;
+            width: 48px;
+            height: 48px;
+            border-radius: 6px;
+            overflow: hidden;
+            border: 1px solid var(--border-2);
+            flex-shrink: 0;
+        }
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        .image-preview .remove-btn {
+            position: absolute;
+            top: 2px;
+            right: 2px;
+            background: rgba(0,0,0,0.6);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 16px;
+            height: 16px;
+            font-size: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
 
         /* ═══════════════════════════════════════════
            CREDITS MODAL
@@ -997,11 +1036,14 @@
                 <button class="input-chip" onclick="setPrompt('Sistema de admin commands')">🔧 Admin</button>
                 <button class="input-chip context-chip" id="context-chip" onclick="mostrarInfoContexto()">🗂️ Sin contexto</button>
             </div>
-            <div class="input-box">
-                <input type="file" id="file-upload" style="display:none">
-                <button class="action-btn" id="attach-btn" title="Adjuntar archivo">📎</button>
-                <textarea id="prompt" rows="1" placeholder="Describe el sistema que necesitas..."></textarea>
-                <button class="action-btn send-btn" id="send-btn">➤</button>
+            <div class="input-box" style="flex-direction: column; padding: 0;">
+                <div id="image-preview-container" class="image-preview-container"></div>
+                <div style="display: flex; width: 100%; align-items: flex-end; padding: 6px;">
+                    <input type="file" id="file-upload" accept="image/*" style="display:none">
+                    <button class="action-btn" id="attach-btn" title="Adjuntar archivo">📎</button>
+                    <textarea id="prompt" rows="1" placeholder="Describe el sistema que necesitas..."></textarea>
+                    <button class="action-btn send-btn" id="send-btn">➤</button>
+                </div>
             </div>
             <div class="input-footer">
                 ⚠️ V1zions puede cometer errores. Revisa el código antes de usarlo en producción.
@@ -1129,7 +1171,6 @@
     });
 
     // ── CONTEXTO DEL PROYECTO ─────────────────────────────────────────────────
-    // La web lee el contexto que el plugin subió a Firebase
     let contextoProyectoActual = "";
     let numScriptsContexto = 0;
 
@@ -1154,7 +1195,6 @@
         }
     }
 
-    // Escucha en tiempo real cuando el plugin sube el contexto
     db.collection("System").doc("ProjectContext").onSnapshot(doc => {
         if (doc.exists && doc.data().contexto) {
             contextoProyectoActual = doc.data().contexto;
@@ -1238,7 +1278,6 @@
         startTypewriter();
     }
 
-    // Typewriter effect
     const PHRASES = [
         "What will you build today?",
         "Inject powerful systems into your game.",
@@ -1286,7 +1325,7 @@
         const proj = projectsData.find(p => p.id === id);
         chatContainer.innerHTML = '';
         if (proj && proj.chats.length > 0) {
-            proj.chats.forEach(m => addMsg(m.role, m.text || m.html)); // Soporte para html o text
+            proj.chats.forEach(m => addMsg(m.role, m.text || m.html));
         } else {
             showWelcome();
         }
@@ -1335,23 +1374,50 @@
         const p = projectsData.find(x => x.id === currentProjectId);
         if (!p) return;
         if (p.chats.length === 0 && role === 'user') {
-            p.title = html.substring(0, 24) + "…";
+            p.title = html.replace(/<[^>]*>?/gm, '').substring(0, 24) + "…";
             renderProjects();
         }
         p.chats.push({ role, html }); saveData();
     }
 
-    // ── ATTACH ──
+    // ── ATTACH & BASE64 VISION ──
+    let imagenBase64Actual = null;
+    let mimeTypeActual = null;
+    const imgPreviewContainer = document.getElementById('image-preview-container');
+
     document.getElementById('attach-btn').addEventListener('click', () => document.getElementById('file-upload').click());
+    
     document.getElementById('file-upload').addEventListener('change', e => {
-        if (!e.target.files.length) return;
-        const ta = document.getElementById('prompt');
-        ta.value += (ta.value ? '\n' : '') + `[Archivo: ${e.target.files[0].name}] `;
-        ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(event) {
+            // Guardamos la imagen en memoria
+            const base64completo = event.target.result;
+            mimeTypeActual = base64completo.split(',')[0].split(':')[1].split(';')[0];
+            imagenBase64Actual = base64completo.split(',')[1]; // Solo la data pura
+
+            // Mostrar preview
+            imgPreviewContainer.innerHTML = `
+                <div class="image-preview">
+                    <img src="${base64completo}">
+                    <button class="remove-btn" onclick="removerImagen()">✕</button>
+                </div>
+            `;
+            imgPreviewContainer.style.display = 'flex';
+        };
+        reader.readAsDataURL(file);
         e.target.value = '';
     });
 
-    // ── QUICK PROMPTS ──
+    window.removerImagen = function() {
+        imagenBase64Actual = null;
+        mimeTypeActual = null;
+        imgPreviewContainer.innerHTML = '';
+        imgPreviewContainer.style.display = 'none';
+    };
+
     function setPrompt(txt) {
         const ta = document.getElementById('prompt');
         ta.value = txt;
@@ -1376,13 +1442,11 @@
         }
     });
 
-    // ── ROADMAP ──
     window.lanzarPasoRoadmap = function(titulo, desc, sistema) {
         setPrompt(`Del sistema "${sistema}", genera el código completo para:\n**${titulo}**\nDetalles: ${desc}\n\nGenera ÚNICAMENTE los scripts de esta parte.`);
         enviar();
     };
 
-    // ── SEND ──
     const ta = document.getElementById('prompt');
     ta.addEventListener('input', function() {
         this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
@@ -1390,20 +1454,25 @@
 
     async function enviar() {
         const txt = ta.value.trim();
-        if (!txt) return;
+        if (!txt && !imagenBase64Actual) return;
         if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
-        const costo = calcularCosto(txt);
+        const costo = calcularCosto(txt || "imagen");
         if (credits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${credits.toFixed(1)}.`);
 
         credits -= costo;
         updateCreditsDisplay();
         flashCost(costo);
 
-        addMsg('user', txt);
-        saveMsg('user', txt);
+        // Mensaje visual para el usuario (si hay imagen, la mostramos en el chat)
+        let htmlUsuario = txt;
+        if (imagenBase64Actual) {
+            htmlUsuario += `<br><img src="data:${mimeTypeActual};base64,${imagenBase64Actual}" style="max-width:200px; border-radius:8px; margin-top:8px;">`;
+        }
+
+        addMsg('user', htmlUsuario);
+        saveMsg('user', htmlUsuario);
         ta.value = ''; ta.style.height = 'auto';
 
-        // ✅ NUEVO: detectar si es una edición e inyectar contexto
         const PALABRAS_EDICION = [
             'cambia','cambialo','cambiar','modifica','modificalo','modificar',
             'ponlo','hazlo','quítale','quitale','añade','añadir','agrega',
@@ -1425,16 +1494,16 @@ CÓDIGO EXISTENTE QUE DEBES EDITAR:
 ${proj.lastCode}
 
 INSTRUCCIÓN DEL USUARIO: ${txt}`;
-            
-            console.log('📝 Modo edición activado — contexto adjuntado');
         }
 
         const tieneContexto = contextoProyectoActual.length > 100;
         const textoLoading = esEdicion && proj?.lastCode 
             ? 'Editando script existente...' 
-            : tieneContexto 
-                ? 'Analizando tu proyecto y generando código...' 
-                : 'Generando código...';
+            : imagenBase64Actual
+                ? 'Analizando imagen y generando código...'
+                : tieneContexto 
+                    ? 'Analizando tu proyecto y generando código...' 
+                    : 'Generando código...';
 
         const lid = 'load-' + Date.now();
         addMsg('ai', `
@@ -1444,14 +1513,28 @@ INSTRUCCIÓN DEL USUARIO: ${txt}`;
             </div>
         `, lid);
 
+        // Guardar referencia de la imagen actual antes de limpiar la UI
+        const imgParaEnviar = imagenBase64Actual;
+        const mimeParaEnviar = mimeTypeActual;
+        removerImagen(); // Limpia la UI para el siguiente mensaje
+
         try {
-            const ref = await db.collection("PeticionesRoblox").add({
-                mensaje: mensajeFinal,   // ← usa mensajeFinal, no txt
-                contextoProyecto: contextoProyectoActual,  // ← EL SECRETO DE LEMONADE.GG
+            // Preparamos el payload base
+            const payload = {
+                mensaje: mensajeFinal || "Genera el código para esta imagen.",
+                contextoProyecto: contextoProyectoActual,
                 estado: "pendiente",
                 esVip: true,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
-            });
+            };
+
+            // ¡AQUÍ ESTÁ LA MAGIA! Si hay imagen, la metemos en el payload
+            if (imgParaEnviar) {
+                payload.imagenData = imgParaEnviar;
+                payload.imagenMime = mimeParaEnviar;
+            }
+
+            const ref = await db.collection("PeticionesRoblox").add(payload);
 
             const unsub = ref.onSnapshot(snap => {
                 const data = snap.data(); if (!data) return;
@@ -1459,7 +1542,6 @@ INSTRUCCIÓN DEL USUARIO: ${txt}`;
 
                 if (data.estado === "completado" || data.estado === "inyectar") {
                     if (loadEl) loadEl.remove();
-
                     
                     const proj = projectsData.find(p => p.id === currentProjectId);
                     if (proj && data.sistemaData) {
