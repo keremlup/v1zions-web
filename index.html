@@ -4,6 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>V1zions.gg — The future of programmers on Roblox</title>
+<script>
+  if (window.location.hostname === "v1zions-web.pages.dev") {
+    window.location.href = "https://v1zions.top" + window.location.pathname;
+  }
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
@@ -585,7 +590,7 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db   = firebase.firestore();
 
-const APP_URL = "./landing.html";
+const APP_URL = "./v1zions_10.html";
 
 // ── LOADER ────────────────────────────────────────────────────
 window.addEventListener("load", () =>
