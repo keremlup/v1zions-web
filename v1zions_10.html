@@ -3,34 +3,35 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>V1zions.gg | Roblox AI Studio</title>
+    <title>V1zions.top | Roblox AI Studio</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
+    <!-- PayPal SDK: reemplaza YOUR_PAYPAL_CLIENT_ID con tu Client ID de developer.paypal.com -->
+    <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD" defer id="paypal-sdk"></script>
+
     <style>
-        /* ═══════════════════════════════════════════
-           TOKENS & RESET
-        ═══════════════════════════════════════════ */
         :root {
             --red:        #e63030;
             --red-light:  #ff4545;
             --red-glow:   rgba(230,48,48,0.35);
-            --red-dim:    rgba(230,48,48,0.1);
+            --red-dim:    rgba(230,48,48,0.10);
             --red-border: rgba(230,48,48,0.25);
             --bg:         #07070a;
             --bg-1:       #0c0c12;
             --bg-2:       #111118;
             --bg-3:       #16161f;
-            --panel:      rgba(11,11,17,0.95);
+            --panel:      rgba(11,11,17,0.96);
             --border:     rgba(255,255,255,0.055);
             --border-2:   rgba(255,255,255,0.09);
             --text:       #ececf4;
             --text-2:     #9898b0;
             --text-3:     #55556a;
             --green:      #22c55e;
-            --green-dim:  rgba(34,197,94,0.1);
+            --green-dim:  rgba(34,197,94,0.10);
             --gold:       #f0b429;
             --discord:    #5865f2;
             --discord-dim:rgba(88,101,242,0.12);
@@ -41,7 +42,7 @@
         }
 
         *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
-
+        html { scroll-behavior: smooth; }
         body {
             background: var(--bg);
             color: var(--text);
@@ -50,18 +51,10 @@
             display: flex;
             overflow: hidden;
         }
-
         button { font-family: var(--font); cursor: pointer; }
         input, textarea { font-family: var(--font); }
 
-        /* ═══════════════════════════════════════════
-           ANIMATED BACKGROUND
-        ═══════════════════════════════════════════ */
-        .bg-layer {
-            position: fixed; inset: 0; z-index: 0; pointer-events: none;
-        }
-
-        /* Tech grid */
+        /* ─── BACKGROUND ─── */
         .bg-grid {
             position: fixed; inset: 0; z-index: 0; pointer-events: none;
             background-image:
@@ -70,1277 +63,1450 @@
             background-size: 44px 44px;
             mask-image: radial-gradient(ellipse 80% 80% at 60% 40%, transparent 40%, black 100%);
         }
-
-        /* Moving red ambient light */
         .bg-orb {
             position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
         }
-
         .bg-orb-1 {
             width: 700px; height: 700px;
             background: radial-gradient(circle, rgba(220,40,40,0.09) 0%, transparent 68%);
             top: -160px; right: 5%;
             animation: orbFloat 14s ease-in-out infinite;
         }
-
         .bg-orb-2 {
             width: 500px; height: 500px;
             background: radial-gradient(circle, rgba(200,30,30,0.055) 0%, transparent 68%);
             bottom: -80px; left: 15%;
             animation: orbFloat 18s ease-in-out infinite reverse;
         }
-
         @keyframes orbFloat {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33%       { transform: translate(25px, -35px) scale(1.06); }
-            66%       { transform: translate(-15px, 20px) scale(0.96); }
+            0%,100% { transform: translate(0,0) scale(1); }
+            33%      { transform: translate(25px,-35px) scale(1.06); }
+            66%      { transform: translate(-15px,20px) scale(0.96); }
         }
 
-        /* ═══════════════════════════════════════════
-           SIDEBAR
-        ═══════════════════════════════════════════ */
+        /* ─── GATE SCREEN ─── */
+        #gate-screen {
+            position: fixed; inset: 0; z-index: 9999;
+            background: var(--bg);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 18px; text-align: center;
+        }
+        #gate-screen.hidden { display: none; }
+        .gate-icon { font-size: 48px; margin-bottom: 4px; }
+        .gate-title { font-size: 22px; font-weight: 800; }
+        .gate-sub { font-size: 14px; color: var(--text-2); max-width: 340px; line-height: 1.65; }
+        .gate-back-btn {
+            background: var(--red); color: white; border: none;
+            padding: 11px 26px; border-radius: 8px; font-size: 13px; font-weight: 700;
+            margin-top: 6px; transition: all .2s;
+        }
+        .gate-back-btn:hover { background: var(--red-light); transform: translateY(-1px); }
+
+        /* ─── SIDEBAR ─── */
         #sidebar {
             width: var(--sidebar-w);
             flex-shrink: 0;
             background: var(--panel);
             backdrop-filter: blur(40px) saturate(180%);
             border-right: 1px solid var(--border);
-            display: flex;
-            flex-direction: column;
-            z-index: 20;
-            position: relative;
+            display: flex; flex-direction: column;
+            z-index: 20; position: relative;
         }
-
-        /* Accent line on right edge */
         #sidebar::after {
-            content: '';
-            position: absolute; right: -1px; top: 10%; bottom: 10%;
+            content: ''; position: absolute; right: -1px; top: 10%; bottom: 10%;
             width: 1px;
             background: linear-gradient(to bottom, transparent, rgba(230,48,48,0.5), transparent);
         }
 
-        /* ── Logo ── */
+        /* Logo */
         .logo-area {
-            padding: 22px 20px 18px;
+            padding: 18px 18px 14px;
             border-bottom: 1px solid var(--border);
         }
-
-        .logo {
-            display: flex; align-items: center; gap: 11px;
-        }
-
+        .logo { display: flex; align-items: center; gap: 10px; }
         .logo-mark {
             width: 34px; height: 34px;
-            background: var(--red);
-            border-radius: 9px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 900;
-            color: white;
+            border-radius: 9px; overflow: hidden;
             flex-shrink: 0;
-            box-shadow: 0 0 22px rgba(230,48,48,0.5), 0 0 6px rgba(230,48,48,0.3);
+            box-shadow: 0 0 22px rgba(230,48,48,0.5);
+            background: var(--red);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 900; color: white;
             position: relative;
         }
-
+        .logo-mark img { width: 100%; height: 100%; object-fit: cover; }
         .logo-mark::after {
-            content: '';
-            position: absolute; inset: -4px;
+            content: ''; position: absolute; inset: -4px;
             border-radius: 12px;
             border: 1px solid rgba(230,48,48,0.3);
             animation: ringPulse 3s ease-in-out infinite;
         }
-
         @keyframes ringPulse {
-            0%,100% { opacity:.25; transform: scale(1); }
-            50%      { opacity:.7;  transform: scale(1.08); }
+            0%,100% { opacity:.25; transform:scale(1); }
+            50%      { opacity:.7;  transform:scale(1.08); }
         }
-
-        .logo-text {
-            display: flex; flex-direction: column; gap: 1px;
-        }
-
-        .logo-name {
-            font-size: 15px; font-weight: 800;
-            letter-spacing: -0.3px;
-            line-height: 1;
-        }
-
+        .logo-text { display: flex; flex-direction: column; gap: 1px; }
+        .logo-name { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; line-height: 1; }
         .logo-badge {
             display: inline-flex; align-items: center;
-            background: rgba(230,48,48,0.12);
-            border: 1px solid rgba(230,48,48,0.2);
-            border-radius: 4px;
-            padding: 1px 6px;
-            font-size: 9px; font-weight: 700;
-            color: var(--red);
-            letter-spacing: 0.8px;
-            text-transform: uppercase;
-            width: fit-content;
-            margin-top: 2px;
+            background: rgba(230,48,48,0.12); border: 1px solid rgba(230,48,48,0.2);
+            border-radius: 4px; padding: 1px 6px;
+            font-size: 9px; font-weight: 700; color: var(--red);
+            letter-spacing: 0.8px; text-transform: uppercase; width: fit-content; margin-top: 2px;
         }
 
-        /* ── New project btn ── */
-        .sidebar-section { padding: 16px 16px 8px; }
-
-        .new-btn {
-            width: 100%;
-            background: var(--red);
-            color: white;
-            border: none;
-            padding: 11px 16px;
+        /* User Profile */
+        .user-profile {
+            margin: 10px 14px 6px;
+            background: var(--bg-2);
+            border: 1px solid var(--border);
             border-radius: var(--radius-sm);
-            font-size: 13px; font-weight: 700;
-            letter-spacing: 0.2px;
+            padding: 10px 12px;
+            display: flex; align-items: center; gap: 10px;
+        }
+        .user-avatar {
+            width: 34px; height: 34px;
+            border-radius: 50%;
+            background: var(--red);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 13px; font-weight: 800; color: white;
+            flex-shrink: 0; overflow: hidden;
+        }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        .user-info { flex: 1; min-width: 0; }
+        .user-name { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-email { font-size: 10px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .user-vip-badge {
+            font-size: 9px; font-weight: 700; color: var(--gold);
+            background: rgba(240,180,41,0.12); border: 1px solid rgba(240,180,41,0.22);
+            border-radius: 4px; padding: 1px 5px; margin-top: 2px; display: inline-block;
+        }
+        .logout-btn {
+            background: transparent; border: none; color: var(--text-3);
+            font-size: 14px; width: 26px; height: 26px;
+            border-radius: 6px; display: flex; align-items: center; justify-content: center;
+            transition: all .15s; flex-shrink: 0;
+        }
+        .logout-btn:hover { color: var(--red); background: var(--red-dim); }
+
+        /* Admin btn */
+        .admin-btn {
+            margin: 4px 14px 2px;
+            width: calc(100% - 28px);
+            background: rgba(240,180,41,0.1);
+            border: 1px solid rgba(240,180,41,0.25);
+            color: var(--gold);
+            padding: 8px 12px;
+            border-radius: 7px; font-size: 11px; font-weight: 700;
+            display: flex; align-items: center; gap: 7px;
+            transition: all .15s;
+        }
+        .admin-btn:hover { background: rgba(240,180,41,0.18); }
+        .admin-btn.hidden { display: none; }
+
+        /* New project */
+        .sidebar-section { padding: 10px 14px 6px; }
+        .new-btn {
+            width: 100%; background: var(--red); color: white; border: none;
+            padding: 10px 14px; border-radius: var(--radius-sm);
+            font-size: 13px; font-weight: 700; letter-spacing: 0.2px;
             display: flex; align-items: center; justify-content: center; gap: 8px;
             transition: all .2s;
             box-shadow: 0 4px 18px rgba(230,48,48,0.28);
             position: relative; overflow: hidden;
         }
-
         .new-btn::before {
-            content: '';
-            position: absolute; top: 0; left: -100%;
+            content: ''; position: absolute; top: 0; left: -100%;
             width: 100%; height: 100%;
             background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
             transition: left .5s;
         }
-
         .new-btn:hover::before { left: 100%; }
         .new-btn:hover { background: var(--red-light); box-shadow: 0 6px 24px rgba(230,48,48,0.42); transform: translateY(-1px); }
-        .new-btn:active { transform: translateY(0); }
 
-        /* ── Section headers ── */
+        /* Project counter */
+        .projects-quota {
+            font-size: 10px; color: var(--text-3); text-align: center;
+            margin: 2px 14px 4px; font-weight: 600;
+        }
+
+        /* Sidebar sections */
         .sidebar-label {
-            font-size: 10px; font-weight: 700;
-            color: var(--text-3);
-            text-transform: uppercase;
-            letter-spacing: 1.5px;
-            padding: 14px 20px 7px;
+            font-size: 10px; font-weight: 700; color: var(--text-3);
+            text-transform: uppercase; letter-spacing: 1.5px; padding: 10px 18px 5px;
         }
-
-        /* ── Projects list ── */
         .projects-scroll {
-            flex: 1;
-            overflow-y: auto;
-            padding: 0 10px;
-            min-height: 0;
+            flex: 1; overflow-y: auto; padding: 0 10px; min-height: 0;
         }
-
         .projects-scroll::-webkit-scrollbar { width: 3px; }
         .projects-scroll::-webkit-scrollbar-thumb { background: rgba(230,48,48,0.2); border-radius: 3px; }
 
         .project-item {
-            display: flex; align-items: center; gap: 9px;
-            padding: 9px 10px;
-            border-radius: 8px;
-            cursor: pointer;
-            color: var(--text-2);
-            font-size: 12.5px; font-weight: 500;
+            display: flex; align-items: center; gap: 7px;
+            padding: 8px 8px 8px 10px;
+            border-radius: 8px; cursor: pointer;
+            color: var(--text-2); font-size: 12px; font-weight: 500;
             transition: all .15s;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
             border: 1px solid transparent;
-            margin-bottom: 2px;
+            margin-bottom: 2px; overflow: hidden;
         }
-
-        .project-item .proj-icon { font-size: 13px; flex-shrink: 0; opacity: .7; }
+        .proj-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .project-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
         .project-item.active {
-            background: var(--red-dim);
-            color: var(--red);
-            border-color: var(--red-border);
-            font-weight: 600;
+            background: var(--red-dim); color: var(--red); border-color: var(--red-border); font-weight: 600;
         }
-        .project-item.active .proj-icon { opacity: 1; }
-
-        /* ── Divider ── */
-        .sidebar-divider {
-            height: 1px;
-            background: var(--border);
-            margin: 8px 16px;
+        .proj-delete {
+            background: transparent; border: none; color: transparent;
+            width: 20px; height: 20px; border-radius: 4px;
+            font-size: 11px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            transition: all .15s;
         }
+        .project-item:hover .proj-delete { color: var(--text-3); }
+        .proj-delete:hover { color: var(--red) !important; background: var(--red-dim); }
 
-        /* ── Credits panel ── */
+        /* Sidebar divider */
+        .sidebar-divider { height: 1px; background: var(--border); margin: 6px 14px; }
+
+        /* Credits panel */
         .credits-panel {
             margin: 0 14px;
-            background: var(--bg-2);
-            border: 1px solid var(--border);
-            border-radius: var(--radius);
-            padding: 14px 15px 12px;
-            position: relative;
-            overflow: hidden;
+            background: var(--bg-2); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 12px 13px 10px;
+            position: relative; overflow: hidden;
         }
-
         .credits-panel::before {
-            content: '';
-            position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
             background: linear-gradient(90deg, transparent, rgba(230,48,48,0.5), transparent);
         }
-
-        .credits-top {
-            display: flex; justify-content: space-between; align-items: flex-start;
-            margin-bottom: 10px;
-        }
-
-        .credits-label {
-            font-size: 10px; font-weight: 700;
-            color: var(--text-3);
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-
-        .credits-value {
-            font-size: 24px; font-weight: 800;
-            color: var(--text);
-            line-height: 1;
-            margin-top: 2px;
-        }
-
-        .credits-sub {
-            font-size: 11px; color: var(--text-3); font-weight: 500;
-            margin-top: 2px;
-        }
-
+        .credits-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
+        .credits-label { font-size: 10px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; }
+        .credits-value { font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; margin-top: 2px; }
+        .credits-sub { font-size: 11px; color: var(--text-3); font-weight: 500; margin-top: 2px; }
         .credits-refill {
             display: flex; align-items: center; gap: 5px;
-            font-size: 10px; color: var(--green);
-            font-weight: 600; margin-top: 1px;
+            font-size: 10px; color: var(--green); font-weight: 600; margin-top: 2px;
         }
-
         .credits-refill-dot {
-            width: 5px; height: 5px; border-radius: 50%;
-            background: var(--green);
+            width: 5px; height: 5px; border-radius: 50%; background: var(--green);
             animation: blink 1.4s ease-in-out infinite;
         }
-
         @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
-
-        /* Progress bar */
         .credits-bar-bg {
-            height: 4px;
-            background: rgba(255,255,255,0.06);
-            border-radius: 4px;
-            margin: 10px 0 10px;
-            overflow: hidden;
+            height: 4px; background: rgba(255,255,255,0.06);
+            border-radius: 4px; margin: 8px 0; overflow: hidden;
         }
-
         .credits-bar-fill {
-            height: 100%;
-            border-radius: 4px;
+            height: 100%; border-radius: 4px;
             background: linear-gradient(90deg, var(--red), var(--red-light));
             transition: width .6s cubic-bezier(.34,1.56,.64,1);
             box-shadow: 0 0 8px rgba(230,48,48,0.4);
         }
-
         .get-credits-btn {
-            width: 100%;
-            background: transparent;
-            border: 1px solid var(--border-2);
-            color: var(--text-2);
-            padding: 8px;
-            border-radius: 7px;
-            font-size: 12px; font-weight: 600;
-            transition: all .15s;
+            width: 100%; background: transparent; border: 1px solid var(--border-2);
+            color: var(--text-2); padding: 7px; border-radius: 7px;
+            font-size: 11.5px; font-weight: 600; transition: all .15s;
             display: flex; align-items: center; justify-content: center; gap: 6px;
         }
-
-        .get-credits-btn:hover {
-            border-color: var(--red-border);
-            color: var(--red);
-            background: var(--red-dim);
-        }
-
-        /* Cost indicator */
+        .get-credits-btn:hover { border-color: var(--red-border); color: var(--red); background: var(--red-dim); }
         .cost-flash {
-            position: absolute; top: 10px; right: 12px;
-            font-size: 11px; font-weight: 700;
-            color: var(--red);
-            opacity: 0;
-            transition: all .3s;
-            pointer-events: none;
+            position: absolute; top: 10px; right: 12px; font-size: 11px; font-weight: 700;
+            color: var(--red); opacity: 0; transition: all .3s; pointer-events: none;
         }
 
-        /* ── Discord section ── */
-        .discord-section {
-            margin: 10px 14px 14px;
-            background: var(--discord-dim);
-            border: 1px solid rgba(88,101,242,0.2);
-            border-radius: var(--radius);
-            padding: 13px 14px;
-            cursor: pointer;
-            transition: all .2s;
-            text-decoration: none;
-            display: block;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .discord-section::before {
-            content: '';
-            position: absolute; top: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(88,101,242,0.5), transparent);
-        }
-
-        .discord-section:hover {
-            background: rgba(88,101,242,0.18);
-            border-color: rgba(88,101,242,0.35);
-            transform: translateY(-1px);
-        }
-
-        .discord-top {
-            display: flex; align-items: center; gap: 10px; margin-bottom: 7px;
-        }
-
-        .discord-icon {
-            width: 30px; height: 30px;
-            background: var(--discord);
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            flex-shrink: 0;
-            font-size: 15px;
-        }
-
-        .discord-name {
-            font-size: 12.5px; font-weight: 700;
-            color: var(--text);
-        }
-
-        .discord-members {
-            font-size: 10px; color: rgba(88,101,242,0.9);
-            font-weight: 600; margin-top: 1px;
-        }
-
-        .discord-desc {
-            font-size: 11px; color: var(--text-2); line-height: 1.5;
-        }
-
-        .discord-reward {
-            display: inline-flex; align-items: center; gap: 5px;
-            background: rgba(240,180,41,0.1);
-            border: 1px solid rgba(240,180,41,0.2);
-            border-radius: 5px;
-            padding: 3px 8px;
-            font-size: 10px; font-weight: 700;
-            color: var(--gold);
-            margin-top: 8px;
-        }
-
-        /* ── Studio status ── */
+        /* Studio status */
         .studio-status {
-            margin: 0 14px 10px;
-            padding: 9px 12px;
-            border-radius: 8px;
+            margin: 8px 14px 6px; padding: 8px 12px; border-radius: 8px;
             border: 1px solid var(--border);
             display: flex; align-items: center; gap: 9px;
-            font-size: 11px; font-weight: 600;
-            color: var(--text-3);
-            background: transparent;
-            transition: all .2s;
+            font-size: 11px; font-weight: 600; color: var(--text-3);
+            background: transparent; transition: all .2s;
+        }
+        .studio-status.online { background: var(--green-dim); border-color: rgba(34,197,94,0.25); color: var(--green); }
+        .status-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-3); flex-shrink: 0; }
+        .studio-status.online .status-dot { background: var(--green); box-shadow: 0 0 6px var(--green); animation: blink 1.5s infinite; }
+
+        /* Discord section */
+        .discord-section {
+            margin: 6px 14px 14px;
+            background: var(--discord-dim); border: 1px solid rgba(88,101,242,0.2);
+            border-radius: var(--radius); padding: 12px 13px;
+            cursor: pointer; transition: all .2s; text-decoration: none; display: block;
+            position: relative; overflow: hidden;
+        }
+        .discord-section::before {
+            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(88,101,242,0.5), transparent);
+        }
+        .discord-section:hover { background: rgba(88,101,242,0.18); border-color: rgba(88,101,242,0.35); transform: translateY(-1px); }
+        .discord-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+        .discord-icon {
+            width: 30px; height: 30px; background: var(--discord); border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
+        }
+        .discord-icon svg { width: 18px; height: 18px; }
+        .discord-name { font-size: 12px; font-weight: 700; color: var(--text); }
+        .discord-members { font-size: 10px; color: rgba(88,101,242,0.9); font-weight: 600; margin-top: 1px; }
+        .discord-desc { font-size: 11px; color: var(--text-2); line-height: 1.45; }
+        .discord-reward {
+            display: inline-flex; align-items: center; gap: 5px;
+            background: rgba(240,180,41,0.1); border: 1px solid rgba(240,180,41,0.2);
+            border-radius: 5px; padding: 3px 8px; font-size: 10px; font-weight: 700; color: var(--gold); margin-top: 7px;
         }
 
-        .studio-status.online {
-            background: var(--green-dim);
-            border-color: rgba(34,197,94,0.25);
-            color: var(--green);
-        }
-
-        .status-dot {
-            width: 7px; height: 7px; border-radius: 50%;
-            background: var(--text-3); flex-shrink: 0;
-        }
-
-        .studio-status.online .status-dot {
-            background: var(--green);
-            box-shadow: 0 0 6px var(--green);
-            animation: blink 1.5s infinite;
-        }
-
-        /* ═══════════════════════════════════════════
-           MAIN CONTENT
-        ═══════════════════════════════════════════ */
-        #main-content {
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            min-width: 0;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* ── Chat container ── */
+        /* ─── MAIN CONTENT ─── */
+        #main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; z-index: 1; }
         #chat-container {
-            flex: 1;
-            overflow-y: auto;
-            padding: 32px 9%;
-            display: flex;
-            flex-direction: column;
-            gap: 18px;
+            flex: 1; overflow-y: auto; padding: 28px 9%;
+            display: flex; flex-direction: column; gap: 18px;
         }
-
         #chat-container::-webkit-scrollbar { width: 4px; }
         #chat-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 4px; }
 
-        /* ── Welcome screen ── */
+        /* Welcome */
         .welcome {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 65vh;
-            gap: 28px;
-            animation: fadeUp .5s ease-out;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 65vh; gap: 24px; animation: fadeUp .5s ease-out;
         }
-
-        @keyframes fadeUp {
-            from { opacity:0; transform:translateY(18px); }
-            to   { opacity:1; transform:translateY(0); }
-        }
-
-        .welcome-eyebrow {
-            display: flex; align-items: center; gap: 8px;
-            font-size: 11px; font-weight: 700;
-            color: var(--red);
-            text-transform: uppercase; letter-spacing: 1.5px;
-        }
-
-        .eyebrow-line {
-            width: 28px; height: 1px; background: var(--red); opacity: .5;
-        }
-
-        .welcome-headline {
-            font-size: clamp(26px, 3.5vw, 40px);
-            font-weight: 800;
-            letter-spacing: -1px;
-            text-align: center;
-            line-height: 1.15;
-            min-height: 1.3em;
-        }
-
-        .typewriter-cursor {
-            display: inline-block;
-            width: 2px; height: .9em;
-            background: var(--red);
-            margin-left: 4px;
-            vertical-align: middle;
-            animation: cursor .8s step-end infinite;
-        }
-
+        @keyframes fadeUp { from{opacity:0;transform:translateY(18px);} to{opacity:1;transform:translateY(0);} }
+        .welcome-eyebrow { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; color: var(--red); text-transform: uppercase; letter-spacing: 1.5px; }
+        .eyebrow-line { width: 28px; height: 1px; background: var(--red); opacity: .5; }
+        .welcome-headline { font-size: clamp(26px,3.5vw,40px); font-weight: 800; letter-spacing: -1px; text-align: center; line-height: 1.15; min-height: 1.3em; }
+        .typewriter-cursor { display: inline-block; width: 2px; height: .9em; background: var(--red); margin-left: 4px; vertical-align: middle; animation: cursor .8s step-end infinite; }
         @keyframes cursor { 0%,100%{opacity:1;} 50%{opacity:0;} }
-
-        .welcome-desc {
-            font-size: 14px;
-            color: var(--text-2);
-            text-align: center;
-            max-width: 440px;
-            line-height: 1.65;
-        }
-
-        /* Stats row */
-        .welcome-stats {
-            display: flex; gap: 12px;
-        }
-
+        .welcome-desc { font-size: 14px; color: var(--text-2); text-align: center; max-width: 440px; line-height: 1.65; }
+        .welcome-stats { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
         .stat-pill {
-            background: var(--bg-2);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 6px 16px;
-            font-size: 12px; font-weight: 600;
-            color: var(--text-2);
-            display: flex; align-items: center; gap: 7px;
-            transition: all .15s;
+            background: var(--bg-2); border: 1px solid var(--border); border-radius: 20px;
+            padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--text-2);
+            display: flex; align-items: center; gap: 7px; transition: all .15s;
         }
-
         .stat-pill:hover { border-color: var(--red-border); color: var(--text); }
         .stat-pill .stat-num { color: var(--text); font-weight: 800; }
-
-        /* Quick prompts */
-        .welcome-chips {
-            display: flex; flex-wrap: wrap; gap: 8px;
-            justify-content: center;
-            max-width: 520px;
-        }
-
+        .welcome-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 520px; }
         .chip {
-            background: var(--bg-2);
-            border: 1px solid var(--border);
-            border-radius: 20px;
-            padding: 7px 15px;
-            font-size: 12px; font-weight: 600;
-            color: var(--text-2);
-            cursor: pointer;
-            transition: all .15s;
+            background: var(--bg-2); border: 1px solid var(--border); border-radius: 20px;
+            padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--text-2);
+            cursor: pointer; transition: all .15s;
         }
+        .chip:hover { border-color: var(--red-border); color: var(--text); background: var(--red-dim); transform: translateY(-1px); }
+        .disclaimer { font-size: 11px; color: var(--text-3); text-align: center; max-width: 380px; line-height: 1.5; }
 
-        .chip:hover {
-            border-color: var(--red-border);
-            color: var(--text);
-            background: var(--red-dim);
-            transform: translateY(-1px);
-        }
-
-        /* Disclaimer */
-        .disclaimer {
-            font-size: 11px;
-            color: var(--text-3);
-            text-align: center;
-            max-width: 380px;
-            line-height: 1.5;
-        }
-
-        /* ═══════════════════════════════════════════
-           MESSAGES
-        ═══════════════════════════════════════════ */
-        .msg {
-            display: flex; gap: 12px;
-            font-size: 13.5px; line-height: 1.65;
-            animation: fadeUp .22s ease-out;
-        }
-
+        /* Messages */
+        .msg { display: flex; gap: 12px; font-size: 13.5px; line-height: 1.65; animation: fadeUp .22s ease-out; }
         .msg.user { justify-content: flex-end; }
-
-        .msg.user .bubble {
-            background: var(--bg-2);
-            border: 1px solid var(--border-2);
-            padding: 13px 18px;
-            border-radius: 14px 14px 4px 14px;
-            max-width: 78%;
-        }
-
-        .msg.ai .bubble {
-            color: #b4b4cc;
-            padding: 4px 0;
-            max-width: 88%;
-        }
-
+        .msg.user .bubble { background: var(--bg-2); border: 1px solid var(--border-2); padding: 13px 18px; border-radius: 14px 14px 4px 14px; max-width: 78%; }
+        .msg.ai .bubble { color: #b4b4cc; padding: 4px 0; max-width: 88%; }
         .ai-ava {
-            width: 32px; height: 32px;
-            background: var(--red);
-            border-radius: 9px;
+            width: 32px; height: 32px; background: var(--red); border-radius: 9px;
             display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 800;
-            flex-shrink: 0;
-            margin-top: 2px;
-            box-shadow: 0 0 14px rgba(230,48,48,0.4);
+            font-size: 12px; font-weight: 800; flex-shrink: 0; margin-top: 2px;
+            box-shadow: 0 0 14px rgba(230,48,48,0.4); overflow: hidden;
         }
-
-        /* Loading */
+        .ai-ava img { width: 100%; height: 100%; object-fit: cover; }
         .loading-bubble {
             display: inline-flex; align-items: center; gap: 10px;
-            background: var(--bg-2);
-            border: 1px solid var(--red-border);
-            border-radius: 10px;
-            padding: 10px 16px;
-            color: var(--red);
-            font-size: 12.5px; font-weight: 600;
+            background: var(--bg-2); border: 1px solid var(--red-border);
+            border-radius: 10px; padding: 10px 16px; color: var(--red); font-size: 12.5px; font-weight: 600;
         }
-
         .dots { display: flex; gap: 4px; }
-        .dots span {
-            width: 5px; height: 5px;
-            border-radius: 50%; background: var(--red);
-            animation: dotBounce 1.2s infinite;
-        }
+        .dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--red); animation: dotBounce 1.2s infinite; }
         .dots span:nth-child(2) { animation-delay:.2s; }
         .dots span:nth-child(3) { animation-delay:.4s; }
-
         @keyframes dotBounce { 0%,100%{transform:translateY(0);opacity:.4;} 50%{transform:translateY(-5px);opacity:1;} }
-
-        /* System msg */
         .sys-msg {
-            display: inline-block;
-            background: var(--green-dim);
-            border: 1px solid rgba(34,197,94,0.2);
-            border-radius: 6px;
-            padding: 5px 10px;
-            font-size: 12px; font-weight: 600;
-            color: var(--green);
-            margin-top: 7px;
+            display: inline-block; background: var(--green-dim); border: 1px solid rgba(34,197,94,0.2);
+            border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; color: var(--green); margin-top: 7px;
         }
-
-        /* Roadmap */
-        .roadmap-box {
-            background: var(--bg-2);
-            border: 1px solid var(--border-2);
-            border-radius: var(--radius);
-            padding: 16px;
-            margin-top: 10px;
-        }
-
-        .roadmap-box-title {
-            font-size: 13px; font-weight: 700;
-            color: var(--text); margin-bottom: 12px;
-        }
-
+        .roadmap-box { background: var(--bg-2); border: 1px solid var(--border-2); border-radius: var(--radius); padding: 16px; margin-top: 10px; }
+        .roadmap-box-title { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 12px; }
         .roadmap-step {
             display: block; width: 100%; text-align: left;
-            background: rgba(255,255,255,0.025);
-            border: 1px solid var(--border);
-            color: var(--text);
-            padding: 11px 14px;
-            border-radius: 8px;
-            margin-bottom: 6px;
-            cursor: pointer;
-            transition: all .15s;
+            background: rgba(255,255,255,0.025); border: 1px solid var(--border); color: var(--text);
+            padding: 11px 14px; border-radius: 8px; margin-bottom: 6px; cursor: pointer; transition: all .15s;
         }
-
         .roadmap-step:hover { background: var(--red-dim); border-color: var(--red-border); }
         .roadmap-step strong { color: var(--red); display: block; font-size: 12.5px; margin-bottom: 2px; }
         .roadmap-step span { font-size: 11.5px; color: var(--text-2); }
 
-        /* ═══════════════════════════════════════════
-           INPUT AREA
-        ═══════════════════════════════════════════ */
-        .input-area {
-            padding: 14px 9% 20px;
-            background: linear-gradient(to top, var(--bg) 65%, transparent);
-        }
-
-        .input-chips {
-            display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap;
-        }
-
+        /* Input area */
+        .input-area { padding: 10px 9% 18px; background: linear-gradient(to top, var(--bg) 65%, transparent); }
+        .input-chips { display: flex; gap: 6px; margin-bottom: 9px; flex-wrap: wrap; }
         .input-chip {
-            background: transparent;
-            border: 1px solid var(--border);
-            border-radius: 5px;
-            padding: 4px 10px;
-            font-size: 11px; font-weight: 600;
-            color: var(--text-3);
-            cursor: pointer;
-            transition: all .15s;
+            background: transparent; border: 1px solid var(--border); border-radius: 5px;
+            padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--text-3); cursor: pointer; transition: all .15s;
         }
-
         .input-chip:hover { border-color: var(--red-border); color: var(--red); }
-
         .input-box {
-            background: rgba(10,10,16,0.97);
-            border: 1px solid var(--border);
-            border-radius: 14px;
-            display: flex; align-items: flex-end;
-            padding: 6px;
-            box-shadow: 0 6px 30px rgba(0,0,0,0.5);
-            transition: border-color .2s, box-shadow .2s;
+            background: rgba(10,10,16,0.97); border: 1px solid var(--border); border-radius: 14px;
+            display: flex; align-items: flex-end; padding: 6px;
+            box-shadow: 0 6px 30px rgba(0,0,0,0.5); transition: border-color .2s, box-shadow .2s;
         }
-
-        .input-box:focus-within {
-            border-color: rgba(230,48,48,0.35);
-            box-shadow: 0 6px 30px rgba(0,0,0,0.5), 0 0 0 3px rgba(230,48,48,0.06);
-        }
-
+        .input-box:focus-within { border-color: rgba(230,48,48,0.35); box-shadow: 0 6px 30px rgba(0,0,0,0.5), 0 0 0 3px rgba(230,48,48,0.06); }
         textarea#prompt {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: var(--text);
-            padding: 11px 12px;
-            font-size: 13.5px;
-            resize: none; outline: none;
-            max-height: 120px; min-height: 24px;
-            line-height: 1.55;
+            flex: 1; background: transparent; border: none; color: var(--text);
+            padding: 11px 12px; font-size: 13.5px; resize: none; outline: none;
+            max-height: 120px; min-height: 24px; line-height: 1.55;
         }
-
         textarea#prompt::placeholder { color: var(--text-3); }
-
         .action-btn {
-            background: transparent; border: none;
-            color: var(--text-3);
-            width: 38px; height: 38px;
-            border-radius: 8px;
-            font-size: 15px;
-            display: flex; align-items: center; justify-content: center;
-            transition: all .15s; flex-shrink: 0;
+            background: transparent; border: none; color: var(--text-3);
+            width: 38px; height: 38px; border-radius: 8px; font-size: 15px;
+            display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0;
         }
-
         .action-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
-
-        .send-btn {
-            background: var(--red);
-            color: white;
-            margin-left: 4px;
-            box-shadow: 0 3px 12px rgba(230,48,48,0.3);
-        }
-
+        .send-btn { background: var(--red); color: white; margin-left: 4px; box-shadow: 0 3px 12px rgba(230,48,48,0.3); }
         .send-btn:hover { background: var(--red-light); box-shadow: 0 4px 18px rgba(230,48,48,0.48); color: white; }
+        .input-footer { text-align: center; font-size: 11px; color: var(--text-3); margin-top: 8px; }
 
-        .input-footer {
-            text-align: center;
-            font-size: 11px; color: var(--text-3);
-            margin-top: 9px;
-        }
-
-        /* ═══════════════════════════════════════════
-           CREDITS MODAL
-        ═══════════════════════════════════════════ */
+        /* ─── MODAL BASE ─── */
         .modal-overlay {
-            position: fixed; inset: 0;
-            background: rgba(0,0,0,0.72);
-            backdrop-filter: blur(8px);
-            z-index: 100;
+            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
+            backdrop-filter: blur(8px); z-index: 100;
             display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none;
-            transition: opacity .25s;
+            opacity: 0; pointer-events: none; transition: opacity .25s;
         }
-
         .modal-overlay.open { opacity: 1; pointer-events: all; }
-
         .modal {
-            background: var(--bg-1);
-            border: 1px solid var(--border-2);
-            border-radius: 18px;
-            padding: 32px;
-            width: 480px;
-            max-width: 92vw;
+            background: var(--bg-1); border: 1px solid var(--border-2); border-radius: 18px;
+            padding: 28px; width: 500px; max-width: 94vw; max-height: 88vh; overflow-y: auto;
             transform: translateY(20px) scale(0.97);
-            transition: all .3s cubic-bezier(.34,1.2,.64,1);
-            position: relative;
+            transition: all .3s cubic-bezier(.34,1.2,.64,1); position: relative;
         }
-
         .modal-overlay.open .modal { transform: translateY(0) scale(1); }
-
         .modal-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
-
-        .modal-title { font-size: 20px; font-weight: 800; letter-spacing: -.3px; }
-
+        .modal-title { font-size: 19px; font-weight: 800; letter-spacing: -.3px; }
         .modal-close {
-            background: transparent; border: none;
-            color: var(--text-3); font-size: 20px;
-            width: 32px; height: 32px;
-            border-radius: 8px;
-            display: flex; align-items: center; justify-content: center;
-            transition: all .15s;
+            background: transparent; border: none; color: var(--text-3); font-size: 20px;
+            width: 32px; height: 32px; border-radius: 8px;
+            display: flex; align-items: center; justify-content: center; transition: all .15s;
         }
-
         .modal-close:hover { background: rgba(255,255,255,0.06); color: var(--text); }
+        .modal-sub { font-size: 13px; color: var(--text-2); margin-bottom: 20px; }
 
-        .modal-sub { font-size: 13px; color: var(--text-2); margin-bottom: 24px; }
-
+        /* Plans */
         .plans { display: flex; flex-direction: column; gap: 10px; }
-
         .plan-card {
-            background: var(--bg-2);
-            border: 1px solid var(--border);
-            border-radius: 12px;
-            padding: 16px 18px;
-            cursor: pointer;
-            transition: all .15s;
-            display: flex; align-items: center; justify-content: space-between;
+            background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px;
+            padding: 14px 16px; cursor: pointer; transition: all .15s;
+            display: flex; align-items: center; justify-content: space-between; position: relative;
         }
-
         .plan-card:hover { border-color: var(--red-border); background: var(--red-dim); transform: translateX(3px); }
-
-        .plan-card.featured {
-            border-color: var(--red-border);
-            background: var(--red-dim);
-            position: relative;
-        }
-
+        .plan-card.featured { border-color: var(--red-border); background: var(--red-dim); }
         .plan-badge {
-            position: absolute; top: -10px; left: 16px;
-            background: var(--red);
-            color: white;
-            font-size: 9px; font-weight: 700;
-            padding: 2px 8px; border-radius: 4px;
+            position: absolute; top: -10px; left: 16px; background: var(--red); color: white;
+            font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
             text-transform: uppercase; letter-spacing: .8px;
         }
-
-        .plan-info { }
         .plan-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
         .plan-desc { font-size: 12px; color: var(--text-2); }
-        .plan-right { text-align: right; }
         .plan-credits { font-size: 20px; font-weight: 800; color: var(--red); line-height: 1; }
         .plan-price { font-size: 11px; color: var(--text-3); margin-top: 2px; }
+        .plan-paypal-container { margin-top: 10px; min-height: 44px; }
 
-        .modal-note {
-            margin-top: 18px;
-            font-size: 11px; color: var(--text-3);
-            text-align: center; line-height: 1.5;
+        .modal-note { margin-top: 16px; font-size: 11px; color: var(--text-3); text-align: center; line-height: 1.5; }
+
+        /* ─── ADMIN PANEL ─── */
+        .admin-modal { width: 540px; }
+        .admin-tabs { display: flex; gap: 3px; background: var(--bg-2); border-radius: 9px; padding: 3px; margin-bottom: 20px; }
+        .admin-tab {
+            flex: 1; background: transparent; border: none;
+            color: rgba(255,255,255,0.4); font-family: var(--font); font-size: 12px; font-weight: 700;
+            padding: 8px; border-radius: 7px; cursor: pointer; transition: all .18s;
         }
+        .admin-tab.active { background: var(--bg-3); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.32); }
+        .admin-section { display: none; }
+        .admin-section.active { display: block; }
+        .admin-field { margin-bottom: 13px; }
+        .admin-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-2); margin-bottom: 6px; }
+        .admin-input {
+            width: 100%; background: var(--bg-2); border: 1px solid var(--border); color: var(--text);
+            font-family: var(--font); font-size: 13px; padding: 10px 12px; border-radius: 8px;
+            outline: none; transition: border-color .18s;
+        }
+        .admin-input:focus { border-color: rgba(230,48,48,0.4); box-shadow: 0 0 0 3px rgba(230,48,48,0.07); }
+        .admin-input::placeholder { color: rgba(255,255,255,0.28); }
+        .admin-input-row { display: flex; gap: 8px; }
+        .admin-input-row .admin-input { flex: 1; }
+        .admin-btn-submit {
+            width: 100%; background: var(--red); color: white; border: none;
+            font-family: var(--font); font-size: 13px; font-weight: 700;
+            padding: 11px; border-radius: 8px; cursor: pointer;
+            box-shadow: 0 4px 18px rgba(230,48,48,0.28); transition: all .2s; margin-top: 4px;
+        }
+        .admin-btn-submit:hover { background: var(--red-light); transform: translateY(-1px); }
+        .admin-btn-submit.gold { background: rgba(240,180,41,0.15); color: var(--gold); border: 1px solid rgba(240,180,41,0.3); box-shadow: none; }
+        .admin-btn-submit.gold:hover { background: rgba(240,180,41,0.25); }
+        .admin-btn-submit.danger { background: rgba(230,48,48,0.15); color: var(--red); border: 1px solid var(--red-border); box-shadow: none; }
+        .admin-btn-submit.danger:hover { background: rgba(230,48,48,0.25); }
+        .admin-msg { margin-top: 10px; padding: 9px 13px; border-radius: 7px; font-size: 12px; font-weight: 600; display: none; }
+        .admin-msg.ok { background: var(--green-dim); border: 1px solid rgba(34,197,94,0.22); color: var(--green); display: block; }
+        .admin-msg.err { background: var(--red-dim); border: 1px solid var(--red-border); color: var(--red); display: block; }
 
-        /* ═══════════════════════════════════════════
-           UTILS
-        ═══════════════════════════════════════════ */
+        /* Animations */
         @keyframes creditsPop {
-            0%   { transform: scale(1); }
-            50%  { transform: scale(1.12); color: var(--green); }
-            100% { transform: scale(1); }
+            0%{transform:scale(1);} 50%{transform:scale(1.12);color:var(--green);} 100%{transform:scale(1);}
         }
-
         .credits-pop { animation: creditsPop .4s ease-out; }
+        @keyframes spin { to { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
 
-    <!-- Background layers -->
-    <div class="bg-grid"></div>
-    <div class="bg-orb bg-orb-1"></div>
-    <div class="bg-orb bg-orb-2"></div>
+<div class="bg-grid"></div>
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
 
-    <!-- ── SIDEBAR ── -->
-    <aside id="sidebar">
-        <div class="logo-area">
-            <div class="logo">
-                <div class="logo-mark">V1</div>
-                <div class="logo-text">
-                    <span class="logo-name">V1zions.gg</span>
-                    <span class="logo-badge">Beta</span>
-                </div>
+<!-- ─── GATE SCREEN (blocked/banned) ─── -->
+<div id="gate-screen">
+    <div class="gate-icon" id="gate-icon">🔒</div>
+    <div class="gate-title" id="gate-title">Verificando acceso...</div>
+    <div class="gate-sub" id="gate-sub">Por favor espera un momento.</div>
+    <button class="gate-back-btn" id="gate-back" style="display:none" onclick="window.location.href='index.html'">← Volver al inicio</button>
+</div>
+
+<!-- ─── SIDEBAR ─── -->
+<aside id="sidebar" style="display:none">
+    <div class="logo-area">
+        <div class="logo">
+            <div class="logo-mark">
+                <img src="logo.png" alt="V1" onerror="this.style.display='none';this.parentElement.textContent='V1'">
             </div>
-        </div>
-
-        <div class="sidebar-section">
-            <button class="new-btn" id="new-btn">
-                <span style="font-size:16px;line-height:1">+</span> Nuevo Proyecto
-            </button>
-        </div>
-
-        <div class="sidebar-label">Proyectos</div>
-        <div class="projects-scroll" id="projects-list"></div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- Credits -->
-        <div class="credits-panel" id="credits-panel">
-            <div class="cost-flash" id="cost-flash"></div>
-            <div class="credits-top">
-                <div>
-                    <div class="credits-label">V-Credits</div>
-                    <div class="credits-value" id="credits-value">0</div>
-                    <div class="credits-sub">Daily credits: <strong id="daily-credits">1.00</strong></div>
-                    <div class="credits-refill" id="refill-timer">
-                        <div class="credits-refill-dot"></div>
-                        <span>Refills in 22h 16m · +1 credit</span>
-                    </div>
-                </div>
-            </div>
-            <div class="credits-bar-bg">
-                <div class="credits-bar-fill" id="credits-bar" style="width:20%"></div>
-            </div>
-            <button class="get-credits-btn" id="get-credits-btn">
-                ⚡ Obtener más V-Credits
-            </button>
-        </div>
-
-        <div class="sidebar-divider"></div>
-
-        <!-- Studio status -->
-        <div class="studio-status" id="studio-status">
-            <div class="status-dot"></div>
-            <span id="status-text">Esperando Studio...</span>
-        </div>
-
-        <!-- Discord -->
-        <a class="discord-section" href="https://discord.gg/TU_INVITE" target="_blank" title="Únete al Discord de V1zions">
-            <div class="discord-top">
-                <div class="discord-icon">💬</div>
-                <div>
-                    <div class="discord-name">V1zions Community</div>
-                    <div class="discord-members">● Comunidad activa</div>
-                </div>
-            </div>
-            <div class="discord-desc">Soporte, novedades y recursos exclusivos para desarrolladores.</div>
-            <div class="discord-reward">🎁 +5 V-Credits al unirte</div>
-        </a>
-    </aside>
-
-    <!-- ── MAIN ── -->
-    <main id="main-content">
-        <div id="chat-container"></div>
-
-        <div class="input-area">
-            <div class="input-chips">
-                <button class="input-chip" onclick="setPrompt('Sistema de DataStore con session locking')">💾 DataStore</button>
-                <button class="input-chip" onclick="setPrompt('GUI de menú principal con animaciones')">🎨 GUI</button>
-                <button class="input-chip" onclick="setPrompt('Sistema de combate melee con hitbox server-side')">⚔️ Combat</button>
-                <button class="input-chip" onclick="setPrompt('NPC con pathfinding y comportamiento AI')">🤖 NPC</button>
-                <button class="input-chip" onclick="setPrompt('Sistema de admin commands')">🔧 Admin</button>
-            </div>
-            <div class="input-box">
-                <input type="file" id="file-upload" style="display:none">
-                <button class="action-btn" id="attach-btn" title="Adjuntar archivo">📎</button>
-                <textarea id="prompt" rows="1" placeholder="Describe el sistema que necesitas..."></textarea>
-                <button class="action-btn send-btn" id="send-btn">➤</button>
-            </div>
-            <div class="input-footer">
-                ⚠️ V1zions puede cometer errores. Revisa el código antes de usarlo en producción.
-            </div>
-        </div>
-    </main>
-
-    <!-- ── CREDITS MODAL ── -->
-    <div class="modal-overlay" id="credits-modal">
-        <div class="modal">
-            <div class="modal-top">
-                <div class="modal-title">Obtener V-Credits</div>
-                <button class="modal-close" id="modal-close">✕</button>
-            </div>
-            <div class="modal-sub">Desbloquea más capacidad para generar sistemas avanzados.</div>
-            <div class="plans">
-                <div class="plan-card" onclick="alert('Próximamente disponible.')">
-                    <div class="plan-info">
-                        <div class="plan-name">Starter</div>
-                        <div class="plan-desc">Para proyectos pequeños y aprendizaje</div>
-                    </div>
-                    <div class="plan-right">
-                        <div class="plan-credits">10</div>
-                        <div class="plan-price">credits · Gratis</div>
-                    </div>
-                </div>
-                <div class="plan-card featured" onclick="alert('Próximamente disponible.')">
-                    <div class="plan-badge">Popular</div>
-                    <div class="plan-info">
-                        <div class="plan-name">Developer</div>
-                        <div class="plan-desc">Para proyectos activos y equipos pequeños</div>
-                    </div>
-                    <div class="plan-right">
-                        <div class="plan-credits">50</div>
-                        <div class="plan-price">credits · $4.99</div>
-                    </div>
-                </div>
-                <div class="plan-card" onclick="alert('Próximamente disponible.')">
-                    <div class="plan-info">
-                        <div class="plan-name">Studio Pro</div>
-                        <div class="plan-desc">Sin límites para estudios profesionales</div>
-                    </div>
-                    <div class="plan-right">
-                        <div class="plan-credits">∞</div>
-                        <div class="plan-price">ilimitado · $14.99/mes</div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-note">
-                También puedes ganar créditos uniéndote al Discord y participando en la comunidad. 💬
+            <div class="logo-text">
+                <span class="logo-name">V1zions.top</span>
+                <span class="logo-badge">Beta</span>
             </div>
         </div>
     </div>
 
-    <!-- ─────────────────────────────────────────
-         JAVASCRIPT
-    ───────────────────────────────────────── -->
-    <script>
-    // ── FIREBASE CONFIG ──
-    const firebaseConfig = {
-        apiKey: "TU_API_KEY_AQUI",
-        authDomain: "TU_PROYECTO.firebaseapp.com",
-        projectId: "TU_PROYECTO_ID",
-        storageBucket: "TU_PROYECTO.firebasestorage.app",
-        messagingSenderId: "TU_SENDER_ID",
-        appId: "TU_APP_ID"
-    };
-    firebase.initializeApp(firebaseConfig);
-    const db = firebase.firestore();
+    <!-- User profile -->
+    <div class="user-profile">
+        <div class="user-avatar" id="user-avatar">?</div>
+        <div class="user-info">
+            <div class="user-name" id="user-display-name">Cargando...</div>
+            <div class="user-email" id="user-email-display"></div>
+            <div class="user-vip-badge" id="vip-badge" style="display:none">⭐ VIP</div>
+        </div>
+        <button class="logout-btn" title="Cerrar sesión" onclick="doLogout()">⏻</button>
+    </div>
 
-    // ── CREDITS ──
-    const MAX_CREDITS = 10;
-    let credits = parseFloat(localStorage.getItem('v1_credits_float')) || 5.0;
+    <!-- Admin button (only visible for owner) -->
+    <button class="admin-btn hidden" id="admin-btn" onclick="openModal('admin')">
+        🛡️ Panel de Administrador
+    </button>
 
-    function updateCreditsDisplay(animate = false) {
-        const val = document.getElementById('credits-value');
-        val.textContent = credits.toFixed(1);
-        if (animate) { val.classList.remove('credits-pop'); void val.offsetWidth; val.classList.add('credits-pop'); }
-        const pct = Math.min((credits / MAX_CREDITS) * 100, 100);
-        document.getElementById('credits-bar').style.width = pct + '%';
-        localStorage.setItem('v1_credits_float', credits);
-    }
+    <!-- New project -->
+    <div class="sidebar-section">
+        <button class="new-btn" id="new-btn">
+            <span style="font-size:16px;line-height:1">+</span> Nuevo Proyecto
+        </button>
+    </div>
+    <div class="projects-quota" id="projects-quota"></div>
 
-    updateCreditsDisplay();
+    <div class="sidebar-label">Proyectos</div>
+    <div class="projects-scroll" id="projects-list"></div>
 
-    // Refill every 5 min
-    setInterval(() => {
-        credits = Math.min(credits + 1.0, MAX_CREDITS);
-        updateCreditsDisplay(true);
-    }, 300000);
+    <div class="sidebar-divider"></div>
 
-    function calcularCosto(txt) {
-        let c = 0.1;
-        if (txt.length > 100) c += .1;
-        if (txt.length > 300) c += .2;
-        if (txt.length > 600) c += .3;
-        ['datastore','framework','oop','raycast','combat','inventario','servidor','modulo','avanzado']
-            .forEach(w => { if (txt.toLowerCase().includes(w)) c += .1; });
-        return Math.min(1.0, c);
-    }
-
-    function flashCost(cost) {
-        const el = document.getElementById('cost-flash');
-        el.textContent = `-${cost.toFixed(1)}`;
-        el.style.opacity = '1'; el.style.transform = 'translateY(-8px)';
-        setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(0)'; }, 1800);
-    }
-
-    // ── CREDITS MODAL ──
-    document.getElementById('get-credits-btn').addEventListener('click', () => {
-        document.getElementById('credits-modal').classList.add('open');
-    });
-
-    document.getElementById('modal-close').addEventListener('click', () => {
-        document.getElementById('credits-modal').classList.remove('open');
-    });
-
-    document.getElementById('credits-modal').addEventListener('click', e => {
-        if (e.target === document.getElementById('credits-modal')) {
-            document.getElementById('credits-modal').classList.remove('open');
-        }
-    });
-
-    // ── PROJECTS ──
-    let projectsData = JSON.parse(localStorage.getItem('v1_projects_data')) || [];
-    let currentProjectId = null;
-    const chatContainer = document.getElementById('chat-container');
-    const projectsList  = document.getElementById('projects-list');
-
-    function saveData() { localStorage.setItem('v1_projects_data', JSON.stringify(projectsData)); }
-
-    function showWelcome() {
-        chatContainer.innerHTML = `
-            <div class="welcome" id="welcome-screen">
-                <div class="welcome-eyebrow">
-                    <div class="eyebrow-line"></div>
-                    Roblox AI Studio
-                    <div class="eyebrow-line"></div>
-                </div>
-                <h1 class="welcome-headline" id="typewriter-el">&nbsp;</h1>
-                <p class="welcome-desc">
-                    Describe cualquier sistema de Roblox en lenguaje natural y lo generaré en Luau de producción, listo para inyectar directamente en tu Studio en segundos.
-                </p>
-                <div class="welcome-stats">
-                    <div class="stat-pill"><span class="stat-num">105K</span> tokens de contexto</div>
-                    <div class="stat-pill"><span class="stat-num">2.5s</span> tiempo promedio</div>
-                    <div class="stat-pill"><span class="stat-num">Gemini</span> 2.5 Flash</div>
-                </div>
-                <div class="welcome-chips">
-                    <div class="chip" onclick="setPrompt('Sistema de leaderstats con monedas y gemas persistentes')">💰 LeaderStats</div>
-                    <div class="chip" onclick="setPrompt('GUI de tienda con productos, precios y botones de compra')">🏪 Tienda GUI</div>
-                    <div class="chip" onclick="setPrompt('Sistema de anti-cheat con detección de speed hack y teleport')">🛡️ Anti-Cheat</div>
-                    <div class="chip" onclick="setPrompt('Sistema de correr con Shift, animación y sonido')">🏃 Sprinting</div>
-                    <div class="chip" onclick="setPrompt('Sistema de cofre con animación de apertura y partículas')">📦 Cofre</div>
-                    <div class="chip" onclick="setPrompt('Sistema de pets con movimiento orbital y multiplicadores')">🐾 Pets</div>
-                </div>
-                <div class="disclaimer">
-                    ⚠️ V1zions puede cometer errores. Revisa siempre el código generado antes de usarlo en producción.
+    <!-- Credits -->
+    <div class="credits-panel" id="credits-panel">
+        <div class="cost-flash" id="cost-flash"></div>
+        <div class="credits-top">
+            <div>
+                <div class="credits-label">V-Credits</div>
+                <div class="credits-value" id="credits-value">—</div>
+                <div class="credits-refill" id="refill-timer">
+                    <div class="credits-refill-dot"></div>
+                    <span id="refill-text">Calculando...</span>
                 </div>
             </div>
-        `;
-        startTypewriter();
+        </div>
+        <div class="credits-bar-bg">
+            <div class="credits-bar-fill" id="credits-bar" style="width:0%"></div>
+        </div>
+        <button class="get-credits-btn" id="get-credits-btn">
+            ⚡ Obtener más V-Credits
+        </button>
+    </div>
+
+    <div class="sidebar-divider"></div>
+
+    <!-- Studio status -->
+    <div class="studio-status" id="studio-status">
+        <div class="status-dot"></div>
+        <span id="status-text">Esperando Studio...</span>
+    </div>
+
+    <!-- Discord -->
+    <a class="discord-section" href="https://discord.gg/tQKwmT3u" target="_blank" rel="noopener">
+        <div class="discord-top">
+            <div class="discord-icon">
+                <!-- Discord Official Logo SVG -->
+                <svg viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg" fill="white">
+                    <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/>
+                </svg>
+            </div>
+            <div>
+                <div class="discord-name">V1zions Community</div>
+                <div class="discord-members">● Comunidad activa</div>
+            </div>
+        </div>
+        <div class="discord-desc">Soporte, novedades y recursos para desarrolladores.</div>
+        <div class="discord-reward">🎁 +5 V-Credits al unirte</div>
+    </a>
+</aside>
+
+<!-- ─── MAIN ─── -->
+<main id="main-content" style="display:none">
+    <div id="chat-container"></div>
+
+    <div class="input-area">
+        <div class="input-chips">
+            <button class="input-chip" onclick="setPrompt('Sistema de DataStore con session locking')">DataStore</button>
+            <button class="input-chip" onclick="setPrompt('GUI de menú principal con animaciones')">GUI</button>
+            <button class="input-chip" onclick="setPrompt('Sistema de combate melee con hitbox server-side')">Combat</button>
+            <button class="input-chip" onclick="setPrompt('NPC con pathfinding y comportamiento AI')">NPC AI</button>
+            <button class="input-chip" onclick="setPrompt('Sistema de admin commands')">Admin</button>
+        </div>
+        <div class="input-box">
+            <input type="file" id="file-upload" style="display:none">
+            <button class="action-btn" id="attach-btn" title="Adjuntar archivo">📎</button>
+            <textarea id="prompt" rows="1" placeholder="Describe el sistema que necesitas..."></textarea>
+            <button class="action-btn send-btn" id="send-btn">➤</button>
+        </div>
+        <div class="input-footer">
+            ⚠️ V1zions puede cometer errores — revisa el código antes de usarlo en producción.
+        </div>
+    </div>
+</main>
+
+<!-- ─── CREDITS MODAL ─── -->
+<div class="modal-overlay" id="credits-modal">
+    <div class="modal">
+        <div class="modal-top">
+            <div class="modal-title">Obtener V-Credits</div>
+            <button class="modal-close" onclick="closeModal('credits')">✕</button>
+        </div>
+        <div class="modal-sub">Desbloquea más capacidad para generar sistemas avanzados.</div>
+        <div class="plans">
+            <!-- Starter: free daily claim -->
+            <div class="plan-card" id="starter-plan">
+                <div>
+                    <div class="plan-name">Starter</div>
+                    <div class="plan-desc">Reclama 5 créditos gratis (una vez al día)</div>
+                </div>
+                <div style="text-align:right">
+                    <div class="plan-credits">+5</div>
+                    <div class="plan-price">Gratis</div>
+                </div>
+            </div>
+            <div id="starter-paypal" class="plan-paypal-container"></div>
+
+            <!-- Developer: $4.99 -->
+            <div class="plan-card featured">
+                <div class="plan-badge">Popular</div>
+                <div>
+                    <div class="plan-name">Developer</div>
+                    <div class="plan-desc">Para proyectos activos y equipos pequeños</div>
+                </div>
+                <div style="text-align:right">
+                    <div class="plan-credits">+50</div>
+                    <div class="plan-price">$4.99</div>
+                </div>
+            </div>
+            <div id="developer-paypal" class="plan-paypal-container"></div>
+
+            <!-- Studio Pro: $14.99/mo — VIP -->
+            <div class="plan-card">
+                <div>
+                    <div class="plan-name">Studio Pro</div>
+                    <div class="plan-desc">VIP: proyectos ilimitados + créditos extra</div>
+                </div>
+                <div style="text-align:right">
+                    <div class="plan-credits">+200</div>
+                    <div class="plan-price">$14.99/mes</div>
+                </div>
+            </div>
+            <div id="pro-paypal" class="plan-paypal-container"></div>
+        </div>
+        <div class="modal-note">
+            También puedes ganar créditos uniéndote al Discord. 💬<br>
+            Los pagos son seguros y procesados por PayPal.
+        </div>
+    </div>
+</div>
+
+<!-- ─── ADMIN PANEL MODAL ─── -->
+<div class="modal-overlay" id="admin-modal">
+    <div class="modal admin-modal">
+        <div class="modal-top">
+            <div class="modal-title">🛡️ Panel Admin</div>
+            <button class="modal-close" onclick="closeModal('admin')">✕</button>
+        </div>
+        <div class="admin-tabs">
+            <button class="admin-tab active" onclick="adminTab('credits')">Dar Créditos</button>
+            <button class="admin-tab" onclick="adminTab('whitelist')">Early Access</button>
+            <button class="admin-tab" onclick="adminTab('ban')">Banear</button>
+        </div>
+
+        <!-- Give Credits -->
+        <div class="admin-section active" id="admin-credits">
+            <div class="admin-field">
+                <label class="admin-label">Correo del usuario</label>
+                <input class="admin-input" type="email" id="admin-credit-email" placeholder="usuario@ejemplo.com">
+            </div>
+            <div class="admin-field">
+                <label class="admin-label">Cantidad de V-Credits a sumar</label>
+                <input class="admin-input" type="number" id="admin-credit-amount" placeholder="10" min="1" max="9999">
+            </div>
+            <button class="admin-btn-submit" onclick="adminGiveCredits()">✓ Dar Créditos</button>
+            <div class="admin-msg" id="admin-credits-msg"></div>
+        </div>
+
+        <!-- Whitelist -->
+        <div class="admin-section" id="admin-whitelist">
+            <div class="admin-field">
+                <label class="admin-label">Correo para Early Access</label>
+                <input class="admin-input" type="email" id="admin-whitelist-email" placeholder="usuario@ejemplo.com">
+            </div>
+            <button class="admin-btn-submit gold" onclick="adminAddWhitelist()">✓ Dar Early Access</button>
+            <div class="admin-msg" id="admin-whitelist-msg"></div>
+            <div style="margin-top:18px; border-top:1px solid var(--border); padding-top:14px;">
+                <div class="admin-label" style="margin-bottom:10px">Remover Early Access</div>
+                <input class="admin-input" type="email" id="admin-remove-email" placeholder="usuario@ejemplo.com" style="margin-bottom:8px">
+                <button class="admin-btn-submit danger" onclick="adminRemoveWhitelist()">✕ Revocar acceso</button>
+                <div class="admin-msg" id="admin-remove-msg"></div>
+            </div>
+        </div>
+
+        <!-- Ban -->
+        <div class="admin-section" id="admin-ban">
+            <div class="admin-field">
+                <label class="admin-label">Correo del usuario a banear</label>
+                <input class="admin-input" type="email" id="admin-ban-email" placeholder="usuario@ejemplo.com">
+            </div>
+            <button class="admin-btn-submit danger" onclick="adminBanUser()">🔨 Banear usuario</button>
+            <div class="admin-msg" id="admin-ban-msg"></div>
+            <div style="margin-top:18px; border-top:1px solid var(--border); padding-top:14px;">
+                <div class="admin-label" style="margin-bottom:10px">Desbanear usuario</div>
+                <input class="admin-input" type="email" id="admin-unban-email" placeholder="usuario@ejemplo.com" style="margin-bottom:8px">
+                <button class="admin-btn-submit gold" onclick="adminUnbanUser()">✓ Desbanear</button>
+                <div class="admin-msg" id="admin-unban-msg"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ─── JAVASCRIPT ─── -->
+<script>
+// ══════════════════════════════════════════
+//  CONFIG
+// ══════════════════════════════════════════
+const OWNER_EMAIL  = "dekeremsa@gmail.com";
+const MAX_CREDITS  = 10;
+const VIP_CREDITS  = 50;
+const REFILL_HOURS = 24;   // horas entre recargas diarias
+const REFILL_AMOUNT = 1;   // créditos por recarga
+
+const firebaseConfig = {
+    apiKey:            "AIzaSyDfEwSZtRYDsbEzDI_KGBEEPtIttOgfV8o",
+    authDomain:        "v1zions-gg-b5181.firebaseapp.com",
+    projectId:         "v1zions-gg-b5181",
+    storageBucket:     "v1zions-gg-b5181.firebasestorage.app",
+    messagingSenderId: "886732747989",
+    appId:             "1:886732747989:web:1e00ec9a4a3ff5b3711e5c"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const db   = firebase.firestore();
+
+// ══════════════════════════════════════════
+//  ESTADO GLOBAL
+// ══════════════════════════════════════════
+let currentUser     = null;
+let userCredits     = 0;
+let userIsVip       = false;
+let projectsData    = [];
+let currentProjectId = null;
+let creditsUnsub    = null;
+let refillInterval  = null;
+
+const chatContainer  = document.getElementById('chat-container');
+const projectsList   = document.getElementById('projects-list');
+
+// ══════════════════════════════════════════
+//  GATE & AUTH
+// ══════════════════════════════════════════
+function showGate(icon, title, sub, showBtn = true) {
+    document.getElementById('gate-icon').textContent  = icon;
+    document.getElementById('gate-title').textContent = title;
+    document.getElementById('gate-sub').textContent   = sub;
+    document.getElementById('gate-back').style.display = showBtn ? 'block' : 'none';
+    document.getElementById('gate-screen').classList.remove('hidden');
+    document.getElementById('sidebar').style.display      = 'none';
+    document.getElementById('main-content').style.display = 'none';
+}
+
+function hideGate() {
+    document.getElementById('gate-screen').classList.add('hidden');
+    document.getElementById('sidebar').style.display      = 'flex';
+    document.getElementById('main-content').style.display = 'flex';
+}
+
+auth.onAuthStateChanged(async user => {
+    if (!user) {
+        window.location.href = 'index.html';
+        return;
+    }
+    currentUser = user;
+
+    // Check banned
+    const userDoc = await db.collection('Users').doc(user.uid).get();
+    const userData = userDoc.exists ? userDoc.data() : {};
+
+    if (userData.banned) {
+        showGate('🔨', 'Cuenta suspendida', 'Tu cuenta ha sido suspendida por el administrador. Contacta por Discord si crees que es un error.');
+        return;
     }
 
-    // Typewriter effect
-    const PHRASES = [
-        "What will you build today?",
-        "Inject powerful systems into your game.",
-        "From idea to Luau in seconds.",
-        "Production-ready Roblox code, instantly.",
-        "Build smarter. Ship faster.",
-    ];
-
-    let twPhrase = 0, twChar = 0, twDeleting = false, twTimeout = null;
-
-    function startTypewriter() {
-        clearTimeout(twTimeout);
-        twPhrase = 0; twChar = 0; twDeleting = false;
-        typeStep();
-    }
-
-    function typeStep() {
-        const el = document.getElementById('typewriter-el');
-        if (!el) return;
-        const phrase = PHRASES[twPhrase];
-        if (!twDeleting) {
-            twChar++;
-            el.innerHTML = phrase.slice(0, twChar) + '<span class="typewriter-cursor"></span>';
-            if (twChar === phrase.length) {
-                twDeleting = true;
-                twTimeout = setTimeout(typeStep, 2200);
-            } else {
-                twTimeout = setTimeout(typeStep, 52);
-            }
-        } else {
-            twChar--;
-            el.innerHTML = phrase.slice(0, twChar) + '<span class="typewriter-cursor"></span>';
-            if (twChar === 0) {
-                twDeleting = false;
-                twPhrase = (twPhrase + 1) % PHRASES.length;
-                twTimeout = setTimeout(typeStep, 300);
-            } else {
-                twTimeout = setTimeout(typeStep, 30);
-            }
+    // Check early access whitelist (owner always passes)
+    if (user.email !== OWNER_EMAIL) {
+        const whitelistDoc = await db.collection('Whitelist').doc(user.email).get();
+        if (!whitelistDoc.exists) {
+            showGate('🔒', 'Acceso Anticipado', 'V1zions.top está en Early Access. Solo usuarios invitados pueden acceder. Únete al Discord para solicitar acceso.', true);
+            return;
         }
     }
 
-    function loadProject(id) {
-        currentProjectId = id;
-        const proj = projectsData.find(p => p.id === id);
-        chatContainer.innerHTML = '';
-        if (proj && proj.chats.length > 0) {
-            proj.chats.forEach(m => addMsg(m.role, m.text));
-        } else {
-            showWelcome();
-        }
-        renderProjects();
+    // Save/update user profile in Firestore
+    await db.collection('Users').doc(user.uid).set({
+        email:       user.email,
+        displayName: user.displayName || '',
+        photoURL:    user.photoURL    || '',
+        lastSeen:    firebase.firestore.FieldValue.serverTimestamp()
+    }, { merge: true });
+
+    // Check/initialize credits
+    if (!userDoc.exists || userData.credits === undefined) {
+        await db.collection('Users').doc(user.uid).set({
+            credits:    5.0,
+            lastRefill: firebase.firestore.FieldValue.serverTimestamp(),
+            vip:        false
+        }, { merge: true });
     }
 
-    function renderProjects() {
-        projectsList.innerHTML = '';
-        projectsData.forEach(p => {
-            const d = document.createElement('div');
-            d.className = 'project-item' + (p.id === currentProjectId ? ' active' : '');
-            d.innerHTML = `<span class="proj-icon">📄</span> ${p.title}`;
-            d.onclick = () => loadProject(p.id);
-            projectsList.appendChild(d);
+    userIsVip = userData.vip || false;
+    loadUI();
+});
+
+function doLogout() {
+    auth.signOut().then(() => { window.location.href = 'index.html'; });
+}
+
+// ══════════════════════════════════════════
+//  UI INIT
+// ══════════════════════════════════════════
+function loadUI() {
+    hideGate();
+    setupUserProfile();
+    setupCreditsListener();
+    setupDailyRefill();
+    loadProjects();
+    setupStudioStatus();
+    initPayPal();
+
+    // Admin button
+    if (currentUser.email === OWNER_EMAIL) {
+        document.getElementById('admin-btn').classList.remove('hidden');
+    }
+}
+
+function setupUserProfile() {
+    const u = currentUser;
+    const avatarEl = document.getElementById('user-avatar');
+    const nameEl   = document.getElementById('user-display-name');
+    const emailEl  = document.getElementById('user-email-display');
+    const vipEl    = document.getElementById('vip-badge');
+
+    // Avatar
+    if (u.photoURL) {
+        avatarEl.innerHTML = `<img src="${u.photoURL}" alt="avatar">`;
+    } else {
+        const initials = (u.displayName || u.email || '?').charAt(0).toUpperCase();
+        avatarEl.textContent = initials;
+    }
+
+    // Name & email
+    nameEl.textContent  = u.displayName || u.email.split('@')[0];
+    emailEl.textContent = u.email;
+
+    if (userIsVip) vipEl.style.display = 'inline-block';
+}
+
+// ══════════════════════════════════════════
+//  CREDITS — FIRESTORE REAL-TIME
+// ══════════════════════════════════════════
+function setupCreditsListener() {
+    if (creditsUnsub) creditsUnsub();
+    creditsUnsub = db.collection('Users').doc(currentUser.uid)
+        .onSnapshot(snap => {
+            if (!snap.exists) return;
+            const data = snap.data();
+            userCredits = typeof data.credits === 'number' ? data.credits : 0;
+            userIsVip   = data.vip || false;
+            updateCreditsDisplay();
+            document.getElementById('vip-badge').style.display = userIsVip ? 'inline-block' : 'none';
         });
-    }
+}
 
+function updateCreditsDisplay(animate = false) {
+    const val    = document.getElementById('credits-value');
+    const bar    = document.getElementById('credits-bar');
+    const maxC   = userIsVip ? VIP_CREDITS : MAX_CREDITS;
+    val.textContent = userCredits.toFixed(1);
+    if (animate) { val.classList.remove('credits-pop'); void val.offsetWidth; val.classList.add('credits-pop'); }
+    const pct = Math.min((userCredits / maxC) * 100, 100);
+    bar.style.width = pct + '%';
+}
+
+async function deductCredits(amount) {
+    userCredits = Math.max(0, userCredits - amount);
+    await db.collection('Users').doc(currentUser.uid).update({
+        credits: firebase.firestore.FieldValue.increment(-amount)
+    });
+}
+
+// ══════════════════════════════════════════
+//  DAILY REFILL TIMER
+// ══════════════════════════════════════════
+async function setupDailyRefill() {
+    const snap = await db.collection('Users').doc(currentUser.uid).get();
+    if (!snap.exists) return;
+    const data = snap.data();
+    const lastRefill = data.lastRefill ? data.lastRefill.toDate() : new Date(0);
+    const now = new Date();
+    const msElapsed = now - lastRefill;
+    const msRefill  = REFILL_HOURS * 3600 * 1000;
+
+    if (msElapsed >= msRefill) {
+        // Trigger refill
+        const maxC = userIsVip ? VIP_CREDITS : MAX_CREDITS;
+        const newCredits = Math.min((data.credits || 0) + REFILL_AMOUNT, maxC);
+        await db.collection('Users').doc(currentUser.uid).update({
+            credits:    newCredits,
+            lastRefill: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        updateRefillTimer(new Date());
+    } else {
+        updateRefillTimer(lastRefill);
+    }
+}
+
+function updateRefillTimer(lastRefill) {
+    if (refillInterval) clearInterval(refillInterval);
+    const msRefill = REFILL_HOURS * 3600 * 1000;
+
+    function tick() {
+        const msLeft = msRefill - (new Date() - lastRefill);
+        if (msLeft <= 0) {
+            document.getElementById('refill-text').textContent = 'Recargando...';
+            setupDailyRefill();
+            clearInterval(refillInterval);
+            return;
+        }
+        const h = Math.floor(msLeft / 3600000);
+        const m = Math.floor((msLeft % 3600000) / 60000);
+        const s = Math.floor((msLeft % 60000) / 1000);
+        document.getElementById('refill-text').textContent =
+            `Recarga en ${h}h ${m}m ${s}s · +${REFILL_AMOUNT} crédito`;
+    }
+    tick();
+    refillInterval = setInterval(tick, 1000);
+}
+
+function flashCost(cost) {
+    const el = document.getElementById('cost-flash');
+    el.textContent = `-${cost.toFixed(1)}`;
+    el.style.opacity = '1'; el.style.transform = 'translateY(-8px)';
+    setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(0)'; }, 1800);
+}
+
+// ══════════════════════════════════════════
+//  PROJECTS
+// ══════════════════════════════════════════
+function projectStorageKey() {
+    return 'v1_projects_' + currentUser.uid;
+}
+
+function loadProjects() {
+    projectsData = JSON.parse(localStorage.getItem(projectStorageKey())) || [];
     if (projectsData.length === 0) {
         projectsData.push({ id: Date.now(), title: "Mi Primer Proyecto", chats: [] });
         saveData();
     }
     loadProject(projectsData[0].id);
+}
 
-    document.getElementById('new-btn').addEventListener('click', () => {
-        const p = { id: Date.now(), title: "Proyecto " + (projectsData.length + 1), chats: [] };
-        projectsData.unshift(p); saveData(); loadProject(p.id);
-    });
+function saveData() {
+    localStorage.setItem(projectStorageKey(), JSON.stringify(projectsData));
+    renderProjects();
+    updateProjectsQuota();
+}
 
-    // ── CHAT RENDER ──
-    function addMsg(role, html, id = null) {
-        const welcome = chatContainer.querySelector('.welcome');
-        if (welcome) { chatContainer.innerHTML = ''; clearTimeout(twTimeout); }
+function updateProjectsQuota() {
+    const maxProj = userIsVip ? 5 : 1;
+    const used    = projectsData.length;
+    const q = document.getElementById('projects-quota');
+    q.textContent = `${used} / ${maxProj} proyectos ${userIsVip ? '(VIP)' : '(Free)'}`;
+    q.style.color = used >= maxProj ? 'var(--red)' : 'var(--text-3)';
+}
+
+function renderProjects() {
+    projectsList.innerHTML = '';
+    projectsData.forEach(p => {
         const d = document.createElement('div');
-        d.className = 'msg ' + role;
-        if (id) d.id = id;
-        if (role === 'user') {
-            d.innerHTML = `<div class="bubble">${html}</div>`;
-        } else {
-            d.innerHTML = `<div class="ai-ava">V1</div><div class="bubble">${html}</div>`;
-        }
-        chatContainer.appendChild(d);
-        chatContainer.scrollTop = chatContainer.scrollHeight;
-    }
-
-    function saveMsg(role, html) {
-        const p = projectsData.find(x => x.id === currentProjectId);
-        if (!p) return;
-        if (p.chats.length === 0 && role === 'user') {
-            p.title = html.substring(0, 24) + "…";
-            renderProjects();
-        }
-        p.chats.push({ role, html }); saveData();
-    }
-
-    // ── ATTACH ──
-    document.getElementById('attach-btn').addEventListener('click', () => document.getElementById('file-upload').click());
-    document.getElementById('file-upload').addEventListener('change', e => {
-        if (!e.target.files.length) return;
-        const ta = document.getElementById('prompt');
-        ta.value += (ta.value ? '\n' : '') + `[Archivo: ${e.target.files[0].name}] `;
-        ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
-        e.target.value = '';
+        d.className = 'project-item' + (p.id === currentProjectId ? ' active' : '');
+        d.innerHTML = `
+            <span style="font-size:12px;flex-shrink:0;opacity:.7">📄</span>
+            <span class="proj-title">${p.title}</span>
+            <button class="proj-delete" title="Eliminar proyecto" onclick="deleteProject(${p.id}, event)">✕</button>
+        `;
+        d.addEventListener('click', e => {
+            if (!e.target.classList.contains('proj-delete')) loadProject(p.id);
+        });
+        projectsList.appendChild(d);
     });
+    updateProjectsQuota();
+}
 
-    // ── QUICK PROMPTS ──
-    function setPrompt(txt) {
-        const ta = document.getElementById('prompt');
-        ta.value = txt;
-        ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px';
-        ta.focus();
+function loadProject(id) {
+    currentProjectId = id;
+    chatContainer.innerHTML = '';
+    const proj = projectsData.find(p => p.id === id);
+    if (proj && proj.chats && proj.chats.length > 0) {
+        proj.chats.forEach(m => addMsg(m.role, m.html || m.text));
+    } else {
+        showWelcome();
     }
+    renderProjects();
+}
 
-    // ── STUDIO STATUS ──
-    const studioEl = document.getElementById('studio-status');
-    const statusTxt = document.getElementById('status-text');
-    let isConnected = false;
+function deleteProject(id, e) {
+    e.stopPropagation();
+    if (projectsData.length <= 1) {
+        alert('⚠️ Debes tener al menos un proyecto.');
+        return;
+    }
+    if (!confirm('¿Eliminar este proyecto? No se puede deshacer.')) return;
+    projectsData = projectsData.filter(p => p.id !== id);
+    saveData();
+    if (currentProjectId === id) loadProject(projectsData[0].id);
+}
 
-    db.collection("System").doc("Connection").onSnapshot(doc => {
-        if (doc.exists && doc.data().status === "online") {
-            studioEl.classList.add('online');
-            statusTxt.textContent = 'Studio Vinculado';
-            isConnected = true;
-        } else {
-            studioEl.classList.remove('online');
-            statusTxt.textContent = 'Esperando Studio...';
-            isConnected = false;
-        }
-    });
+document.getElementById('new-btn').addEventListener('click', () => {
+    const maxProj = userIsVip ? 5 : 1;
+    if (projectsData.length >= maxProj) {
+        openModal('credits');
+        return;
+    }
+    const p = { id: Date.now(), title: 'Proyecto ' + (projectsData.length + 1), chats: [] };
+    projectsData.unshift(p);
+    saveData();
+    loadProject(p.id);
+});
 
-    // ── ROADMAP ──
-    window.lanzarPasoRoadmap = function(titulo, desc, sistema) {
-        setPrompt(`Del sistema "${sistema}", genera el código completo para:\n**${titulo}**\nDetalles: ${desc}\n\nGenera ÚNICAMENTE los scripts de esta parte.`);
-        enviar();
-    };
+// ══════════════════════════════════════════
+//  CHAT RENDER
+// ══════════════════════════════════════════
+function addMsg(role, html, id = null) {
+    const welcome = chatContainer.querySelector('.welcome');
+    if (welcome) { chatContainer.innerHTML = ''; clearTimeout(twTimeout); }
+    const d = document.createElement('div');
+    d.className = 'msg ' + role;
+    if (id) d.id = id;
+    if (role === 'user') {
+        d.innerHTML = `<div class="bubble">${html}</div>`;
+    } else {
+        d.innerHTML = `<div class="ai-ava"><img src="logo.png" alt="V1" onerror="this.parentElement.textContent='V1'"></div><div class="bubble">${html}</div>`;
+    }
+    chatContainer.appendChild(d);
+    chatContainer.scrollTop = chatContainer.scrollHeight;
+}
 
-    // ── SEND ──
-    const ta = document.getElementById('prompt');
-    ta.addEventListener('input', function() {
-        this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px';
-    });
+function saveMsg(role, html) {
+    const p = projectsData.find(x => x.id === currentProjectId);
+    if (!p) return;
+    if (p.chats.length === 0 && role === 'user') {
+        p.title = html.substring(0, 26) + '…';
+        renderProjects();
+    }
+    if (!p.chats) p.chats = [];
+    p.chats.push({ role, html }); saveData();
+}
 
-    async function enviar() {
-        const txt = ta.value.trim();
-        if (!txt) return;
-        if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
-        const costo = calcularCosto(txt);
-        if (credits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${credits.toFixed(1)}.`);
+// ══════════════════════════════════════════
+//  WELCOME SCREEN
+// ══════════════════════════════════════════
+const PHRASES = [
+    "What will you build today?",
+    "Inject powerful systems into your game.",
+    "From idea to Luau in seconds.",
+    "Production-ready Roblox code, instantly.",
+    "Build smarter. Ship faster.",
+];
+let twPhrase = 0, twChar = 0, twDeleting = false, twTimeout = null;
 
-        credits -= costo;
-        updateCreditsDisplay();
-        flashCost(costo);
+function startTypewriter() {
+    clearTimeout(twTimeout); twPhrase = 0; twChar = 0; twDeleting = false; typeStep();
+}
+function typeStep() {
+    const el = document.getElementById('typewriter-el'); if (!el) return;
+    const phrase = PHRASES[twPhrase];
+    if (!twDeleting) {
+        twChar++;
+        el.innerHTML = phrase.slice(0, twChar) + '<span class="typewriter-cursor"></span>';
+        twTimeout = twChar === phrase.length ? setTimeout(typeStep, 2200) : setTimeout(typeStep, 52);
+        if (twChar === phrase.length) twDeleting = true;
+    } else {
+        twChar--;
+        el.innerHTML = phrase.slice(0, twChar) + '<span class="typewriter-cursor"></span>';
+        if (twChar === 0) {
+            twDeleting = false; twPhrase = (twPhrase + 1) % PHRASES.length;
+            twTimeout = setTimeout(typeStep, 300);
+        } else { twTimeout = setTimeout(typeStep, 30); }
+    }
+}
 
-        addMsg('user', txt);
-        saveMsg('user', txt);
-        ta.value = ''; ta.style.height = 'auto';
-
-        const lid = 'load-' + Date.now();
-        addMsg('ai', `
-            <div class="loading-bubble">
-                <div class="dots"><span></span><span></span><span></span></div>
-                Generando código...
+function showWelcome() {
+    chatContainer.innerHTML = `
+        <div class="welcome" id="welcome-screen">
+            <div class="welcome-eyebrow">
+                <div class="eyebrow-line"></div>Roblox AI Studio<div class="eyebrow-line"></div>
             </div>
-        `, lid);
+            <h1 class="welcome-headline" id="typewriter-el">&nbsp;</h1>
+            <p class="welcome-desc">Describe cualquier sistema de Roblox en lenguaje natural y lo generaré en Luau de producción, listo para inyectar en tu Studio al instante.</p>
+            <div class="welcome-stats">
+                <div class="stat-pill"><span class="stat-num">105K</span> tokens de contexto</div>
+                <div class="stat-pill"><span class="stat-num">2.5s</span> tiempo promedio</div>
+                <div class="stat-pill"><span class="stat-num">Gemini</span> 2.5 Flash</div>
+            </div>
+            <div class="welcome-chips">
+                <div class="chip" onclick="setPrompt('Sistema de leaderstats con monedas y gemas persistentes')">💰 LeaderStats</div>
+                <div class="chip" onclick="setPrompt('GUI de tienda con productos, precios y botones de compra')">🏪 Tienda GUI</div>
+                <div class="chip" onclick="setPrompt('Sistema de anti-cheat con detección de speed hack')">🛡️ Anti-Cheat</div>
+                <div class="chip" onclick="setPrompt('Sistema de correr con Shift, animación y sonido')">🏃 Sprinting</div>
+                <div class="chip" onclick="setPrompt('Sistema de cofre con animación de apertura y partículas')">📦 Cofre</div>
+                <div class="chip" onclick="setPrompt('Sistema de pets con movimiento orbital y multiplicadores')">🐾 Pets</div>
+            </div>
+            <div class="disclaimer">⚠️ V1zions puede cometer errores. Revisa siempre el código antes de usarlo en producción.</div>
+        </div>
+    `;
+    startTypewriter();
+}
 
-        try {
-            const ref = await db.collection("PeticionesRoblox").add({
-                mensaje: txt, estado: "pendiente", esVip: true,
+// ══════════════════════════════════════════
+//  SEND / ENVIAR
+// ══════════════════════════════════════════
+const ta = document.getElementById('prompt');
+ta.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
+
+let isConnected = false;
+
+function calcularCosto(txt) {
+    let c = 0.1;
+    if (txt.length > 100) c += .1;
+    if (txt.length > 300) c += .2;
+    if (txt.length > 600) c += .3;
+    ['datastore','framework','oop','raycast','combat','inventario','servidor','modulo','avanzado']
+        .forEach(w => { if (txt.toLowerCase().includes(w)) c += .1; });
+    return Math.min(1.0, c);
+}
+
+async function enviar() {
+    const txt = ta.value.trim(); if (!txt) return;
+    if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
+    const costo = calcularCosto(txt);
+    if (userCredits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${userCredits.toFixed(1)}.`);
+
+    await deductCredits(costo);
+    flashCost(costo);
+
+    addMsg('user', txt);
+    saveMsg('user', txt);
+    ta.value = ''; ta.style.height = 'auto';
+
+    const lid = 'load-' + Date.now();
+    addMsg('ai', `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Generando código...</div>`, lid);
+
+    try {
+        const ref = await db.collection('PeticionesRoblox').add({
+            mensaje: txt, estado: 'pendiente', uid: currentUser.uid,
+            esVip: userIsVip, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        const unsub = ref.onSnapshot(snap => {
+            const data = snap.data(); if (!data) return;
+            const loadEl = document.getElementById(lid);
+            if (data.estado === 'completado' || data.estado === 'inyectar') {
+                if (loadEl) loadEl.remove();
+                const resumen = data.resultado || 'Scripts inyectados correctamente.';
+                const m = `<strong>Sistema inyectado ✓</strong><br><span class="sys-msg">${resumen.replace(/\n/g,'<br>')}</span>`;
+                addMsg('ai', m); saveMsg('ai', m); unsub();
+            } else if (data.estado === 'roadmap_pendiente') {
+                if (loadEl) loadEl.remove();
+                let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
+                html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
+                data.pasos.forEach(p => {
+                    html += `<button class="roadmap-step" onclick='window.lanzarPasoRoadmap(${JSON.stringify(p.titulo)},${JSON.stringify(p.descripcion)},${JSON.stringify(data.tituloSistema)})'>
+                        <strong>${p.titulo}</strong><span>${p.descripcion}</span></button>`;
+                });
+                html += `</div>`;
+                addMsg('ai', html); saveMsg('ai', 'Roadmap generado.'); unsub();
+            } else if (data.estado === 'error') {
+                if (loadEl) loadEl.remove();
+                addMsg('ai', `❌ ${data.resultado || 'Error en la inyección.'}`); unsub();
+            }
+        });
+    } catch(e) {
+        const loadEl = document.getElementById(lid);
+        if (loadEl) loadEl.remove();
+        addMsg('ai', '❌ Error de conexión con Firebase.');
+    }
+}
+
+document.getElementById('send-btn').addEventListener('click', enviar);
+ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } });
+document.getElementById('attach-btn').addEventListener('click', () => document.getElementById('file-upload').click());
+document.getElementById('file-upload').addEventListener('change', e => {
+    if (!e.target.files.length) return;
+    ta.value += (ta.value ? '\n' : '') + `[Archivo: ${e.target.files[0].name}] `;
+    ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; e.target.value = '';
+});
+
+function setPrompt(txt) { ta.value = txt; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; ta.focus(); }
+
+window.lanzarPasoRoadmap = function(titulo, desc, sistema) {
+    setPrompt(`Del sistema "${sistema}", genera el código completo para:\n**${titulo}**\nDetalles: ${desc}\n\nGenera ÚNICAMENTE los scripts de esta parte.`);
+    enviar();
+};
+
+// ══════════════════════════════════════════
+//  STUDIO STATUS
+// ══════════════════════════════════════════
+function setupStudioStatus() {
+    db.collection('System').doc('Connection').onSnapshot(doc => {
+        const online = doc.exists && doc.data().status === 'online';
+        document.getElementById('studio-status').classList.toggle('online', online);
+        document.getElementById('status-text').textContent = online ? 'Studio Vinculado' : 'Esperando Studio...';
+        isConnected = online;
+    });
+}
+
+// ══════════════════════════════════════════
+//  MODALS
+// ══════════════════════════════════════════
+function openModal(name) {
+    document.getElementById(name + '-modal').classList.add('open');
+}
+function closeModal(name) {
+    document.getElementById(name + '-modal').classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(el => {
+    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
+});
+document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
+});
+document.getElementById('get-credits-btn').addEventListener('click', () => openModal('credits'));
+
+// ══════════════════════════════════════════
+//  PAYPAL INTEGRATION (SEGURO)
+// ══════════════════════════════════════════
+function initPayPal() {
+    // Si el SDK no cargó (client-id no configurado), mostrar instrucciones
+    if (typeof paypal === 'undefined') {
+        ['starter-paypal','developer-paypal','pro-paypal'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:6px 0;text-align:center">Configura tu PayPal Client ID para habilitar pagos.</div>';
+        });
+        // Starter: free claim button siempre funciona
+        setupStarterClaim();
+        return;
+    }
+
+    setupStarterClaim();
+    setupPayPalButton('developer-paypal', 4.99, 50, false);
+    setupPayPalButton('pro-paypal', 14.99, 200, true);
+}
+
+function setupStarterClaim() {
+    const container = document.getElementById('starter-paypal');
+    const btn = document.createElement('button');
+    btn.textContent = '🎁 Reclamar 5 créditos gratis';
+    btn.style.cssText = 'width:100%;background:var(--green-dim);border:1px solid rgba(34,197,94,0.25);color:var(--green);padding:10px;border-radius:8px;font-family:var(--font);font-size:13px;font-weight:700;cursor:pointer;margin-bottom:4px;transition:all .15s';
+    btn.onmouseenter = () => btn.style.background = 'rgba(34,197,94,0.18)';
+    btn.onmouseleave = () => btn.style.background = 'var(--green-dim)';
+    btn.onclick = async () => {
+        // Check daily claim
+        const snap = await db.collection('Users').doc(currentUser.uid).get();
+        const lastClaim = snap.data().lastFreeClaim ? snap.data().lastFreeClaim.toDate() : new Date(0);
+        const elapsed = new Date() - lastClaim;
+        if (elapsed < 24 * 3600 * 1000) {
+            const h = Math.ceil((24 * 3600 * 1000 - elapsed) / 3600000);
+            btn.textContent = `⏳ Ya reclamaste hoy. Vuelve en ${h}h`;
+            return;
+        }
+        const maxC = userIsVip ? VIP_CREDITS : MAX_CREDITS;
+        const newC  = Math.min(userCredits + 5, maxC);
+        await db.collection('Users').doc(currentUser.uid).update({
+            credits:       newC,
+            lastFreeClaim: firebase.firestore.FieldValue.serverTimestamp()
+        });
+        btn.textContent = '✓ ¡5 créditos añadidos!';
+        setTimeout(() => { btn.textContent = '🎁 Reclamar 5 créditos gratis'; }, 3000);
+    };
+    container.appendChild(btn);
+}
+
+function setupPayPalButton(containerId, price, credits, isVip) {
+    if (typeof paypal === 'undefined') return;
+    const container = document.getElementById(containerId);
+    paypal.Buttons({
+        style: { layout: 'horizontal', color: 'black', shape: 'rect', label: 'pay', height: 40 },
+        createOrder: (data, actions) => {
+            return actions.order.create({
+                purchase_units: [{
+                    amount: { value: price.toFixed(2), currency_code: 'USD' },
+                    description: `V1zions.top - ${credits} V-Credits`
+                }]
+            });
+        },
+        onApprove: async (data, actions) => {
+            const order = await actions.order.capture();
+            const orderID = order.id;
+
+            // Prevent duplicate: check if orderID already processed
+            const dupCheck = await db.collection('ProcessedPayments').doc(orderID).get();
+            if (dupCheck.exists) {
+                alert('⚠️ Este pago ya fue procesado anteriormente.');
+                return;
+            }
+
+            // Record payment
+            await db.collection('ProcessedPayments').doc(orderID).set({
+                uid:       currentUser.uid,
+                email:     currentUser.email,
+                credits:   credits,
+                price:     price,
+                isVip:     isVip,
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
 
-            const unsub = ref.onSnapshot(snap => {
-                const data = snap.data(); if (!data) return;
-                const loadEl = document.getElementById(lid);
+            // Add credits
+            const snap    = await db.collection('Users').doc(currentUser.uid).get();
+            const current = snap.data().credits || 0;
+            const maxC    = isVip ? VIP_CREDITS : MAX_CREDITS;
+            const newC    = Math.min(current + credits, isVip ? 999 : maxC);
 
-                if (data.estado === "completado" || data.estado === "inyectar") {
-                    if (loadEl) loadEl.remove();
-                    const resumen = data.resultado || "Scripts inyectados correctamente.";
-                    const m = `<strong>Sistema inyectado ✓</strong><br><span class="sys-msg">${resumen.replace(/\n/g,'<br>')}</span>`;
-                    addMsg('ai', m); saveMsg('ai', m);
-                    unsub();
+            const updateData = { credits: newC };
+            if (isVip) updateData.vip = true;
 
-                } else if (data.estado === "roadmap_pendiente") {
-                    if (loadEl) loadEl.remove();
-                    let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
-                    html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
-                    data.pasos.forEach(p => {
-                        html += `<button class="roadmap-step" onclick='window.lanzarPasoRoadmap(${JSON.stringify(p.titulo)},${JSON.stringify(p.descripcion)},${JSON.stringify(data.tituloSistema)})'>
-                            <strong>${p.titulo}</strong><span>${p.descripcion}</span>
-                        </button>`;
-                    });
-                    html += `</div>`;
-                    addMsg('ai', html); saveMsg('ai', "Roadmap generado.");
-                    unsub();
+            await db.collection('Users').doc(currentUser.uid).update(updateData);
 
-                } else if (data.estado === "error") {
-                    if (loadEl) loadEl.remove();
-                    addMsg('ai', `❌ ${data.resultado || "Error en la inyección."}`);
-                    unsub();
-                }
-            });
-        } catch(e) {
-            const loadEl = document.getElementById(lid);
-            if (loadEl) loadEl.remove();
-            addMsg('ai', "❌ Error de conexión con Firebase.");
+            closeModal('credits');
+            alert(`✅ ¡Pago confirmado! +${credits} V-Credits añadidos a tu cuenta.`);
+        },
+        onError: (err) => {
+            console.error('PayPal error:', err);
+            alert('❌ Error en el pago. Por favor intenta de nuevo.');
         }
-    }
+    }).render('#' + containerId);
+}
 
-    document.getElementById('send-btn').addEventListener('click', enviar);
-    ta.addEventListener('keydown', e => {
-        if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); }
+// ══════════════════════════════════════════
+//  ADMIN PANEL
+// ══════════════════════════════════════════
+function adminTab(name) {
+    document.querySelectorAll('.admin-tab').forEach((t, i) => {
+        t.classList.toggle('active', ['credits','whitelist','ban'][i] === name);
     });
-    </script>
+    document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
+    document.getElementById('admin-' + name).classList.add('active');
+    document.querySelectorAll('.admin-msg').forEach(m => { m.className = 'admin-msg'; m.textContent = ''; });
+}
+
+function showAdminMsg(id, text, ok) {
+    const el = document.getElementById(id);
+    el.textContent = text;
+    el.className = 'admin-msg ' + (ok ? 'ok' : 'err');
+}
+
+async function adminGiveCredits() {
+    const email  = document.getElementById('admin-credit-email').value.trim();
+    const amount = parseFloat(document.getElementById('admin-credit-amount').value);
+    if (!email || isNaN(amount) || amount <= 0) return showAdminMsg('admin-credits-msg', 'Datos inválidos.', false);
+
+    try {
+        const snap = await db.collection('Users').where('email', '==', email).get();
+        if (snap.empty) return showAdminMsg('admin-credits-msg', 'Usuario no encontrado.', false);
+        const uid = snap.docs[0].id;
+        await db.collection('Users').doc(uid).update({
+            credits: firebase.firestore.FieldValue.increment(amount)
+        });
+        showAdminMsg('admin-credits-msg', `✓ +${amount} créditos añadidos a ${email}`, true);
+    } catch(e) {
+        showAdminMsg('admin-credits-msg', 'Error: ' + e.message, false);
+    }
+}
+
+async function adminAddWhitelist() {
+    const email = document.getElementById('admin-whitelist-email').value.trim().toLowerCase();
+    if (!email) return showAdminMsg('admin-whitelist-msg', 'Introduce un correo.', false);
+    try {
+        await db.collection('Whitelist').doc(email).set({ added: firebase.firestore.FieldValue.serverTimestamp() });
+        showAdminMsg('admin-whitelist-msg', `✓ ${email} añadido a Early Access`, true);
+        document.getElementById('admin-whitelist-email').value = '';
+    } catch(e) {
+        showAdminMsg('admin-whitelist-msg', 'Error: ' + e.message, false);
+    }
+}
+
+async function adminRemoveWhitelist() {
+    const email = document.getElementById('admin-remove-email').value.trim().toLowerCase();
+    if (!email) return showAdminMsg('admin-remove-msg', 'Introduce un correo.', false);
+    try {
+        await db.collection('Whitelist').doc(email).delete();
+        showAdminMsg('admin-remove-msg', `✓ Acceso revocado a ${email}`, true);
+    } catch(e) {
+        showAdminMsg('admin-remove-msg', 'Error: ' + e.message, false);
+    }
+}
+
+async function adminBanUser() {
+    const email = document.getElementById('admin-ban-email').value.trim();
+    if (!email) return showAdminMsg('admin-ban-msg', 'Introduce un correo.', false);
+    try {
+        const snap = await db.collection('Users').where('email', '==', email).get();
+        if (snap.empty) return showAdminMsg('admin-ban-msg', 'Usuario no encontrado.', false);
+        await db.collection('Users').doc(snap.docs[0].id).update({ banned: true });
+        showAdminMsg('admin-ban-msg', `✓ ${email} ha sido baneado.`, true);
+    } catch(e) {
+        showAdminMsg('admin-ban-msg', 'Error: ' + e.message, false);
+    }
+}
+
+async function adminUnbanUser() {
+    const email = document.getElementById('admin-unban-email').value.trim();
+    if (!email) return showAdminMsg('admin-unban-msg', 'Introduce un correo.', false);
+    try {
+        const snap = await db.collection('Users').where('email', '==', email).get();
+        if (snap.empty) return showAdminMsg('admin-unban-msg', 'Usuario no encontrado.', false);
+        await db.collection('Users').doc(snap.docs[0].id).update({ banned: false });
+        showAdminMsg('admin-unban-msg', `✓ ${email} ha sido desbaneado.`, true);
+    } catch(e) {
+        showAdminMsg('admin-unban-msg', 'Error: ' + e.message, false);
+    }
+}
+</script>
 </body>
 </html>
