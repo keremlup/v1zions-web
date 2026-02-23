@@ -851,15 +851,19 @@ function hideGate() {
 
 window.addEventListener('load', async () => {
     try {
-        currentUser = await account.get();
-        
-        // Cargar documento de usuario
+        // 1. Verificar si hay sesión activa (si no hay, al login)
+        try {
+            currentUser = await account.get();
+        } catch (authError) {
+            window.location.href = 'index.html';
+            return;
+        }
+
+        // 2. Cargar o crear datos del usuario
         let userData = {};
         try {
-            const userDoc = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
-            userData = userDoc;
+            userData = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
         } catch (e) {
-            // Si el usuario no existe en la base de datos, lo creamos
             userData = await databases.createDocument(DB_ID, 'Users', currentUser.$id, {
                 email: currentUser.email,
                 displayName: currentUser.name || '',
@@ -870,26 +874,39 @@ window.addEventListener('load', async () => {
             });
         }
 
+        // 3. Verificar Ban
         if (userData.banned) {
-            showGate('🔨', 'Cuenta suspendida', 'Tu cuenta ha sido suspendida por el administrador. Contacta por Discord si crees que es un error.');
+            showGate('🔨', 'Cuenta suspendida', 'Tu cuenta ha sido suspendida.');
             return;
         }
 
-        // Check early access whitelist (owner always passes)
-        if (currentUser.email !== OWNER_EMAIL) {
+        // 4. Verificar Whitelist (SOLO si no eres el dueño)
+        if (currentUser.email.toLowerCase() !== OWNER_EMAIL.toLowerCase()) {
             try {
-                // Buscamos si existe su email en la colección Whitelist
-                const queries = [Appwrite.Query.equal('email', currentUser.email)];
-                const whitelist = await databases.listDocuments(DB_ID, 'Whitelist', queries);
+                const whitelist = await databases.listDocuments(DB_ID, 'Whitelist', [
+                    Appwrite.Query.equal('email', currentUser.email.toLowerCase())
+                ]);
+                
                 if (whitelist.total === 0) {
-                    showGate('🔒', 'Acceso Anticipado', 'V1zions.top está en Early Access. Solo usuarios invitados pueden acceder. Únete al Discord para solicitar acceso.', true);
-                    return;
+                    showGate('🔒', 'Acceso Anticipado', `Tu correo (${currentUser.email}) no está en la lista de invitados.`);
+                    return; 
                 }
             } catch (e) {
-                showGate('🔒', 'Acceso Anticipado', 'Error verificando acceso. Intenta más tarde.', true);
+                console.error("Error Whitelist:", e);
+                showGate('⚠️', 'Error de Verificación', 'No pudimos verificar tu acceso. Revisa los permisos de la tabla Whitelist.');
                 return;
             }
         }
+
+        // Si todo está bien, cargamos la interfaz
+        userIsVip = userData.vip || false;
+        loadUI();
+
+    } catch (globalError) {
+        console.error("Error Global:", globalError);
+        showGate('❌', 'Error Crítico', 'Ocurrió un error al cargar: ' + globalError.message);
+    }
+});
 
         // Update last seen
         await databases.updateDocument(DB_ID, 'Users', currentUser.$id, {
