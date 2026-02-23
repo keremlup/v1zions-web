@@ -921,28 +921,6 @@ window.addEventListener('load', async () => {
     }
 });
 
-        // Update last seen
-        await databases.updateDocument(DB_ID, 'Users', currentUser.$id, {
-            lastSeen: new Date().toISOString()
-        });
-
-        userIsVip = userData.vip || false;
-        
-        // Bug de sesión fantasma resuelto: asegurarnos de limpiar data local si es un usuario distinto al anterior
-        const lastUid = localStorage.getItem('v1_last_uid');
-        if (lastUid && lastUid !== currentUser.$id) {
-             localStorage.clear(); // Limpiamos todo rastro si entró otra cuenta
-        }
-        localStorage.setItem('v1_last_uid', currentUser.$id);
-
-        loadUI();
-
-    } catch (e) {
-        // No hay sesión
-        window.location.href = 'index.html';
-    }
-});
-
 async function doLogout() {
     try {
         await account.deleteSession('current');
