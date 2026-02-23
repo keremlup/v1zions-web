@@ -560,7 +560,7 @@
     <div class="gate-icon" id="gate-icon">🔒</div>
     <div class="gate-title" id="gate-title">Verificando acceso...</div>
     <div class="gate-sub" id="gate-sub">Por favor espera un momento.</div>
-    <button class="gate-back-btn" id="gate-back" style="display:none" onclick="window.location.href='index.html'">← Volver al inicio</button>
+    <button class="gate-back-btn" id="gate-back" style="display:none" onclick="doLogout()">← Volver al inicio</button>
 </div>
 
 <!-- ─── SIDEBAR ─── -->
@@ -922,13 +922,24 @@ window.addEventListener('load', async () => {
 });
 
 async function doLogout() {
+    // 1. Limpiamos storage PRIMERO, antes de cualquier await,
+    //    para que no queden rastros sin importar lo que pase después.
+    localStorage.clear();
+    sessionStorage.clear();
+
+    // 2. Cerramos la sesión en Appwrite. Usamos try/catch para que,
+    //    aunque Appwrite falle (ej. sesión ya expirada), la redirección
+    //    siempre ocurra de todas formas.
     try {
         await account.deleteSession('current');
-        localStorage.clear(); // Limpiamos datos locales por seguridad
-        window.location.href = 'index.html';
     } catch (e) {
-        console.error("Error al cerrar sesión", e);
+        // Sesión ya cerrada o expirada — no es un error crítico, seguimos.
+        console.warn("Sesión de Appwrite ya estaba cerrada:", e.message);
     }
+
+    // 3. Redirigimos. replace() en vez de href para que el usuario
+    //    no pueda volver atrás con el botón del navegador.
+    window.location.replace('index.html');
 }
 
 // ══════════════════════════════════════════
