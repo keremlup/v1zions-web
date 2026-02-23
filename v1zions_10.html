@@ -6,9 +6,7 @@
     <title>V1zions.top | Roblox AI Studio</title>
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
 
     <!-- PayPal SDK: reemplaza YOUR_PAYPAL_CLIENT_ID con tu Client ID de developer.paypal.com -->
     <script src="https://www.paypal.com/sdk/js?client-id=YOUR_PAYPAL_CLIENT_ID&currency=USD" defer id="paypal-sdk"></script>
@@ -800,7 +798,7 @@
 <!-- ─── JAVASCRIPT ─── -->
 <script>
 // ══════════════════════════════════════════
-//  CONFIG
+//  CONFIG APPWRITE
 // ══════════════════════════════════════════
 const OWNER_EMAIL  = "dekeremsa@gmail.com";
 const MAX_CREDITS  = 10;
@@ -808,17 +806,15 @@ const VIP_CREDITS  = 50;
 const REFILL_HOURS = 24;   // horas entre recargas diarias
 const REFILL_AMOUNT = 1;   // créditos por recarga
 
-const firebaseConfig = {
-    apiKey:            "AIzaSyDfEwSZtRYDsbEzDI_KGBEEPtIttOgfV8o",
-    authDomain:        "v1zions-gg-b5181.firebaseapp.com",
-    projectId:         "v1zions-gg-b5181",
-    storageBucket:     "v1zions-gg-b5181.firebasestorage.app",
-    messagingSenderId: "886732747989",
-    appId:             "1:886732747989:web:1e00ec9a4a3ff5b3711e5c"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db   = firebase.firestore();
+const client = new Appwrite.Client()
+    .setEndpoint('https://nyc.cloud.appwrite.io/v1')
+    .setProject('699bb6ae001951375c5d');
+
+const account = new Appwrite.Account(client);
+const databases = new Appwrite.Databases(client);
+
+// El ID de tu base de datos en Appwrite
+const DB_ID = "V1zions"; 
 
 // ══════════════════════════════════════════
 //  ESTADO GLOBAL
@@ -853,54 +849,78 @@ function hideGate() {
     document.getElementById('main-content').style.display = 'flex';
 }
 
-auth.onAuthStateChanged(async user => {
-    if (!user) {
-        window.location.href = 'index.html';
-        return;
-    }
-    currentUser = user;
+window.addEventListener('load', async () => {
+    try {
+        currentUser = await account.get();
+        
+        // Cargar documento de usuario
+        let userData = {};
+        try {
+            const userDoc = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
+            userData = userDoc;
+        } catch (e) {
+            // Si el usuario no existe en la base de datos, lo creamos
+            userData = await databases.createDocument(DB_ID, 'Users', currentUser.$id, {
+                email: currentUser.email,
+                displayName: currentUser.name || '',
+                credits: 5.0,
+                lastRefill: new Date().toISOString(),
+                vip: false,
+                banned: false
+            });
+        }
 
-    // Check banned
-    const userDoc = await db.collection('Users').doc(user.uid).get();
-    const userData = userDoc.exists ? userDoc.data() : {};
-
-    if (userData.banned) {
-        showGate('🔨', 'Cuenta suspendida', 'Tu cuenta ha sido suspendida por el administrador. Contacta por Discord si crees que es un error.');
-        return;
-    }
-
-    // Check early access whitelist (owner always passes)
-    if (user.email !== OWNER_EMAIL) {
-        const whitelistDoc = await db.collection('Whitelist').doc(user.email).get();
-        if (!whitelistDoc.exists) {
-            showGate('🔒', 'Acceso Anticipado', 'V1zions.top está en Early Access. Solo usuarios invitados pueden acceder. Únete al Discord para solicitar acceso.', true);
+        if (userData.banned) {
+            showGate('🔨', 'Cuenta suspendida', 'Tu cuenta ha sido suspendida por el administrador. Contacta por Discord si crees que es un error.');
             return;
         }
+
+        // Check early access whitelist (owner always passes)
+        if (currentUser.email !== OWNER_EMAIL) {
+            try {
+                // Buscamos si existe su email en la colección Whitelist
+                const queries = [Appwrite.Query.equal('email', currentUser.email)];
+                const whitelist = await databases.listDocuments(DB_ID, 'Whitelist', queries);
+                if (whitelist.total === 0) {
+                    showGate('🔒', 'Acceso Anticipado', 'V1zions.top está en Early Access. Solo usuarios invitados pueden acceder. Únete al Discord para solicitar acceso.', true);
+                    return;
+                }
+            } catch (e) {
+                showGate('🔒', 'Acceso Anticipado', 'Error verificando acceso. Intenta más tarde.', true);
+                return;
+            }
+        }
+
+        // Update last seen
+        await databases.updateDocument(DB_ID, 'Users', currentUser.$id, {
+            lastSeen: new Date().toISOString()
+        });
+
+        userIsVip = userData.vip || false;
+        
+        // Bug de sesión fantasma resuelto: asegurarnos de limpiar data local si es un usuario distinto al anterior
+        const lastUid = localStorage.getItem('v1_last_uid');
+        if (lastUid && lastUid !== currentUser.$id) {
+             localStorage.clear(); // Limpiamos todo rastro si entró otra cuenta
+        }
+        localStorage.setItem('v1_last_uid', currentUser.$id);
+
+        loadUI();
+
+    } catch (e) {
+        // No hay sesión
+        window.location.href = 'index.html';
     }
-
-    // Save/update user profile in Firestore
-    await db.collection('Users').doc(user.uid).set({
-        email:       user.email,
-        displayName: user.displayName || '',
-        photoURL:    user.photoURL    || '',
-        lastSeen:    firebase.firestore.FieldValue.serverTimestamp()
-    }, { merge: true });
-
-    // Check/initialize credits
-    if (!userDoc.exists || userData.credits === undefined) {
-        await db.collection('Users').doc(user.uid).set({
-            credits:    5.0,
-            lastRefill: firebase.firestore.FieldValue.serverTimestamp(),
-            vip:        false
-        }, { merge: true });
-    }
-
-    userIsVip = userData.vip || false;
-    loadUI();
 });
 
-function doLogout() {
-    auth.signOut().then(() => { window.location.href = 'index.html'; });
+async function doLogout() {
+    try {
+        await account.deleteSession('current');
+        localStorage.clear(); // Limpiamos datos locales por seguridad
+        window.location.href = 'index.html';
+    } catch (e) {
+        console.error("Error al cerrar sesión", e);
+    }
 }
 
 // ══════════════════════════════════════════
@@ -922,41 +942,40 @@ function loadUI() {
 }
 
 function setupUserProfile() {
-    const u = currentUser;
     const avatarEl = document.getElementById('user-avatar');
     const nameEl   = document.getElementById('user-display-name');
     const emailEl  = document.getElementById('user-email-display');
     const vipEl    = document.getElementById('vip-badge');
 
-    // Avatar
-    if (u.photoURL) {
-        avatarEl.innerHTML = `<img src="${u.photoURL}" alt="avatar">`;
-    } else {
-        const initials = (u.displayName || u.email || '?').charAt(0).toUpperCase();
-        avatarEl.textContent = initials;
-    }
+    const initials = (currentUser.name || currentUser.email || '?').charAt(0).toUpperCase();
+    avatarEl.textContent = initials;
 
-    // Name & email
-    nameEl.textContent  = u.displayName || u.email.split('@')[0];
-    emailEl.textContent = u.email;
+    nameEl.textContent  = currentUser.name || currentUser.email.split('@')[0];
+    emailEl.textContent = currentUser.email;
 
     if (userIsVip) vipEl.style.display = 'inline-block';
 }
 
 // ══════════════════════════════════════════
-//  CREDITS — FIRESTORE REAL-TIME
+//  CREDITS — APPWRITE REAL-TIME
 // ══════════════════════════════════════════
-function setupCreditsListener() {
+async function setupCreditsListener() {
+    // Carga inicial
+    const data = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
+    userCredits = typeof data.credits === 'number' ? data.credits : 0;
+    userIsVip   = data.vip || false;
+    updateCreditsDisplay();
+    document.getElementById('vip-badge').style.display = userIsVip ? 'inline-block' : 'none';
+
+    // Suscripción en tiempo real
     if (creditsUnsub) creditsUnsub();
-    creditsUnsub = db.collection('Users').doc(currentUser.uid)
-        .onSnapshot(snap => {
-            if (!snap.exists) return;
-            const data = snap.data();
-            userCredits = typeof data.credits === 'number' ? data.credits : 0;
-            userIsVip   = data.vip || false;
-            updateCreditsDisplay();
-            document.getElementById('vip-badge').style.display = userIsVip ? 'inline-block' : 'none';
-        });
+    creditsUnsub = client.subscribe(`databases.${DB_ID}.collections.Users.documents.${currentUser.$id}`, response => {
+        const doc = response.payload;
+        userCredits = typeof doc.credits === 'number' ? doc.credits : 0;
+        userIsVip   = doc.vip || false;
+        updateCreditsDisplay(true);
+        document.getElementById('vip-badge').style.display = userIsVip ? 'inline-block' : 'none';
+    });
 }
 
 function updateCreditsDisplay(animate = false) {
@@ -971,8 +990,11 @@ function updateCreditsDisplay(animate = false) {
 
 async function deductCredits(amount) {
     userCredits = Math.max(0, userCredits - amount);
-    await db.collection('Users').doc(currentUser.uid).update({
-        credits: firebase.firestore.FieldValue.increment(-amount)
+    // Leemos el valor actual y restamos (Appwrite no tiene increment nativo fácil en cliente)
+    const doc = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
+    const updatedCredits = Math.max(0, (doc.credits || 0) - amount);
+    await databases.updateDocument(DB_ID, 'Users', currentUser.$id, {
+        credits: updatedCredits
     });
 }
 
@@ -980,10 +1002,8 @@ async function deductCredits(amount) {
 //  DAILY REFILL TIMER
 // ══════════════════════════════════════════
 async function setupDailyRefill() {
-    const snap = await db.collection('Users').doc(currentUser.uid).get();
-    if (!snap.exists) return;
-    const data = snap.data();
-    const lastRefill = data.lastRefill ? data.lastRefill.toDate() : new Date(0);
+    const data = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
+    const lastRefill = data.lastRefill ? new Date(data.lastRefill) : new Date(0);
     const now = new Date();
     const msElapsed = now - lastRefill;
     const msRefill  = REFILL_HOURS * 3600 * 1000;
@@ -992,9 +1012,9 @@ async function setupDailyRefill() {
         // Trigger refill
         const maxC = userIsVip ? VIP_CREDITS : MAX_CREDITS;
         const newCredits = Math.min((data.credits || 0) + REFILL_AMOUNT, maxC);
-        await db.collection('Users').doc(currentUser.uid).update({
+        await databases.updateDocument(DB_ID, 'Users', currentUser.$id, {
             credits:    newCredits,
-            lastRefill: firebase.firestore.FieldValue.serverTimestamp()
+            lastRefill: new Date().toISOString()
         });
         updateRefillTimer(new Date());
     } else {
@@ -1035,7 +1055,7 @@ function flashCost(cost) {
 //  PROJECTS
 // ══════════════════════════════════════════
 function projectStorageKey() {
-    return 'v1_projects_' + currentUser.uid;
+    return 'v1_projects_' + currentUser.$id;
 }
 
 function loadProjects() {
@@ -1239,13 +1259,16 @@ async function enviar() {
     addMsg('ai', `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Generando código...</div>`, lid);
 
     try {
-        const ref = await db.collection('PeticionesRoblox').add({
-            mensaje: txt, estado: 'pendiente', uid: currentUser.uid,
-            esVip: userIsVip, timestamp: firebase.firestore.FieldValue.serverTimestamp()
+        const ref = await databases.createDocument(DB_ID, 'PeticionesRoblox', Appwrite.ID.unique(), {
+            mensaje: txt, 
+            estado: 'pendiente', 
+            uid: currentUser.$id,
+            esVip: userIsVip, 
+            timestamp: new Date().toISOString()
         });
 
-        const unsub = ref.onSnapshot(snap => {
-            const data = snap.data(); if (!data) return;
+        const unsub = client.subscribe(`databases.${DB_ID}.collections.PeticionesRoblox.documents.${ref.$id}`, response => {
+            const data = response.payload;
             const loadEl = document.getElementById(lid);
             if (data.estado === 'completado' || data.estado === 'inyectar') {
                 if (loadEl) loadEl.remove();
@@ -1256,10 +1279,15 @@ async function enviar() {
                 if (loadEl) loadEl.remove();
                 let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
                 html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
-                data.pasos.forEach(p => {
-                    html += `<button class="roadmap-step" onclick='window.lanzarPasoRoadmap(${JSON.stringify(p.titulo)},${JSON.stringify(p.descripcion)},${JSON.stringify(data.tituloSistema)})'>
-                        <strong>${p.titulo}</strong><span>${p.descripcion}</span></button>`;
-                });
+                try {
+                    const pasos = JSON.parse(data.pasos); // Aseguramos parseo si Appwrite lo guarda como string
+                    pasos.forEach(p => {
+                        html += `<button class="roadmap-step" onclick='window.lanzarPasoRoadmap(${JSON.stringify(p.titulo)},${JSON.stringify(p.descripcion)},${JSON.stringify(data.tituloSistema)})'>
+                            <strong>${p.titulo}</strong><span>${p.descripcion}</span></button>`;
+                    });
+                } catch(err) {
+                    console.error("Error parseando pasos", err);
+                }
                 html += `</div>`;
                 addMsg('ai', html); saveMsg('ai', 'Roadmap generado.'); unsub();
             } else if (data.estado === 'error') {
@@ -1270,7 +1298,7 @@ async function enviar() {
     } catch(e) {
         const loadEl = document.getElementById(lid);
         if (loadEl) loadEl.remove();
-        addMsg('ai', '❌ Error de conexión con Firebase.');
+        addMsg('ai', '❌ Error de conexión con Appwrite.');
     }
 }
 
@@ -1293,13 +1321,24 @@ window.lanzarPasoRoadmap = function(titulo, desc, sistema) {
 // ══════════════════════════════════════════
 //  STUDIO STATUS
 // ══════════════════════════════════════════
-function setupStudioStatus() {
-    db.collection('System').doc('Connection').onSnapshot(doc => {
-        const online = doc.exists && doc.data().status === 'online';
+async function setupStudioStatus() {
+    try {
+        const doc = await databases.getDocument(DB_ID, 'System', 'Connection');
+        const online = doc.status === 'online';
         document.getElementById('studio-status').classList.toggle('online', online);
         document.getElementById('status-text').textContent = online ? 'Studio Vinculado' : 'Esperando Studio...';
         isConnected = online;
-    });
+        
+        client.subscribe(`databases.${DB_ID}.collections.System.documents.Connection`, response => {
+            const data = response.payload;
+            const isOnline = data.status === 'online';
+            document.getElementById('studio-status').classList.toggle('online', isOnline);
+            document.getElementById('status-text').textContent = isOnline ? 'Studio Vinculado' : 'Esperando Studio...';
+            isConnected = isOnline;
+        });
+    } catch (e) {
+        // Documento no existe aún
+    }
 }
 
 // ══════════════════════════════════════════
@@ -1323,17 +1362,14 @@ document.getElementById('get-credits-btn').addEventListener('click', () => openM
 //  PAYPAL INTEGRATION (SEGURO)
 // ══════════════════════════════════════════
 function initPayPal() {
-    // Si el SDK no cargó (client-id no configurado), mostrar instrucciones
     if (typeof paypal === 'undefined') {
         ['starter-paypal','developer-paypal','pro-paypal'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:6px 0;text-align:center">Configura tu PayPal Client ID para habilitar pagos.</div>';
         });
-        // Starter: free claim button siempre funciona
         setupStarterClaim();
         return;
     }
-
     setupStarterClaim();
     setupPayPalButton('developer-paypal', 4.99, 50, false);
     setupPayPalButton('pro-paypal', 14.99, 200, true);
@@ -1347,9 +1383,8 @@ function setupStarterClaim() {
     btn.onmouseenter = () => btn.style.background = 'rgba(34,197,94,0.18)';
     btn.onmouseleave = () => btn.style.background = 'var(--green-dim)';
     btn.onclick = async () => {
-        // Check daily claim
-        const snap = await db.collection('Users').doc(currentUser.uid).get();
-        const lastClaim = snap.data().lastFreeClaim ? snap.data().lastFreeClaim.toDate() : new Date(0);
+        const snap = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
+        const lastClaim = snap.lastFreeClaim ? new Date(snap.lastFreeClaim) : new Date(0);
         const elapsed = new Date() - lastClaim;
         if (elapsed < 24 * 3600 * 1000) {
             const h = Math.ceil((24 * 3600 * 1000 - elapsed) / 3600000);
@@ -1357,10 +1392,10 @@ function setupStarterClaim() {
             return;
         }
         const maxC = userIsVip ? VIP_CREDITS : MAX_CREDITS;
-        const newC  = Math.min(userCredits + 5, maxC);
-        await db.collection('Users').doc(currentUser.uid).update({
+        const newC  = Math.min((snap.credits || 0) + 5, maxC);
+        await databases.updateDocument(DB_ID, 'Users', currentUser.$id, {
             credits:       newC,
-            lastFreeClaim: firebase.firestore.FieldValue.serverTimestamp()
+            lastFreeClaim: new Date().toISOString()
         });
         btn.textContent = '✓ ¡5 créditos añadidos!';
         setTimeout(() => { btn.textContent = '🎁 Reclamar 5 créditos gratis'; }, 3000);
@@ -1385,33 +1420,35 @@ function setupPayPalButton(containerId, price, credits, isVip) {
             const order = await actions.order.capture();
             const orderID = order.id;
 
-            // Prevent duplicate: check if orderID already processed
-            const dupCheck = await db.collection('ProcessedPayments').doc(orderID).get();
-            if (dupCheck.exists) {
+            try {
+                // Prevent duplicate
+                await databases.getDocument(DB_ID, 'ProcessedPayments', orderID);
                 alert('⚠️ Este pago ya fue procesado anteriormente.');
                 return;
+            } catch (e) {
+                // Si da error, significa que NO existe, lo cual es correcto, procedemos.
             }
 
             // Record payment
-            await db.collection('ProcessedPayments').doc(orderID).set({
-                uid:       currentUser.uid,
+            await databases.createDocument(DB_ID, 'ProcessedPayments', orderID, {
+                uid:       currentUser.$id,
                 email:     currentUser.email,
                 credits:   credits,
                 price:     price,
                 isVip:     isVip,
-                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+                timestamp: new Date().toISOString()
             });
 
             // Add credits
-            const snap    = await db.collection('Users').doc(currentUser.uid).get();
-            const current = snap.data().credits || 0;
+            const snap    = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
+            const current = snap.credits || 0;
             const maxC    = isVip ? VIP_CREDITS : MAX_CREDITS;
             const newC    = Math.min(current + credits, isVip ? 999 : maxC);
 
             const updateData = { credits: newC };
             if (isVip) updateData.vip = true;
 
-            await db.collection('Users').doc(currentUser.uid).update(updateData);
+            await databases.updateDocument(DB_ID, 'Users', currentUser.$id, updateData);
 
             closeModal('credits');
             alert(`✅ ¡Pago confirmado! +${credits} V-Credits añadidos a tu cuenta.`);
@@ -1447,11 +1484,13 @@ async function adminGiveCredits() {
     if (!email || isNaN(amount) || amount <= 0) return showAdminMsg('admin-credits-msg', 'Datos inválidos.', false);
 
     try {
-        const snap = await db.collection('Users').where('email', '==', email).get();
-        if (snap.empty) return showAdminMsg('admin-credits-msg', 'Usuario no encontrado.', false);
-        const uid = snap.docs[0].id;
-        await db.collection('Users').doc(uid).update({
-            credits: firebase.firestore.FieldValue.increment(amount)
+        const queries = [Appwrite.Query.equal('email', email)];
+        const snap = await databases.listDocuments(DB_ID, 'Users', queries);
+        if (snap.total === 0) return showAdminMsg('admin-credits-msg', 'Usuario no encontrado.', false);
+        const uid = snap.documents[0].$id;
+        const actual = snap.documents[0].credits || 0;
+        await databases.updateDocument(DB_ID, 'Users', uid, {
+            credits: actual + amount
         });
         showAdminMsg('admin-credits-msg', `✓ +${amount} créditos añadidos a ${email}`, true);
     } catch(e) {
@@ -1463,7 +1502,11 @@ async function adminAddWhitelist() {
     const email = document.getElementById('admin-whitelist-email').value.trim().toLowerCase();
     if (!email) return showAdminMsg('admin-whitelist-msg', 'Introduce un correo.', false);
     try {
-        await db.collection('Whitelist').doc(email).set({ added: firebase.firestore.FieldValue.serverTimestamp() });
+        // En Appwrite usaremos el ID generado automáticamente para la whitelist, guardando el email
+        await databases.createDocument(DB_ID, 'Whitelist', Appwrite.ID.unique(), { 
+            email: email, 
+            added: new Date().toISOString() 
+        });
         showAdminMsg('admin-whitelist-msg', `✓ ${email} añadido a Early Access`, true);
         document.getElementById('admin-whitelist-email').value = '';
     } catch(e) {
@@ -1475,8 +1518,14 @@ async function adminRemoveWhitelist() {
     const email = document.getElementById('admin-remove-email').value.trim().toLowerCase();
     if (!email) return showAdminMsg('admin-remove-msg', 'Introduce un correo.', false);
     try {
-        await db.collection('Whitelist').doc(email).delete();
-        showAdminMsg('admin-remove-msg', `✓ Acceso revocado a ${email}`, true);
+        const queries = [Appwrite.Query.equal('email', email)];
+        const snap = await databases.listDocuments(DB_ID, 'Whitelist', queries);
+        if (snap.total > 0) {
+            await databases.deleteDocument(DB_ID, 'Whitelist', snap.documents[0].$id);
+            showAdminMsg('admin-remove-msg', `✓ Acceso revocado a ${email}`, true);
+        } else {
+            showAdminMsg('admin-remove-msg', 'No estaba en la lista.', false);
+        }
     } catch(e) {
         showAdminMsg('admin-remove-msg', 'Error: ' + e.message, false);
     }
@@ -1486,9 +1535,10 @@ async function adminBanUser() {
     const email = document.getElementById('admin-ban-email').value.trim();
     if (!email) return showAdminMsg('admin-ban-msg', 'Introduce un correo.', false);
     try {
-        const snap = await db.collection('Users').where('email', '==', email).get();
-        if (snap.empty) return showAdminMsg('admin-ban-msg', 'Usuario no encontrado.', false);
-        await db.collection('Users').doc(snap.docs[0].id).update({ banned: true });
+        const queries = [Appwrite.Query.equal('email', email)];
+        const snap = await databases.listDocuments(DB_ID, 'Users', queries);
+        if (snap.total === 0) return showAdminMsg('admin-ban-msg', 'Usuario no encontrado.', false);
+        await databases.updateDocument(DB_ID, 'Users', snap.documents[0].$id, { banned: true });
         showAdminMsg('admin-ban-msg', `✓ ${email} ha sido baneado.`, true);
     } catch(e) {
         showAdminMsg('admin-ban-msg', 'Error: ' + e.message, false);
@@ -1499,14 +1549,13 @@ async function adminUnbanUser() {
     const email = document.getElementById('admin-unban-email').value.trim();
     if (!email) return showAdminMsg('admin-unban-msg', 'Introduce un correo.', false);
     try {
-        const snap = await db.collection('Users').where('email', '==', email).get();
-        if (snap.empty) return showAdminMsg('admin-unban-msg', 'Usuario no encontrado.', false);
-        await db.collection('Users').doc(snap.docs[0].id).update({ banned: false });
+        const queries = [Appwrite.Query.equal('email', email)];
+        const snap = await databases.listDocuments(DB_ID, 'Users', queries);
+        if (snap.total === 0) return showAdminMsg('admin-unban-msg', 'Usuario no encontrado.', false);
+        await databases.updateDocument(DB_ID, 'Users', snap.documents[0].$id, { banned: false });
         showAdminMsg('admin-unban-msg', `✓ ${email} ha sido desbaneado.`, true);
     } catch(e) {
         showAdminMsg('admin-unban-msg', 'Error: ' + e.message, false);
     }
 }
 </script>
-</body>
-</html>
