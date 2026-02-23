@@ -898,8 +898,21 @@ window.addEventListener('load', async () => {
             }
         }
 
-        // Si todo está bien, cargamos la interfaz
+       
+        await databases.updateDocument(DB_ID, 'Users', currentUser.$id, {
+            lastSeen: new Date().toISOString()
+        });
+
+       
         userIsVip = userData.vip || false;
+        
+       
+        const lastUid = localStorage.getItem('v1_last_uid');
+        if (lastUid && lastUid !== currentUser.$id) {
+             localStorage.clear(); 
+        }
+        localStorage.setItem('v1_last_uid', currentUser.$id);
+
         loadUI();
 
     } catch (globalError) {
