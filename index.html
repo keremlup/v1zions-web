@@ -11,9 +11,9 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+<script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+
 <style>
 :root{
   --red:#e63030; --red-l:#ff4545; --red-glow:rgba(230,48,48,.38);
@@ -577,25 +577,27 @@ footer{background:var(--bg1);border-top:1px solid var(--bdr);padding:40px 6% 30p
 </div>
 
 <script>
-// ── FIREBASE ──────────────────────────────────────────────────
-const firebaseConfig = {
-  apiKey:            "AIzaSyDfEwSZtRYDsbEzDI_KGBEEPtIttOgfV8o",
-  authDomain:        "v1zions-gg-b5181.firebaseapp.com",
-  projectId:         "v1zions-gg-b5181",
-  storageBucket:     "v1zions-gg-b5181.firebasestorage.app",
-  messagingSenderId: "886732747989",
-  appId:             "1:886732747989:web:1e00ec9a4a3ff5b3711e5c"
-};
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db   = firebase.firestore();
+// ── APPWRITE ──────────────────────────────────────────────────
+const client = new Appwrite.Client()
+  .setEndpoint('https://nyc.cloud.appwrite.io/v1')
+  .setProject('699bb6ae001951375c5d');
+
+const account = new Appwrite.Account(client);
+const databases = new Appwrite.Databases(client);
 
 const APP_URL = "./v1zions_10.html";
 
-// ── LOADER ────────────────────────────────────────────────────
-window.addEventListener("load", () =>
-  setTimeout(() => document.getElementById("page-loader").classList.add("hidden"), 500)
-);
+// ── LOADER & VERIFICADOR DE SESIÓN ────────────────────────────
+window.addEventListener("load", async () => {
+  setTimeout(() => document.getElementById("page-loader").classList.add("hidden"), 500);
+  // Si ya tiene sesión iniciada, lo mandamos de una vez a la otra página
+  try {
+    await account.get();
+    window.location.href = APP_URL;
+  } catch (e) {
+    // Si da error, significa que no ha iniciado sesión, se queda aquí
+  }
+});
 
 // ── SCROLL HELPER ─────────────────────────────────────────────
 function scrollTo(id) {
@@ -660,30 +662,24 @@ function setLoading(id, on, label) {
 }
 
 // ── FRIENDLY ERROR MESSAGES ───────────────────────────────────
-function friendlyError(code) {
-  const map = {
-    "auth/user-not-found":        "No account found with that email.",
-    "auth/wrong-password":        "Incorrect password. Please try again.",
-    "auth/invalid-credential":    "Invalid email or password.",
-    "auth/invalid-email":         "Please enter a valid email address.",
-    "auth/too-many-requests":     "Too many attempts. Please wait a moment and try again.",
-    "auth/email-already-in-use":  "An account with this email already exists. Try signing in.",
-    "auth/weak-password":         "Password must be at least 6 characters.",
-    "auth/network-request-failed":"Network error. Check your connection.",
-    "auth/popup-closed-by-user":  "Sign-in popup was closed. Please try again.",
-    "auth/popup-blocked":         "Popup blocked by browser. Allow popups for this site.",
-  };
-  return map[code] || "Something went wrong. Please try again.";
+function friendlyError(error) {
+  if (error && error.message) {
+    if (error.message.includes("Invalid credentials")) return "Invalid email or password.";
+    if (error.message.includes("already exists")) return "An account with this email already exists.";
+    if (error.message.includes("Password must be")) return "Password must be at least 8 characters.";
+    return error.message;
+  }
+  return "Something went wrong. Please try again.";
 }
 
 // ── SAVE ROBLOX USERNAME ──────────────────────────────────────
 async function saveRobloxUsername(uid, username) {
   if (!username || !username.trim()) return;
   try {
-    await db.collection("Users").doc(uid).set(
-      { robloxUsername: username.trim(), updatedAt: firebase.firestore.FieldValue.serverTimestamp() },
-      { merge: true }
-    );
+    // Si más adelante creas una tabla 'users_data' en la base 'V1zions', aquí se guarda
+    await databases.createDocument("V1zions", "users_data", uid, {
+      robloxUsername: username.trim()
+    });
   } catch (e) { /* non-critical */ }
 }
 
@@ -691,16 +687,16 @@ async function saveRobloxUsername(uid, username) {
 async function loginEmail() {
   const email  = document.getElementById("login-email").value.trim();
   const pass   = document.getElementById("login-pass").value;
-  const roblox = document.getElementById("login-roblox").value.trim();
+  
   if (!email || !pass) return showMsg("login-msg", "Please enter your email and password.", "error");
   setLoading("login-btn", true, "Sign In →");
+  
   try {
-    const cred = await auth.signInWithEmailAndPassword(email, pass);
-    await saveRobloxUsername(cred.user.uid, roblox);
+    await account.createEmailPasswordSession(email, pass);
     showMsg("login-msg", "✓ Welcome back! Redirecting...", "success");
     setTimeout(() => window.location.href = APP_URL, 1100);
   } catch (e) {
-    showMsg("login-msg", friendlyError(e.code), "error");
+    showMsg("login-msg", friendlyError(e), "error");
     setLoading("login-btn", false, "Sign In →");
   }
 }
@@ -710,33 +706,45 @@ async function registerEmail() {
   const email  = document.getElementById("reg-email").value.trim();
   const pass   = document.getElementById("reg-pass").value;
   const roblox = document.getElementById("reg-roblox").value.trim();
+  
   if (!email || !pass) return showMsg("reg-msg", "Please enter your email and password.", "error");
-  if (pass.length < 6) return showMsg("reg-msg", "Password must be at least 6 characters.", "error");
+  // Appwrite pide 8 caracteres mínimo obligatorio
+  if (pass.length < 8) return showMsg("reg-msg", "Password must be at least 8 characters.", "error");
+  
   setLoading("reg-btn", true, "Create Account →");
   try {
-    const cred = await auth.createUserWithEmailAndPassword(email, pass);
-    await saveRobloxUsername(cred.user.uid, roblox);
+    // Appwrite guarda el usuario de Roblox directo en la cuenta
+    const user = await account.create(Appwrite.ID.unique(), email, pass, roblox);
+    
+    // Inicia sesión automáticamente después de registrar
+    await account.createEmailPasswordSession(email, pass);
+    
+    // Guarda el nombre en la base de datos de forma silenciosa
+    await saveRobloxUsername(user.$id, roblox);
+    
     showMsg("reg-msg", "✓ Account created! Redirecting...", "success");
     setTimeout(() => window.location.href = APP_URL, 1100);
   } catch (e) {
-    showMsg("reg-msg", friendlyError(e.code), "error");
+    showMsg("reg-msg", friendlyError(e), "error");
     setLoading("reg-btn", false, "Create Account →");
   }
 }
 
 // ── GOOGLE LOGIN ──────────────────────────────────────────────
 async function loginGoogle() {
-  const provider = new firebase.auth.GoogleAuthProvider();
-  provider.setCustomParameters({ prompt: "select_account" });
   try {
-    const cred = await auth.signInWithPopup(provider);
-    showMsg("login-msg", "✓ Signed in with Google! Redirecting...", "success");
-    showMsg("reg-msg",   "✓ Signed in with Google! Redirecting...", "success");
-    setTimeout(() => window.location.href = APP_URL, 1100);
+    showMsg("login-msg", "Redirecting to Google...", "success");
+    showMsg("reg-msg",   "Redirecting to Google...", "success");
+    
+    // Appwrite recarga la página, no usa popups que se bloquean
+    let successUrl = window.location.origin + window.location.pathname.replace('index.html', '') + APP_URL.replace('./', '');
+    let failureUrl = window.location.origin + window.location.pathname;
+
+    account.createOAuth2Session('google', successUrl, failureUrl);
   } catch (e) {
     const msgId = document.getElementById("form-login").style.display !== "none"
       ? "login-msg" : "reg-msg";
-    showMsg(msgId, friendlyError(e.code), "error");
+    showMsg(msgId, friendlyError(e), "error");
   }
 }
 
@@ -746,6 +754,3 @@ document.addEventListener("keydown", e => {
   const loginVisible = document.getElementById("form-login").style.display !== "none";
   loginVisible ? loginEmail() : registerEmail();
 });
-</script>
-</body>
-</html>
