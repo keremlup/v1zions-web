@@ -870,12 +870,12 @@ window.addEventListener('load', async () => {
                 credits: 5.0,
                 lastRefill: new Date().toISOString(),
                 vip: false,
-                banned: false
+                isBanned: false
             });
         }
 
         // 3. Verificar Ban
-        if (userData.banned) {
+        if (userData.isBanned) {
             showGate('🔨', 'Cuenta suspendida', 'Tu cuenta ha sido suspendida.');
             return;
         }
@@ -1557,7 +1557,7 @@ async function adminBanUser() {
         const queries = [Appwrite.Query.equal('email', email)];
         const snap = await databases.listDocuments(DB_ID, 'Users', queries);
         if (snap.total === 0) return showAdminMsg('admin-ban-msg', 'Usuario no encontrado.', false);
-        await databases.updateDocument(DB_ID, 'Users', snap.documents[0].$id, { banned: true });
+       await databases.updateDocument(DB_ID, 'Users', snap.documents[0].$id, { isBanned: true });
         showAdminMsg('admin-ban-msg', `✓ ${email} ha sido baneado.`, true);
     } catch(e) {
         showAdminMsg('admin-ban-msg', 'Error: ' + e.message, false);
@@ -1571,7 +1571,7 @@ async function adminUnbanUser() {
         const queries = [Appwrite.Query.equal('email', email)];
         const snap = await databases.listDocuments(DB_ID, 'Users', queries);
         if (snap.total === 0) return showAdminMsg('admin-unban-msg', 'Usuario no encontrado.', false);
-        await databases.updateDocument(DB_ID, 'Users', snap.documents[0].$id, { banned: false });
+        await databases.updateDocument(DB_ID, 'Users', snap.documents[0].$id, { isBanned: false });
         showAdminMsg('admin-unban-msg', `✓ ${email} ha sido desbaneado.`, true);
     } catch(e) {
         showAdminMsg('admin-unban-msg', 'Error: ' + e.message, false);
