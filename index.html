@@ -576,26 +576,32 @@ footer{background:var(--bg1);border-top:1px solid var(--bdr);padding:40px 6% 30p
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
+
 <script>
-// ── APPWRITE ──────────────────────────────────────────────────
+// ── 1. QUITAR EL LOADER SÍ O SÍ ───────────────────────────────
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    const loader = document.getElementById("page-loader");
+    if (loader) loader.classList.add("hidden");
+  }, 500);
+});
+
+// ── 2. APPWRITE CONFIG ────────────────────────────────────────
 const client = new Appwrite.Client()
   .setEndpoint('https://nyc.cloud.appwrite.io/v1')
   .setProject('699bb6ae001951375c5d');
 
 const account = new Appwrite.Account(client);
-const databases = new Appwrite.Databases(client);
-
 const APP_URL = "./v1zions_10.html";
 
-// ── LOADER & VERIFICADOR DE SESIÓN ────────────────────────────
+// ── 3. VERIFICAR SESIÓN EN SEGUNDO PLANO ──────────────────────
 window.addEventListener("load", async () => {
-  setTimeout(() => document.getElementById("page-loader").classList.add("hidden"), 500);
-  // Si ya tiene sesión iniciada, lo mandamos de una vez a la otra página
   try {
     await account.get();
     window.location.href = APP_URL;
   } catch (e) {
-    // Si da error, significa que no ha iniciado sesión, se queda aquí
+    // No hay sesión, no hacemos nada, se queda en la pantalla de login
   }
 });
 
@@ -640,11 +646,12 @@ function switchTab(tab) {
 function clearMsgs() {
   ["login-msg", "reg-msg"].forEach(id => {
     const el = document.getElementById(id);
-    el.className = "auth-msg"; el.textContent = ""; el.style.display = "none";
+    if(el) { el.className = "auth-msg"; el.textContent = ""; el.style.display = "none"; }
   });
 }
 function showMsg(id, text, type) {
   const el = document.getElementById(id);
+  if(!el) return;
   el.textContent = text; el.className = "auth-msg " + type; el.style.display = "block";
 }
 
@@ -655,32 +662,21 @@ document.head.insertAdjacentHTML("beforeend",
 
 function setLoading(id, on, label) {
   const btn = document.getElementById(id);
+  if(!btn) return;
   btn.disabled = on;
   btn.innerHTML = on
     ? "<div style='width:16px;height:16px;border:2px solid rgba(255,255,255,.25);border-top-color:white;border-radius:50%;animation:spin .7s linear infinite'></div>"
     : label;
 }
 
-// ── FRIENDLY ERROR MESSAGES ───────────────────────────────────
 function friendlyError(error) {
   if (error && error.message) {
-    if (error.message.includes("Invalid credentials")) return "Invalid email or password.";
-    if (error.message.includes("already exists")) return "An account with this email already exists.";
-    if (error.message.includes("Password must be")) return "Password must be at least 8 characters.";
+    if (error.message.includes("Invalid credentials")) return "Correo o contraseña incorrectos.";
+    if (error.message.includes("already exists")) return "Ya existe una cuenta con este correo.";
+    if (error.message.includes("Password must be")) return "La contraseña debe tener al menos 8 caracteres.";
     return error.message;
   }
-  return "Something went wrong. Please try again.";
-}
-
-// ── SAVE ROBLOX USERNAME ──────────────────────────────────────
-async function saveRobloxUsername(uid, username) {
-  if (!username || !username.trim()) return;
-  try {
-    // Si más adelante creas una tabla 'users_data' en la base 'V1zions', aquí se guarda
-    await databases.createDocument("V1zions", "users_data", uid, {
-      robloxUsername: username.trim()
-    });
-  } catch (e) { /* non-critical */ }
+  return "Algo salió mal. Intenta de nuevo.";
 }
 
 // ── EMAIL LOGIN ───────────────────────────────────────────────
@@ -688,12 +684,12 @@ async function loginEmail() {
   const email  = document.getElementById("login-email").value.trim();
   const pass   = document.getElementById("login-pass").value;
   
-  if (!email || !pass) return showMsg("login-msg", "Please enter your email and password.", "error");
-  setLoading("login-btn", true, "Sign In →");
+  if (!email || !pass) return showMsg("login-msg", "Por favor ingresa tu correo y contraseña.", "error");
   
+  setLoading("login-btn", true, "Sign In →");
   try {
     await account.createEmailPasswordSession(email, pass);
-    showMsg("login-msg", "✓ Welcome back! Redirecting...", "success");
+    showMsg("login-msg", "✓ ¡Bienvenido! Redirigiendo...", "success");
     setTimeout(() => window.location.href = APP_URL, 1100);
   } catch (e) {
     showMsg("login-msg", friendlyError(e), "error");
@@ -707,24 +703,18 @@ async function registerEmail() {
   const pass   = document.getElementById("reg-pass").value;
   const roblox = document.getElementById("reg-roblox").value.trim();
   
-  if (!email || !pass) return showMsg("reg-msg", "Please enter your email and password.", "error");
-  // Appwrite pide 8 caracteres mínimo obligatorio
-  if (pass.length < 8) return showMsg("reg-msg", "Password must be at least 8 characters.", "error");
+  if (!email || !pass) return showMsg("reg-msg", "Por favor ingresa tu correo y contraseña.", "error");
+  if (pass.length < 8) return showMsg("reg-msg", "La contraseña debe tener al menos 8 caracteres.", "error"); 
   
   setLoading("reg-btn", true, "Create Account →");
   try {
-    // Appwrite guarda el usuario de Roblox directo en la cuenta
-    const user = await account.create(Appwrite.ID.unique(), email, pass, roblox);
-    
-    // Inicia sesión automáticamente después de registrar
+    await account.create(Appwrite.ID.unique(), email, pass, roblox || "Roblox User");
     await account.createEmailPasswordSession(email, pass);
     
-    // Guarda el nombre en la base de datos de forma silenciosa
-    await saveRobloxUsername(user.$id, roblox);
-    
-    showMsg("reg-msg", "✓ Account created! Redirecting...", "success");
+    showMsg("reg-msg", "✓ ¡Cuenta creada! Redirigiendo...", "success");
     setTimeout(() => window.location.href = APP_URL, 1100);
   } catch (e) {
+    console.error("Error en registro:", e);
     showMsg("reg-msg", friendlyError(e), "error");
     setLoading("reg-btn", false, "Create Account →");
   }
@@ -733,17 +723,15 @@ async function registerEmail() {
 // ── GOOGLE LOGIN ──────────────────────────────────────────────
 async function loginGoogle() {
   try {
-    showMsg("login-msg", "Redirecting to Google...", "success");
-    showMsg("reg-msg",   "Redirecting to Google...", "success");
+    showMsg("login-msg", "Redirigiendo a Google...", "success");
+    showMsg("reg-msg",   "Redirigiendo a Google...", "success");
     
-    // Appwrite recarga la página, no usa popups que se bloquean
     let successUrl = window.location.origin + window.location.pathname.replace('index.html', '') + APP_URL.replace('./', '');
     let failureUrl = window.location.origin + window.location.pathname;
 
     account.createOAuth2Session('google', successUrl, failureUrl);
   } catch (e) {
-    const msgId = document.getElementById("form-login").style.display !== "none"
-      ? "login-msg" : "reg-msg";
+    const msgId = document.getElementById("form-login").style.display !== "none" ? "login-msg" : "reg-msg";
     showMsg(msgId, friendlyError(e), "error");
   }
 }
@@ -754,3 +742,4 @@ document.addEventListener("keydown", e => {
   const loginVisible = document.getElementById("form-login").style.display !== "none";
   loginVisible ? loginEmail() : registerEmail();
 });
+</script>
