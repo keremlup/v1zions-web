@@ -1401,14 +1401,23 @@ function calcularCosto(txt) {
     return Math.min(1.0, c);
 }
 
+// ══════════════════════════════════════════
+//  SEND / ENVIAR  [v25.2]
+//  CAMBIO: cobro de créditos movido al éxito.
+//  Al inicio solo se verifica saldo.
+//  El descuento real ocurre dentro de
+//  escucharDocumento, ÚNICAMENTE cuando
+//  el estado llega a 'inyectar' o 'completado'.
+//  Si hay error o roadmap_pendiente → sin cobro.
+// ══════════════════════════════════════════
 async function enviar() {
     const txt = ta.value.trim(); if (!txt) return;
     if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
     const costo = calcularCosto(txt);
+
+    // ── Solo verificación de saldo — NO cobrar todavía ──
     if (userCredits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${userCredits.toFixed(1)}.`);
 
-    await deductCredits(costo);
-    flashCost(costo);
     addMsg('user', txt);
     saveMsg('user', txt);
     ta.value = ''; ta.style.height = 'auto';
@@ -1422,8 +1431,10 @@ async function enviar() {
     let ref;
     try {
         ref = await databases.createDocument(DB_ID, 'PeticionesRoblox', Appwrite.ID.unique(), {
-            mensaje: txt, estado: 'pendiente',
-            uid: currentUser.$id, esVip: userIsVip,
+            mensaje:   txt,
+            estado:    'pendiente',
+            uid:       currentUser.$id,
+            esVip:     userIsVip,
             timestamp: new Date().toISOString()
         });
     } catch(e) {
@@ -1433,13 +1444,13 @@ async function enviar() {
         return;
     }
 
-    // [FIX v25.1] Usar escucharDocumento en vez de subscribe directo
-    const stop = escucharDocumento(ref.$id, lid, (data) => {
+    // [v25.2] costo capturado en closure — se usará al éxito
+    const stop = escucharDocumento(ref.$id, lid, async (data) => {
         const loadEl = document.getElementById(lid);
 
         // ── Plan listo → mostrar interfaz de aprobación ──
         if (data.estado === 'esperando_aprobacion') {
-            stop(); // dejar de escuchar aquí — aprobarPlan crea su propio listener
+            stop(); // aprobarPlan crea su propio listener
             if (!data.planData) {
                 if (loadEl) loadEl.remove();
                 addMsg('ai', '❌ El plan llegó vacío. Intenta de nuevo.');
@@ -1449,28 +1460,32 @@ async function enviar() {
                 const plan = JSON.parse(data.planData);
                 renderizarPlan(plan, ref.$id, lid);
             } catch(parseErr) {
-                console.error('[v25.1] Error parseando planData:', parseErr, data.planData);
+                console.error('[v25.2] Error parseando planData:', parseErr);
                 if (loadEl) loadEl.remove();
                 addMsg('ai', '❌ Error al leer el plan generado. Intenta de nuevo.');
             }
             return;
         }
 
-        // ── Código listo ──
+        // ── Código listo → cobrar AQUÍ, solo en éxito real ──
         if (data.estado === 'inyectar' || data.estado === 'completado') {
             stop();
             if (loadEl) loadEl.remove();
+            await deductCredits(costo);   // [v25.2] cobro real al confirmar éxito
+            flashCost(costo);
             const resumen = data.resultado || 'Scripts inyectados correctamente.';
             const m = `<strong>Sistema inyectado ✓</strong><br><span class="sys-msg">${resumen.replace(/\n/g,'<br>')}</span>`;
             addMsg('ai', m); saveMsg('ai', m);
             return;
         }
 
-        // ── Roadmap ──
+        // ── Roadmap → sistema muy grande, NO cobrar nada ──
         if (data.estado === 'roadmap_pendiente') {
             stop();
             if (loadEl) loadEl.remove();
-            let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
+            // No se cobra — el usuario aún no recibió código
+            let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>`;
+            html += `<span style="font-size:12px;color:var(--text-2);">Este sistema es muy grande para generarse de golpe. Elige una fase para empezar:</span><br><br>`;
             html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
             try {
                 const pasos = JSON.parse(data.pasos);
@@ -1485,7 +1500,7 @@ async function enviar() {
             return;
         }
 
-        // ── Error ──
+        // ── Error → no cobrar nada ──
         if (data.estado === 'error') {
             stop();
             if (loadEl) loadEl.remove();
@@ -1505,14 +1520,14 @@ document.getElementById('file-upload').addEventListener('change', e => {
 
 function setPrompt(txt) { ta.value = txt; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; ta.focus(); }
 
+// [v25.2] lanzarPasoRoadmap: solo pega el texto en el textarea.
+// El usuario debe presionar Enter manualmente para enviar.
+// Se eliminó el enviar() automático que causaba envíos sin intención.
 window.lanzarPasoRoadmap = function(titulo, desc, sistema) {
     setPrompt(`Del sistema "${sistema}", genera el código completo para:\n**${titulo}**\nDetalles: ${desc}\n\nGenera ÚNICAMENTE los scripts de esta parte.`);
-    enviar();
+    // ← enviar() eliminado intencionalmente. El usuario presiona Enter.
 };
 
-// ══════════════════════════════════════════
-//  STUDIO STATUS
-// ══════════════════════════════════════════
 async function setupStudioStatus() {
     // ── El subscribe se activa SIEMPRE, antes que cualquier await.
     //    Así la página escucha cambios en tiempo real sin importar
