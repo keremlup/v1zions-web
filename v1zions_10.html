@@ -8,6 +8,8 @@
 
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
 
+
+
     <style>
         :root {
             --red:        #e63030;
@@ -479,7 +481,7 @@
         .modal-close:hover { background: rgba(255,255,255,0.06); color: var(--text); }
         .modal-sub { font-size: 13px; color: var(--text-2); margin-bottom: 20px; }
 
-        /* Plans (credits modal) */
+        /* Plans */
         .plans { display: flex; flex-direction: column; gap: 10px; }
         .plan-card {
             background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px;
@@ -498,6 +500,7 @@
         .plan-credits { font-size: 20px; font-weight: 800; color: var(--red); line-height: 1; }
         .plan-price { font-size: 11px; color: var(--text-3); margin-top: 2px; }
         .plan-paypal-container { margin-top: 10px; min-height: 44px; }
+
         .modal-note { margin-top: 16px; font-size: 11px; color: var(--text-3); text-align: center; line-height: 1.5; }
 
         /* ─── ADMIN PANEL ─── */
@@ -537,177 +540,6 @@
         .admin-msg.ok { background: var(--green-dim); border: 1px solid rgba(34,197,94,0.22); color: var(--green); display: block; }
         .admin-msg.err { background: var(--red-dim); border: 1px solid var(--red-border); color: var(--red); display: block; }
 
-        /* ══════════════════════════════════════════════════════
-           ─── PLAN DE CAMBIOS — SISTEMA DE APROBACIÓN [v25] ───
-           Inspirado en Cursor / GitHub Copilot
-        ══════════════════════════════════════════════════════ */
-
-        /* Contenedor principal del plan */
-        .plan-box {
-            background: var(--bg-2);
-            border: 1px solid rgba(34,197,94,0.22);
-            border-radius: 14px;
-            padding: 16px 18px 14px;
-            margin-top: 4px;
-            position: relative;
-            overflow: hidden;
-            animation: fadeUp .3s ease-out;
-        }
-        /* Línea decorativa verde arriba */
-        .plan-box::before {
-            content: '';
-            position: absolute; top: 0; left: 0; right: 0; height: 2px;
-            background: linear-gradient(90deg, transparent, var(--green), transparent);
-        }
-
-        /* Header del plan */
-        .plan-box-header {
-            display: flex; align-items: center; gap: 9px; margin-bottom: 4px;
-        }
-        .plan-box-icon {
-            width: 22px; height: 22px;
-            background: var(--green-dim); border: 1px solid rgba(34,197,94,0.3);
-            border-radius: 6px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; flex-shrink: 0;
-        }
-        .plan-box-title {
-            font-size: 13px; font-weight: 800; color: var(--text); letter-spacing: -0.2px;
-        }
-        .plan-box-subtitle {
-            font-size: 11.5px; color: var(--text-3); margin-bottom: 14px; margin-top: 2px;
-            font-weight: 500;
-        }
-
-        /* Separador "What has changed:" */
-        .plan-changes-label {
-            font-size: 10px; font-weight: 700; color: var(--text-3);
-            text-transform: uppercase; letter-spacing: 1.4px;
-            margin-bottom: 10px;
-            display: flex; align-items: center; gap: 8px;
-        }
-        .plan-changes-label::after {
-            content: ''; flex: 1; height: 1px; background: var(--border);
-        }
-
-        /* Lista de archivos del plan */
-        .plan-files-list {
-            display: flex; flex-direction: column; gap: 7px;
-            margin-bottom: 16px;
-        }
-
-        /* Cada fila de archivo */
-        .plan-file-item {
-            display: flex; align-items: flex-start; gap: 10px;
-            padding: 9px 12px;
-            background: rgba(255,255,255,0.025);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            transition: border-color .15s;
-        }
-        .plan-file-item:hover { border-color: rgba(34,197,94,0.2); }
-
-        /* Círculo de acción (verde = crear, dorado = modificar) */
-        .plan-file-dot {
-            width: 18px; height: 18px;
-            border-radius: 50%;
-            flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 9px; font-weight: 800;
-            margin-top: 1px;
-        }
-        .plan-file-dot.crear {
-            background: rgba(34,197,94,0.18);
-            border: 1.5px solid var(--green);
-            color: var(--green);
-        }
-        .plan-file-dot.modificar {
-            background: rgba(240,180,41,0.15);
-            border: 1.5px solid var(--gold);
-            color: var(--gold);
-        }
-
-        /* Info del archivo */
-        .plan-file-info { flex: 1; min-width: 0; }
-        .plan-file-ruta {
-            font-size: 12px; font-weight: 700;
-            color: var(--text); font-family: 'Courier New', monospace;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
-        /* Resaltar el nombre del script dentro de la ruta */
-        .plan-file-ruta .plan-ruta-parent {
-            color: var(--text-3);
-        }
-        .plan-file-ruta .plan-ruta-name {
-            color: var(--green);
-        }
-        .plan-file-ruta .plan-ruta-sep {
-            color: var(--text-3);
-            opacity: 0.6;
-        }
-        .plan-file-type-badge {
-            display: inline-flex; align-items: center;
-            background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-            border-radius: 3px; padding: 1px 5px;
-            font-size: 9px; font-weight: 700; color: var(--text-3);
-            margin-left: 6px; vertical-align: middle; text-transform: uppercase; letter-spacing: 0.5px;
-        }
-        .plan-file-desc {
-            font-size: 11.5px; color: var(--text-2); margin-top: 3px; line-height: 1.5;
-        }
-
-        /* Acción badge (CREAR / MODIFICAR) */
-        .plan-action-tag {
-            font-size: 9px; font-weight: 700;
-            padding: 2px 6px; border-radius: 4px;
-            text-transform: uppercase; letter-spacing: 0.6px;
-            flex-shrink: 0; margin-top: 2px;
-        }
-        .plan-action-tag.crear {
-            background: rgba(34,197,94,0.12);
-            color: var(--green);
-            border: 1px solid rgba(34,197,94,0.25);
-        }
-        .plan-action-tag.modificar {
-            background: rgba(240,180,41,0.1);
-            color: var(--gold);
-            border: 1px solid rgba(240,180,41,0.22);
-        }
-
-        /* Botones de aprobación */
-        .plan-actions {
-            display: flex; gap: 8px; margin-top: 4px;
-        }
-        .plan-btn {
-            flex: 1; padding: 10px 14px; border-radius: 9px;
-            font-family: var(--font); font-size: 13px; font-weight: 700;
-            border: none; cursor: pointer; transition: all .18s;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-        }
-        .plan-btn-accept {
-            background: var(--green);
-            color: #07110d;
-            box-shadow: 0 4px 16px rgba(34,197,94,0.28);
-        }
-        .plan-btn-accept:hover {
-            background: #2dd468;
-            transform: translateY(-1px);
-            box-shadow: 0 6px 20px rgba(34,197,94,0.4);
-        }
-        .plan-btn-accept:disabled {
-            opacity: 0.5; cursor: not-allowed; transform: none;
-        }
-        .plan-btn-reject {
-            background: transparent;
-            color: var(--text-2);
-            border: 1px solid var(--border-2);
-        }
-        .plan-btn-reject:hover {
-            border-color: var(--red-border);
-            color: var(--red);
-            background: var(--red-dim);
-        }
-
         /* Animations */
         @keyframes creditsPop {
             0%{transform:scale(1);} 50%{transform:scale(1.12);color:var(--green);} 100%{transform:scale(1);}
@@ -722,7 +554,7 @@
 <div class="bg-orb bg-orb-1"></div>
 <div class="bg-orb bg-orb-2"></div>
 
-<!-- ─── GATE SCREEN ─── -->
+<!-- ─── GATE SCREEN (blocked/banned) ─── -->
 <div id="gate-screen">
     <div class="gate-icon" id="gate-icon">🔒</div>
     <div class="gate-title" id="gate-title">Verificando acceso...</div>
@@ -755,7 +587,7 @@
         <button class="logout-btn" title="Cerrar sesión" onclick="doLogout()">⏻</button>
     </div>
 
-    <!-- Admin button -->
+    <!-- Admin button (only visible for owner) -->
     <button class="admin-btn hidden" id="admin-btn" onclick="openModal('admin')">
         🛡️ Panel de Administrador
     </button>
@@ -806,6 +638,7 @@
     <a class="discord-section" href="https://discord.gg/tQKwmT3u" target="_blank" rel="noopener">
         <div class="discord-top">
             <div class="discord-icon">
+                <!-- Discord Official Logo SVG -->
                 <svg viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg" fill="white">
                     <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/>
                 </svg>
@@ -853,6 +686,7 @@
         </div>
         <div class="modal-sub">Desbloquea más capacidad para generar sistemas avanzados.</div>
         <div class="plans">
+            <!-- Starter: free daily claim -->
             <div class="plan-card" id="starter-plan">
                 <div>
                     <div class="plan-name">Starter</div>
@@ -865,6 +699,7 @@
             </div>
             <div id="starter-paypal" class="plan-paypal-container"></div>
 
+            <!-- Developer: $4.99 -->
             <div class="plan-card featured">
                 <div class="plan-badge">Popular</div>
                 <div>
@@ -878,6 +713,7 @@
             </div>
             <div id="developer-paypal" class="plan-paypal-container"></div>
 
+            <!-- Studio Pro: $14.99/mo — VIP -->
             <div class="plan-card">
                 <div>
                     <div class="plan-name">Studio Pro</div>
@@ -910,6 +746,7 @@
             <button class="admin-tab" onclick="adminTab('ban')">Banear</button>
         </div>
 
+        <!-- Give Credits -->
         <div class="admin-section active" id="admin-credits">
             <div class="admin-field">
                 <label class="admin-label">Correo del usuario</label>
@@ -923,6 +760,7 @@
             <div class="admin-msg" id="admin-credits-msg"></div>
         </div>
 
+        <!-- Whitelist -->
         <div class="admin-section" id="admin-whitelist">
             <div class="admin-field">
                 <label class="admin-label">Correo para Early Access</label>
@@ -938,6 +776,7 @@
             </div>
         </div>
 
+        <!-- Ban -->
         <div class="admin-section" id="admin-ban">
             <div class="admin-field">
                 <label class="admin-label">Correo del usuario a banear</label>
@@ -992,15 +831,14 @@ const projectsList  = document.getElementById('projects-list');
 //  GATE & AUTH
 // ══════════════════════════════════════════
 function showGate(icon, title, sub, showBtn = true) {
-    document.getElementById('gate-icon').textContent  = icon;
-    document.getElementById('gate-title').textContent = title;
-    document.getElementById('gate-sub').textContent   = sub;
+    document.getElementById('gate-icon').textContent   = icon;
+    document.getElementById('gate-title').textContent  = title;
+    document.getElementById('gate-sub').textContent    = sub;
     document.getElementById('gate-back').style.display = showBtn ? 'block' : 'none';
     document.getElementById('gate-screen').classList.remove('hidden');
     document.getElementById('sidebar').style.display      = 'none';
     document.getElementById('main-content').style.display = 'none';
 }
-
 function hideGate() {
     document.getElementById('gate-screen').classList.add('hidden');
     document.getElementById('sidebar').style.display      = 'flex';
@@ -1009,31 +847,20 @@ function hideGate() {
 
 window.addEventListener('load', async () => {
     try {
-        try {
-            currentUser = await account.get();
-        } catch (authError) {
-            window.location.href = 'index.html';
-            return;
-        }
+        try { currentUser = await account.get(); }
+        catch (e) { window.location.href = 'index.html'; return; }
 
         let userData = {};
         try {
             userData = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
         } catch (e) {
             userData = await databases.createDocument(DB_ID, 'Users', currentUser.$id, {
-                email:       currentUser.email,
-                displayName: currentUser.name || '',
-                credits:     5.0,
-                lastRefill:  new Date().toISOString(),
-                vip:         false,
-                isBanned:    false
+                email: currentUser.email, displayName: currentUser.name || '',
+                credits: 5.0, lastRefill: new Date().toISOString(), vip: false, isBanned: false
             });
         }
 
-        if (userData.isBanned) {
-            showGate('🔨', 'Cuenta suspendida', 'Tu cuenta ha sido suspendida.');
-            return;
-        }
+        if (userData.isBanned) { showGate('🔨', 'Cuenta suspendida', 'Tu cuenta ha sido suspendida.'); return; }
 
         if (currentUser.email.toLowerCase() !== OWNER_EMAIL.toLowerCase()) {
             try {
@@ -1045,34 +872,27 @@ window.addEventListener('load', async () => {
                     return;
                 }
             } catch (e) {
-                console.error("Error Whitelist:", e);
-                showGate('⚠️', 'Error de Verificación', 'No pudimos verificar tu acceso. Revisa los permisos de la tabla Whitelist.');
+                showGate('⚠️', 'Error de Verificación', 'No pudimos verificar tu acceso.');
                 return;
             }
         }
 
-        await databases.updateDocument(DB_ID, 'Users', currentUser.$id, {
-            lastSeen: new Date().toISOString()
-        });
+        await databases.updateDocument(DB_ID, 'Users', currentUser.$id, { lastSeen: new Date().toISOString() });
 
         userIsVip = userData.vip || false;
-
         const lastUid = localStorage.getItem('v1_last_uid');
         if (lastUid && lastUid !== currentUser.$id) { localStorage.clear(); }
         localStorage.setItem('v1_last_uid', currentUser.$id);
 
         loadUI();
-
-    } catch (globalError) {
-        console.error("Error Global:", globalError);
-        showGate('❌', 'Error Crítico', 'Ocurrió un error al cargar: ' + globalError.message);
+    } catch (e) {
+        showGate('❌', 'Error Crítico', 'Ocurrió un error al cargar: ' + e.message);
     }
 });
 
 async function doLogout() {
-    localStorage.clear();
-    sessionStorage.clear();
-    try { await account.deleteSession('current'); } catch (e) { console.warn("Sesión ya cerrada:", e.message); }
+    localStorage.clear(); sessionStorage.clear();
+    try { await account.deleteSession('current'); } catch (e) {}
     window.location.replace('index.html');
 }
 
@@ -1087,21 +907,16 @@ function loadUI() {
     loadProjects();
     setupStudioStatus();
     initPayPal();
-    if (currentUser.email === OWNER_EMAIL) {
+    if (currentUser.email === OWNER_EMAIL)
         document.getElementById('admin-btn').classList.remove('hidden');
-    }
 }
 
 function setupUserProfile() {
-    const avatarEl = document.getElementById('user-avatar');
-    const nameEl   = document.getElementById('user-display-name');
-    const emailEl  = document.getElementById('user-email-display');
-    const vipEl    = document.getElementById('vip-badge');
     const initials = (currentUser.name || currentUser.email || '?').charAt(0).toUpperCase();
-    avatarEl.textContent = initials;
-    nameEl.textContent   = currentUser.name || currentUser.email.split('@')[0];
-    emailEl.textContent  = currentUser.email;
-    if (userIsVip) vipEl.style.display = 'inline-block';
+    document.getElementById('user-avatar').textContent      = initials;
+    document.getElementById('user-display-name').textContent = currentUser.name || currentUser.email.split('@')[0];
+    document.getElementById('user-email-display').textContent = currentUser.email;
+    if (userIsVip) document.getElementById('vip-badge').style.display = 'inline-block';
 }
 
 // ══════════════════════════════════════════
@@ -1115,13 +930,16 @@ async function setupCreditsListener() {
     document.getElementById('vip-badge').style.display = userIsVip ? 'inline-block' : 'none';
 
     if (creditsUnsub) creditsUnsub();
-    creditsUnsub = client.subscribe(`databases.${DB_ID}.collections.Users.documents.${currentUser.$id}`, response => {
-        const doc   = response.payload;
-        userCredits = typeof doc.credits === 'number' ? doc.credits : 0;
-        userIsVip   = doc.vip || false;
-        updateCreditsDisplay(true);
-        document.getElementById('vip-badge').style.display = userIsVip ? 'inline-block' : 'none';
-    });
+    creditsUnsub = client.subscribe(
+        `databases.${DB_ID}.collections.Users.documents.${currentUser.$id}`,
+        response => {
+            const doc = response.payload;
+            userCredits = typeof doc.credits === 'number' ? doc.credits : 0;
+            userIsVip   = doc.vip || false;
+            updateCreditsDisplay(true);
+            document.getElementById('vip-badge').style.display = userIsVip ? 'inline-block' : 'none';
+        }
+    );
 }
 
 function updateCreditsDisplay(animate = false) {
@@ -1130,32 +948,29 @@ function updateCreditsDisplay(animate = false) {
     const maxC = userIsVip ? VIP_CREDITS : MAX_CREDITS;
     val.textContent = userCredits.toFixed(1);
     if (animate) { val.classList.remove('credits-pop'); void val.offsetWidth; val.classList.add('credits-pop'); }
-    const pct = Math.min((userCredits / maxC) * 100, 100);
-    bar.style.width = pct + '%';
+    bar.style.width = Math.min((userCredits / maxC) * 100, 100) + '%';
 }
 
 async function deductCredits(amount) {
     userCredits = Math.max(0, userCredits - amount);
-    const doc           = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
-    const updatedCredits = Math.max(0, (doc.credits || 0) - amount);
-    await databases.updateDocument(DB_ID, 'Users', currentUser.$id, { credits: updatedCredits });
+    const doc = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
+    await databases.updateDocument(DB_ID, 'Users', currentUser.$id, {
+        credits: Math.max(0, (doc.credits || 0) - amount)
+    });
 }
 
 // ══════════════════════════════════════════
-//  DAILY REFILL TIMER
+//  DAILY REFILL
 // ══════════════════════════════════════════
 async function setupDailyRefill() {
-    const data       = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
+    const data      = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
     const lastRefill = data.lastRefill ? new Date(data.lastRefill) : new Date(0);
-    const now        = new Date();
-    const msElapsed  = now - lastRefill;
-    const msRefill   = REFILL_HOURS * 3600 * 1000;
-
+    const msElapsed = new Date() - lastRefill;
+    const msRefill  = REFILL_HOURS * 3600 * 1000;
     if (msElapsed >= msRefill) {
-        const maxC       = userIsVip ? VIP_CREDITS : MAX_CREDITS;
-        const newCredits = Math.min((data.credits || 0) + REFILL_AMOUNT, maxC);
+        const maxC = userIsVip ? VIP_CREDITS : MAX_CREDITS;
         await databases.updateDocument(DB_ID, 'Users', currentUser.$id, {
-            credits:    newCredits,
+            credits:    Math.min((data.credits || 0) + REFILL_AMOUNT, maxC),
             lastRefill: new Date().toISOString()
         });
         updateRefillTimer(new Date());
@@ -1171,9 +986,7 @@ function updateRefillTimer(lastRefill) {
         const msLeft = msRefill - (new Date() - lastRefill);
         if (msLeft <= 0) {
             document.getElementById('refill-text').textContent = 'Recargando...';
-            setupDailyRefill();
-            clearInterval(refillInterval);
-            return;
+            setupDailyRefill(); clearInterval(refillInterval); return;
         }
         const h = Math.floor(msLeft / 3600000);
         const m = Math.floor((msLeft % 3600000) / 60000);
@@ -1181,8 +994,7 @@ function updateRefillTimer(lastRefill) {
         document.getElementById('refill-text').textContent =
             `Recarga en ${h}h ${m}m ${s}s · +${REFILL_AMOUNT} crédito`;
     }
-    tick();
-    refillInterval = setInterval(tick, 1000);
+    tick(); refillInterval = setInterval(tick, 1000);
 }
 
 function flashCost(cost) {
@@ -1208,8 +1020,7 @@ function loadProjects() {
 
 function saveData() {
     localStorage.setItem(projectStorageKey(), JSON.stringify(projectsData));
-    renderProjects();
-    updateProjectsQuota();
+    renderProjects(); updateProjectsQuota();
 }
 
 function updateProjectsQuota() {
@@ -1230,9 +1041,7 @@ function renderProjects() {
             <span class="proj-title">${p.title}</span>
             <button class="proj-delete" title="Eliminar proyecto" onclick="deleteProject(${p.id}, event)">✕</button>
         `;
-        d.addEventListener('click', e => {
-            if (!e.target.classList.contains('proj-delete')) loadProject(p.id);
-        });
+        d.addEventListener('click', e => { if (!e.target.classList.contains('proj-delete')) loadProject(p.id); });
         projectsList.appendChild(d);
     });
     updateProjectsQuota();
@@ -1244,16 +1053,14 @@ function loadProject(id) {
     const proj = projectsData.find(p => p.id === id);
     if (proj && proj.chats && proj.chats.length > 0) {
         proj.chats.forEach(m => addMsg(m.role, m.html || m.text));
-    } else {
-        showWelcome();
-    }
+    } else { showWelcome(); }
     renderProjects();
 }
 
 function deleteProject(id, e) {
     e.stopPropagation();
     if (projectsData.length <= 1) { alert('⚠️ Debes tener al menos un proyecto.'); return; }
-    if (!confirm('¿Eliminar este proyecto? No se puede deshacer.')) return;
+    if (!confirm('¿Eliminar este proyecto?')) return;
     projectsData = projectsData.filter(p => p.id !== id);
     saveData();
     if (currentProjectId === id) loadProject(projectsData[0].id);
@@ -1263,9 +1070,7 @@ document.getElementById('new-btn').addEventListener('click', () => {
     const maxProj = userIsVip ? 5 : 1;
     if (projectsData.length >= maxProj) { openModal('credits'); return; }
     const p = { id: Date.now(), title: 'Proyecto ' + (projectsData.length + 1), chats: [] };
-    projectsData.unshift(p);
-    saveData();
-    loadProject(p.id);
+    projectsData.unshift(p); saveData(); loadProject(p.id);
 });
 
 // ══════════════════════════════════════════
@@ -1277,25 +1082,20 @@ function addMsg(role, html, id = null) {
     const d = document.createElement('div');
     d.className = 'msg ' + role;
     if (id) d.id = id;
-    if (role === 'user') {
-        d.innerHTML = `<div class="bubble">${html}</div>`;
-    } else {
-        d.innerHTML = `<div class="ai-ava"><img src="logo.png" alt="V1" onerror="this.parentElement.textContent='V1'"></div><div class="bubble">${html}</div>`;
-    }
+    d.innerHTML = role === 'user'
+        ? `<div class="bubble">${html}</div>`
+        : `<div class="ai-ava"><img src="logo.png" alt="V1" onerror="this.parentElement.textContent='V1'"></div><div class="bubble">${html}</div>`;
     chatContainer.appendChild(d);
     chatContainer.scrollTop = chatContainer.scrollHeight;
+    return d;
 }
 
 function saveMsg(role, html) {
     const p = projectsData.find(x => x.id === currentProjectId);
     if (!p) return;
-    if (p.chats.length === 0 && role === 'user') {
-        p.title = html.substring(0, 26) + '…';
-        renderProjects();
-    }
+    if (p.chats.length === 0 && role === 'user') { p.title = html.substring(0, 26) + '…'; renderProjects(); }
     if (!p.chats) p.chats = [];
-    p.chats.push({ role, html });
-    saveData();
+    p.chats.push({ role, html }); saveData();
 }
 
 // ══════════════════════════════════════════
@@ -1310,9 +1110,7 @@ const PHRASES = [
 ];
 let twPhrase = 0, twChar = 0, twDeleting = false, twTimeout = null;
 
-function startTypewriter() {
-    clearTimeout(twTimeout); twPhrase = 0; twChar = 0; twDeleting = false; typeStep();
-}
+function startTypewriter() { clearTimeout(twTimeout); twPhrase = 0; twChar = 0; twDeleting = false; typeStep(); }
 function typeStep() {
     const el = document.getElementById('typewriter-el'); if (!el) return;
     const phrase = PHRASES[twPhrase];
@@ -1334,9 +1132,7 @@ function typeStep() {
 function showWelcome() {
     chatContainer.innerHTML = `
         <div class="welcome" id="welcome-screen">
-            <div class="welcome-eyebrow">
-                <div class="eyebrow-line"></div>Roblox AI Studio<div class="eyebrow-line"></div>
-            </div>
+            <div class="welcome-eyebrow"><div class="eyebrow-line"></div>Roblox AI Studio<div class="eyebrow-line"></div></div>
             <h1 class="welcome-headline" id="typewriter-el">&nbsp;</h1>
             <p class="welcome-desc">Describe cualquier sistema de Roblox en lenguaje natural y lo generaré en Luau de producción, listo para inyectar en tu Studio al instante.</p>
             <div class="welcome-stats">
@@ -1359,45 +1155,42 @@ function showWelcome() {
 }
 
 // ══════════════════════════════════════════
-//  PLAN DE APROBACIÓN — [v25]
-//  Renderiza el plan visual estilo Cursor
+//  PLAN DE APROBACIÓN [v25.1]
+//  FIX: polling activo como base fiable
+//  + Realtime como complemento opcional
 // ══════════════════════════════════════════
 
 /**
- * Formatea la ruta del archivo con el parent en gris y el nombre en verde.
- * Ejemplo: "ServerScriptService / ShopServer"
+ * Formatea la ruta con el parent en gris y el nombre en verde.
  */
 function formatearRuta(ruta, type) {
     if (!ruta) return '<span class="plan-ruta-name">?</span>';
-    const parts = ruta.split('/');
-    if (parts.length <= 1) {
-        return `<span class="plan-ruta-name">${ruta}</span>`;
-    }
-    const nombre  = parts.pop();
-    const parents = parts.join('<span class="plan-ruta-sep">/</span>');
-    const typeBadge = type
-        ? `<span class="plan-file-type-badge">${type}</span>`
-        : '';
-    return `<span class="plan-ruta-parent">${parents}<span class="plan-ruta-sep">/</span></span><span class="plan-ruta-name">${nombre}</span>${typeBadge}`;
+    const parts  = ruta.split('/');
+    const nombre = parts.pop();
+    const parent = parts.join('<span class="plan-ruta-sep">/</span>');
+    const badge  = type ? `<span class="plan-file-type-badge">${type}</span>` : '';
+    return parts.length
+        ? `<span class="plan-ruta-parent">${parent}<span class="plan-ruta-sep">/</span></span><span class="plan-ruta-name">${nombre}</span>${badge}`
+        : `<span class="plan-ruta-name">${nombre}</span>${badge}`;
 }
 
 /**
- * Construye y renderiza el bloque visual del plan en el chat.
- * Se llama cuando Appwrite emite estado: 'esperando_aprobacion'.
+ * Renderiza el cuadro visual del plan con los botones Sí / No.
+ * Recibe el objeto plan ya parseado.
  */
-function renderizarPlan(plan, docId, loadMsgId, unsub) {
-    // Eliminar el loading bubble
+function renderizarPlan(plan, docId, loadMsgId) {
+    // Eliminar el loading bubble si existe
     const loadEl = document.getElementById(loadMsgId);
     if (loadEl) loadEl.remove();
 
-    const numArchivos = plan.archivos?.length || 0;
-    const numCrear    = plan.archivos?.filter(a => a.accion === 'crear').length || 0;
-    const numModif    = plan.archivos?.filter(a => a.accion === 'modificar').length || 0;
+    // Evitar renderizar el mismo plan dos veces
+    if (document.getElementById('plan-box-' + docId)) return;
 
-    // Construir lista de archivos
+    const archivos = plan.archivos || [];
+
     let archivosHTML = '';
-    (plan.archivos || []).forEach(archivo => {
-        const esCrear   = archivo.accion === 'crear';
+    archivos.forEach(archivo => {
+        const esCrear   = (archivo.accion || '').toLowerCase() === 'crear';
         const dotClass  = esCrear ? 'crear' : 'modificar';
         const tagClass  = esCrear ? 'crear' : 'modificar';
         const dotSymbol = esCrear ? '+' : '~';
@@ -1411,19 +1204,8 @@ function renderizarPlan(plan, docId, loadMsgId, unsub) {
                     <div class="plan-file-desc">${archivo.descripcion || ''}</div>
                 </div>
                 <div class="plan-action-tag ${tagClass}">${tagText}</div>
-            </div>
-        `;
+            </div>`;
     });
-
-    // Resumen de conteo
-    let resumenConteo = '';
-    if (numCrear > 0 && numModif > 0) {
-        resumenConteo = `${numCrear} archivo${numCrear !== 1 ? 's' : ''} nuevo${numCrear !== 1 ? 's' : ''}, ${numModif} modificado${numModif !== 1 ? 's' : ''}`;
-    } else if (numCrear > 0) {
-        resumenConteo = `${numCrear} archivo${numCrear !== 1 ? 's' : ''} nuevo${numCrear !== 1 ? 's' : ''}`;
-    } else if (numModif > 0) {
-        resumenConteo = `${numModif} archivo${numModif !== 1 ? 's' : ''} a modificar`;
-    }
 
     const planHTML = `
         <div class="plan-box" id="plan-box-${docId}">
@@ -1432,132 +1214,173 @@ function renderizarPlan(plan, docId, loadMsgId, unsub) {
                 <div class="plan-box-title">${plan.titulo || 'Plan del sistema'}</div>
             </div>
             <div class="plan-box-subtitle">${plan.resumen || ''}</div>
-
             <div class="plan-changes-label">What has changed</div>
-
-            <div class="plan-files-list">
-                ${archivosHTML}
-            </div>
-
+            <div class="plan-files-list">${archivosHTML}</div>
             <div class="plan-actions">
-                <button
-                    class="plan-btn plan-btn-accept"
-                    id="btn-accept-${docId}"
-                    onclick="aprobarPlan('${docId}', '${loadMsgId}')">
+                <button class="plan-btn plan-btn-accept" id="btn-accept-${docId}"
+                    onclick="aprobarPlan('${docId}')">
                     ✓ Sí, generar código
                 </button>
-                <button
-                    class="plan-btn plan-btn-reject"
-                    id="btn-reject-${docId}"
-                    onclick="rechazarPlan('${docId}', '${loadMsgId}')">
+                <button class="plan-btn plan-btn-reject" id="btn-reject-${docId}"
+                    onclick="rechazarPlan('${docId}')">
                     ✕ No, modificar plan
                 </button>
             </div>
-        </div>
-    `;
+        </div>`;
 
     addMsg('ai', planHTML);
-    saveMsg('ai', `Plan listo: "${plan.titulo}" (${resumenConteo})`);
-
-    // Dejar de escuchar — los botones manejarán el siguiente paso
-    if (unsub) unsub();
+    saveMsg('ai', `Plan: "${plan.titulo}" (${archivos.length} archivo${archivos.length !== 1 ? 's' : ''})`);
 }
 
 /**
- * El usuario aprueba el plan.
- * Actualiza el doc a estado: 'aprobado' y escucha la respuesta de código.
+ * [FIX v25.1] Escucha el estado de un documento usando POLLING ACTIVO
+ * como mecanismo principal (100% confiable) + Realtime como complemento.
+ * Resuelve el bug de race condition donde unsub era llamado antes de
+ * estar asignado, y el bug de eventos Realtime perdidos en WebSocket.
+ *
+ * @param {string} docId         - ID del documento PeticionesRoblox
+ * @param {string} loadMsgId     - ID del elemento loading a remover
+ * @param {Function} onData      - Callback que recibe el payload del doc
+ * @param {number} [maxMs=120000] - Timeout máximo en ms (default 2 min)
+ * @returns {Function} stopListening - llama para limpiar todo
  */
-async function aprobarPlan(docId, loadMsgId) {
+function escucharDocumento(docId, loadMsgId, onData, maxMs = 120000) {
+    let stopped       = false;
+    let pollingId     = null;
+    let realtimeUnsub = null;
+    let lastEstado    = null;
+
+    // ── Función de procesamiento (compartida por polling y realtime) ──
+    function procesarDoc(payload) {
+        if (stopped) return;
+        // Solo disparar si el estado cambió para evitar procesamiento doble
+        if (payload.estado === lastEstado) return;
+        lastEstado = payload.estado;
+        onData(payload);
+    }
+
+    // ── POLLING: lee el doc directamente cada 2.5s ──
+    pollingId = setInterval(async () => {
+        if (stopped) { clearInterval(pollingId); return; }
+        try {
+            const doc = await databases.getDocument(DB_ID, 'PeticionesRoblox', docId);
+            procesarDoc(doc);
+        } catch(e) {
+            // Si el doc ya no existe (eliminado) parar
+            if (e.code === 404) { stop(); }
+        }
+    }, 2500);
+
+    // ── REALTIME: complemento para respuesta instantánea ──
+    // Se suscribe DESPUÉS de que pollingId está asignado para evitar la
+    // race condition. Si falla no es crítico porque el polling lo cubre.
+    try {
+        realtimeUnsub = client.subscribe(
+            `databases.${DB_ID}.collections.PeticionesRoblox.documents.${docId}`,
+            response => { procesarDoc(response.payload); }
+        );
+    } catch(e) {
+        console.warn('[v25.1] Realtime no disponible, usando solo polling:', e.message);
+    }
+
+    // ── Timeout de seguridad ──
+    const timeoutId = setTimeout(() => {
+        if (!stopped) {
+            stop();
+            const loadEl = document.getElementById(loadMsgId);
+            if (loadEl) loadEl.remove();
+            addMsg('ai', '⏱️ La solicitud tardó demasiado. Intenta de nuevo.');
+        }
+    }, maxMs);
+
+    function stop() {
+        if (stopped) return;
+        stopped = true;
+        clearInterval(pollingId);
+        clearTimeout(timeoutId);
+        if (realtimeUnsub) { try { realtimeUnsub(); } catch(e) {} }
+    }
+
+    return stop;
+}
+
+/**
+ * El usuario aprueba el plan — actualiza a 'aprobado' y espera el código.
+ */
+async function aprobarPlan(docId) {
     const btnAccept = document.getElementById('btn-accept-' + docId);
     const btnReject = document.getElementById('btn-reject-' + docId);
     if (!btnAccept) return;
 
-    // Deshabilitar botones mientras procesa
-    btnAccept.disabled = true;
-    btnReject.disabled = true;
+    btnAccept.disabled    = true;
+    btnReject.disabled    = true;
     btnAccept.textContent = '⏳ Generando código...';
 
     try {
-        // Actualizar estado a 'aprobado' → el backend lo tomará y generará el código
-        await databases.updateDocument(DB_ID, 'PeticionesRoblox', docId, {
-            estado: 'aprobado'
-        });
-
-        // Mostrar loading de código bajo el plan
-        const lid = 'load-code-' + Date.now();
-        addMsg('ai', `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Generando código completo...</div>`, lid);
-
-        // Escuchar respuesta del backend
-        const unsub = client.subscribe(`databases.${DB_ID}.collections.PeticionesRoblox.documents.${docId}`, response => {
-            const data    = response.payload;
-            const loadEl  = document.getElementById(lid);
-
-            if (data.estado === 'inyectar' || data.estado === 'completado') {
-                if (loadEl) loadEl.remove();
-                const resumen = data.resultado || 'Scripts inyectados correctamente.';
-                const m = `<strong>Sistema inyectado ✓</strong><br><span class="sys-msg">${resumen.replace(/\n/g,'<br>')}</span>`;
-                addMsg('ai', m);
-                saveMsg('ai', m);
-                unsub();
-            } else if (data.estado === 'roadmap_pendiente') {
-                if (loadEl) loadEl.remove();
-                let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
-                html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
-                try {
-                    const pasos = JSON.parse(data.pasos);
-                    pasos.forEach(p => {
-                        html += `<button class="roadmap-step" onclick='window.lanzarPasoRoadmap(${JSON.stringify(p.titulo)},${JSON.stringify(p.descripcion)},${JSON.stringify(data.tituloSistema)})'>
-                            <strong>${p.titulo}</strong><span>${p.descripcion}</span></button>`;
-                    });
-                } catch(err) { console.error("Error parseando pasos", err); }
-                html += `</div>`;
-                addMsg('ai', html);
-                saveMsg('ai', 'Roadmap generado.');
-                unsub();
-            } else if (data.estado === 'error') {
-                if (loadEl) loadEl.remove();
-                addMsg('ai', `❌ ${data.resultado || 'Error generando el código.'}`);
-                unsub();
-            }
-        });
-
+        await databases.updateDocument(DB_ID, 'PeticionesRoblox', docId, { estado: 'aprobado' });
     } catch(e) {
-        btnAccept.disabled   = false;
-        btnReject.disabled   = false;
+        btnAccept.disabled    = false;
+        btnReject.disabled    = false;
         btnAccept.textContent = '✓ Sí, generar código';
-        addMsg('ai', '❌ Error al aprobar el plan: ' + e.message);
+        addMsg('ai', '❌ Error al aprobar: ' + e.message);
+        return;
     }
+
+    const lid = 'load-code-' + Date.now();
+    addMsg('ai',
+        `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Generando código completo...</div>`,
+        lid
+    );
+
+    const stop = escucharDocumento(docId, lid, (data) => {
+        const loadEl = document.getElementById(lid);
+
+        if (data.estado === 'inyectar' || data.estado === 'completado') {
+            stop();
+            if (loadEl) loadEl.remove();
+            const resumen = data.resultado || 'Scripts inyectados correctamente.';
+            const m = `<strong>Sistema inyectado ✓</strong><br><span class="sys-msg">${resumen.replace(/\n/g,'<br>')}</span>`;
+            addMsg('ai', m); saveMsg('ai', m);
+
+        } else if (data.estado === 'roadmap_pendiente') {
+            stop();
+            if (loadEl) loadEl.remove();
+            let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
+            html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
+            try {
+                const pasos = JSON.parse(data.pasos);
+                pasos.forEach(p => {
+                    html += `<button class="roadmap-step"
+                        onclick='window.lanzarPasoRoadmap(${JSON.stringify(p.titulo)},${JSON.stringify(p.descripcion)},${JSON.stringify(data.tituloSistema)})'>
+                        <strong>${p.titulo}</strong><span>${p.descripcion}</span></button>`;
+                });
+            } catch(err) { console.error("Error parseando pasos", err); }
+            html += `</div>`;
+            addMsg('ai', html); saveMsg('ai', 'Roadmap generado.');
+
+        } else if (data.estado === 'error') {
+            stop();
+            if (loadEl) loadEl.remove();
+            addMsg('ai', `❌ ${data.resultado || 'Error generando el código.'}`);
+        }
+    });
 }
 
 /**
- * El usuario rechaza el plan.
- * Pide al usuario que describa qué cambiar y re-envía como nueva petición.
+ * El usuario rechaza el plan — limpia y pide reformulación.
  */
-async function rechazarPlan(docId, loadMsgId) {
-    // Primero marcar el doc como error para limpiarlo en Appwrite
+async function rechazarPlan(docId) {
     try {
         await databases.updateDocument(DB_ID, 'PeticionesRoblox', docId, {
-            estado:    'error',
-            resultado: 'Plan rechazado por el usuario.'
+            estado: 'error', resultado: 'Plan rechazado por el usuario.'
         });
-    } catch(e) {
-        console.warn("No se pudo marcar el plan como rechazado:", e.message);
-    }
+    } catch(e) { console.warn("No se pudo marcar el plan:", e.message); }
 
-    // Eliminar el plan visual del chat
     const planBox = document.getElementById('plan-box-' + docId);
-    if (planBox) {
-        // Encontrar el msg contenedor y eliminarlo
-        const msgEl = planBox.closest('.msg');
-        if (msgEl) msgEl.remove();
-    }
+    if (planBox) { const msg = planBox.closest('.msg'); if (msg) msg.remove(); }
 
-    // Mostrar mensaje pidiendo ajuste
     addMsg('ai', `<span style="color:var(--text-2);font-size:13px;">Entendido. ¿Qué quieres cambiar del plan? Descríbelo y generaré uno nuevo.</span>`);
-
-    // Enfocar el textarea para que el usuario escriba
-    const ta = document.getElementById('prompt');
-    if (ta) { ta.focus(); }
+    document.getElementById('prompt').focus();
 }
 
 // ══════════════════════════════════════════
@@ -1586,79 +1409,89 @@ async function enviar() {
 
     await deductCredits(costo);
     flashCost(costo);
-
     addMsg('user', txt);
     saveMsg('user', txt);
     ta.value = ''; ta.style.height = 'auto';
 
     const lid = 'load-' + Date.now();
-    addMsg('ai', `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Analizando y planificando...</div>`, lid);
+    addMsg('ai',
+        `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Analizando y planificando...</div>`,
+        lid
+    );
 
+    let ref;
     try {
-        const ref = await databases.createDocument(DB_ID, 'PeticionesRoblox', Appwrite.ID.unique(), {
-            mensaje:   txt,
-            estado:    'pendiente',
-            uid:       currentUser.$id,
-            esVip:     userIsVip,
+        ref = await databases.createDocument(DB_ID, 'PeticionesRoblox', Appwrite.ID.unique(), {
+            mensaje: txt, estado: 'pendiente',
+            uid: currentUser.$id, esVip: userIsVip,
             timestamp: new Date().toISOString()
         });
-
-        const unsub = client.subscribe(`databases.${DB_ID}.collections.PeticionesRoblox.documents.${ref.$id}`, response => {
-            const data   = response.payload;
-            const loadEl = document.getElementById(lid);
-
-            // ── [v25] Plan listo — mostrar interfaz de aprobación ──
-            if (data.estado === 'esperando_aprobacion') {
-                try {
-                    const plan = JSON.parse(data.planData);
-                    renderizarPlan(plan, ref.$id, lid, unsub);
-                } catch(parseErr) {
-                    if (loadEl) loadEl.remove();
-                    addMsg('ai', '❌ Error al leer el plan generado.');
-                    unsub();
-                }
-                return;
-            }
-
-            // ── Código listo para inyectar ──
-            if (data.estado === 'completado' || data.estado === 'inyectar') {
-                if (loadEl) loadEl.remove();
-                const resumen = data.resultado || 'Scripts inyectados correctamente.';
-                const m = `<strong>Sistema inyectado ✓</strong><br><span class="sys-msg">${resumen.replace(/\n/g,'<br>')}</span>`;
-                addMsg('ai', m); saveMsg('ai', m); unsub();
-                return;
-            }
-
-            // ── Roadmap ──
-            if (data.estado === 'roadmap_pendiente') {
-                if (loadEl) loadEl.remove();
-                let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
-                html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
-                try {
-                    const pasos = JSON.parse(data.pasos);
-                    pasos.forEach(p => {
-                        html += `<button class="roadmap-step" onclick='window.lanzarPasoRoadmap(${JSON.stringify(p.titulo)},${JSON.stringify(p.descripcion)},${JSON.stringify(data.tituloSistema)})'>
-                            <strong>${p.titulo}</strong><span>${p.descripcion}</span></button>`;
-                    });
-                } catch(err) { console.error("Error parseando pasos", err); }
-                html += `</div>`;
-                addMsg('ai', html); saveMsg('ai', 'Roadmap generado.'); unsub();
-                return;
-            }
-
-            // ── Error ──
-            if (data.estado === 'error') {
-                if (loadEl) loadEl.remove();
-                addMsg('ai', `❌ ${data.resultado || 'Error en la inyección.'}`);
-                unsub();
-            }
-        });
-
     } catch(e) {
         const loadEl = document.getElementById(lid);
         if (loadEl) loadEl.remove();
-        addMsg('ai', '❌ Error de conexión con Appwrite.');
+        addMsg('ai', '❌ Error de conexión con Appwrite: ' + e.message);
+        return;
     }
+
+    // [FIX v25.1] Usar escucharDocumento en vez de subscribe directo
+    const stop = escucharDocumento(ref.$id, lid, (data) => {
+        const loadEl = document.getElementById(lid);
+
+        // ── Plan listo → mostrar interfaz de aprobación ──
+        if (data.estado === 'esperando_aprobacion') {
+            stop(); // dejar de escuchar aquí — aprobarPlan crea su propio listener
+            if (!data.planData) {
+                if (loadEl) loadEl.remove();
+                addMsg('ai', '❌ El plan llegó vacío. Intenta de nuevo.');
+                return;
+            }
+            try {
+                const plan = JSON.parse(data.planData);
+                renderizarPlan(plan, ref.$id, lid);
+            } catch(parseErr) {
+                console.error('[v25.1] Error parseando planData:', parseErr, data.planData);
+                if (loadEl) loadEl.remove();
+                addMsg('ai', '❌ Error al leer el plan generado. Intenta de nuevo.');
+            }
+            return;
+        }
+
+        // ── Código listo ──
+        if (data.estado === 'inyectar' || data.estado === 'completado') {
+            stop();
+            if (loadEl) loadEl.remove();
+            const resumen = data.resultado || 'Scripts inyectados correctamente.';
+            const m = `<strong>Sistema inyectado ✓</strong><br><span class="sys-msg">${resumen.replace(/\n/g,'<br>')}</span>`;
+            addMsg('ai', m); saveMsg('ai', m);
+            return;
+        }
+
+        // ── Roadmap ──
+        if (data.estado === 'roadmap_pendiente') {
+            stop();
+            if (loadEl) loadEl.remove();
+            let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
+            html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
+            try {
+                const pasos = JSON.parse(data.pasos);
+                pasos.forEach(p => {
+                    html += `<button class="roadmap-step"
+                        onclick='window.lanzarPasoRoadmap(${JSON.stringify(p.titulo)},${JSON.stringify(p.descripcion)},${JSON.stringify(data.tituloSistema)})'>
+                        <strong>${p.titulo}</strong><span>${p.descripcion}</span></button>`;
+                });
+            } catch(err) { console.error("Error pasos:", err); }
+            html += `</div>`;
+            addMsg('ai', html); saveMsg('ai', 'Roadmap generado.');
+            return;
+        }
+
+        // ── Error ──
+        if (data.estado === 'error') {
+            stop();
+            if (loadEl) loadEl.remove();
+            addMsg('ai', `❌ ${data.resultado || 'Error en la inyección.'}`);
+        }
+    });
 }
 
 document.getElementById('send-btn').addEventListener('click', enviar);
@@ -1687,15 +1520,14 @@ async function setupStudioStatus() {
         document.getElementById('studio-status').classList.toggle('online', online);
         document.getElementById('status-text').textContent = online ? 'Studio Vinculado' : 'Esperando Studio...';
         isConnected = online;
-
         client.subscribe(`databases.${DB_ID}.collections.System.documents.Connection`, response => {
-            const data     = response.payload;
-            const isOnline = data.status === 'online';
-            document.getElementById('studio-status').classList.toggle('online', isOnline);
-            document.getElementById('status-text').textContent = isOnline ? 'Studio Vinculado' : 'Esperando Studio...';
-            isConnected = isOnline;
+            const d = response.payload;
+            const o = d.status === 'online';
+            document.getElementById('studio-status').classList.toggle('online', o);
+            document.getElementById('status-text').textContent = o ? 'Studio Vinculado' : 'Esperando Studio...';
+            isConnected = o;
         });
-    } catch (e) { /* Sin doc de conexión aún */ }
+    } catch(e) { /* Sin doc de conexión aún */ }
 }
 
 // ══════════════════════════════════════════
@@ -1720,8 +1552,7 @@ function initPayPal() {
             const el = document.getElementById(id);
             if (el) el.innerHTML = '<div style="font-size:11px;color:var(--text-3);padding:6px 0;text-align:center">Configura tu PayPal Client ID para habilitar pagos.</div>';
         });
-        setupStarterClaim();
-        return;
+        setupStarterClaim(); return;
     }
     setupStarterClaim();
     setupPayPalButton('developer-paypal', 4.99, 50, false);
@@ -1741,14 +1572,12 @@ function setupStarterClaim() {
         const elapsed   = new Date() - lastClaim;
         if (elapsed < 24 * 3600 * 1000) {
             const h = Math.ceil((24 * 3600 * 1000 - elapsed) / 3600000);
-            btn.textContent = `⏳ Ya reclamaste hoy. Vuelve en ${h}h`;
-            return;
+            btn.textContent = `⏳ Ya reclamaste hoy. Vuelve en ${h}h`; return;
         }
         const maxC = userIsVip ? VIP_CREDITS : MAX_CREDITS;
         const newC = Math.min((snap.credits || 0) + 5, maxC);
         await databases.updateDocument(DB_ID, 'Users', currentUser.$id, {
-            credits:       newC,
-            lastFreeClaim: new Date().toISOString()
+            credits: newC, lastFreeClaim: new Date().toISOString()
         });
         btn.textContent = '✓ ¡5 créditos añadidos!';
         setTimeout(() => { btn.textContent = '🎁 Reclamar 5 créditos gratis'; }, 3000);
@@ -1758,45 +1587,28 @@ function setupStarterClaim() {
 
 function setupPayPalButton(containerId, price, credits, isVip) {
     if (typeof paypal === 'undefined') return;
-    const container = document.getElementById(containerId);
     paypal.Buttons({
         style: { layout: 'horizontal', color: 'black', shape: 'rect', label: 'pay', height: 40 },
-        createOrder: (data, actions) => {
-            return actions.order.create({
-                purchase_units: [{
-                    amount: { value: price.toFixed(2), currency_code: 'USD' },
-                    description: `V1zions.top - ${credits} V-Credits`
-                }]
-            });
-        },
+        createOrder: (data, actions) => actions.order.create({
+            purchase_units: [{ amount: { value: price.toFixed(2), currency_code: 'USD' },
+                description: `V1zions.top - ${credits} V-Credits` }]
+        }),
         onApprove: async (data, actions) => {
             const order   = await actions.order.capture();
             const orderID = order.id;
-            try {
-                await databases.getDocument(DB_ID, 'ProcessedPayments', orderID);
-                alert('⚠️ Este pago ya fue procesado anteriormente.');
-                return;
-            } catch (e) { /* No existe — proceder */ }
-
+            try { await databases.getDocument(DB_ID, 'ProcessedPayments', orderID); alert('⚠️ Pago ya procesado.'); return; } catch(e) {}
             await databases.createDocument(DB_ID, 'ProcessedPayments', orderID, {
-                uid: currentUser.$id, email: currentUser.email,
-                credits, price, isVip, timestamp: new Date().toISOString()
+                uid: currentUser.$id, email: currentUser.email, credits, price, isVip,
+                timestamp: new Date().toISOString()
             });
-
             const snap  = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
             const maxC  = isVip ? VIP_CREDITS : MAX_CREDITS;
             const newC  = Math.min((snap.credits || 0) + credits, isVip ? 999 : maxC);
-            const updateData = { credits: newC };
-            if (isVip) updateData.vip = true;
-            await databases.updateDocument(DB_ID, 'Users', currentUser.$id, updateData);
-
-            closeModal('credits');
-            alert(`✅ ¡Pago confirmado! +${credits} V-Credits añadidos a tu cuenta.`);
+            const upd   = { credits: newC }; if (isVip) upd.vip = true;
+            await databases.updateDocument(DB_ID, 'Users', currentUser.$id, upd);
+            closeModal('credits'); alert(`✅ ¡Pago confirmado! +${credits} V-Credits añadidos.`);
         },
-        onError: (err) => {
-            console.error('PayPal error:', err);
-            alert('❌ Error en el pago. Por favor intenta de nuevo.');
-        }
+        onError: err => { console.error('PayPal:', err); alert('❌ Error en el pago. Intenta de nuevo.'); }
     }).render('#' + containerId);
 }
 
@@ -1811,43 +1623,32 @@ function adminTab(name) {
     document.getElementById('admin-' + name).classList.add('active');
     document.querySelectorAll('.admin-msg').forEach(m => { m.className = 'admin-msg'; m.textContent = ''; });
 }
-
 function showAdminMsg(id, text, ok) {
     const el = document.getElementById(id);
-    el.textContent = text;
-    el.className = 'admin-msg ' + (ok ? 'ok' : 'err');
+    el.textContent = text; el.className = 'admin-msg ' + (ok ? 'ok' : 'err');
 }
-
 async function adminGiveCredits() {
     const email  = document.getElementById('admin-credit-email').value.trim();
     const amount = parseFloat(document.getElementById('admin-credit-amount').value);
     if (!email || isNaN(amount) || amount <= 0) return showAdminMsg('admin-credits-msg', 'Datos inválidos.', false);
     try {
-        const snap = await databases.listDocuments(DB_ID, 'Users', [Appwrite.Query.equal('email', email)]);
+        const snap   = await databases.listDocuments(DB_ID, 'Users', [Appwrite.Query.equal('email', email)]);
         if (snap.total === 0) return showAdminMsg('admin-credits-msg', 'Usuario no encontrado.', false);
-        const uid    = snap.documents[0].$id;
-        const actual = snap.documents[0].credits || 0;
-        await databases.updateDocument(DB_ID, 'Users', uid, { credits: actual + amount });
+        await databases.updateDocument(DB_ID, 'Users', snap.documents[0].$id, {
+            credits: (snap.documents[0].credits || 0) + amount
+        });
         showAdminMsg('admin-credits-msg', `✓ +${amount} créditos añadidos a ${email}`, true);
-    } catch(e) {
-        showAdminMsg('admin-credits-msg', 'Error: ' + e.message, false);
-    }
+    } catch(e) { showAdminMsg('admin-credits-msg', 'Error: ' + e.message, false); }
 }
-
 async function adminAddWhitelist() {
     const email = document.getElementById('admin-whitelist-email').value.trim().toLowerCase();
     if (!email) return showAdminMsg('admin-whitelist-msg', 'Introduce un correo.', false);
     try {
-        await databases.createDocument(DB_ID, 'Whitelist', Appwrite.ID.unique(), {
-            email, added: new Date().toISOString()
-        });
+        await databases.createDocument(DB_ID, 'Whitelist', Appwrite.ID.unique(), { email, added: new Date().toISOString() });
         showAdminMsg('admin-whitelist-msg', `✓ ${email} añadido a Early Access`, true);
         document.getElementById('admin-whitelist-email').value = '';
-    } catch(e) {
-        showAdminMsg('admin-whitelist-msg', 'Error: ' + e.message, false);
-    }
+    } catch(e) { showAdminMsg('admin-whitelist-msg', 'Error: ' + e.message, false); }
 }
-
 async function adminRemoveWhitelist() {
     const email = document.getElementById('admin-remove-email').value.trim().toLowerCase();
     if (!email) return showAdminMsg('admin-remove-msg', 'Introduce un correo.', false);
@@ -1856,14 +1657,9 @@ async function adminRemoveWhitelist() {
         if (snap.total > 0) {
             await databases.deleteDocument(DB_ID, 'Whitelist', snap.documents[0].$id);
             showAdminMsg('admin-remove-msg', `✓ Acceso revocado a ${email}`, true);
-        } else {
-            showAdminMsg('admin-remove-msg', 'No estaba en la lista.', false);
-        }
-    } catch(e) {
-        showAdminMsg('admin-remove-msg', 'Error: ' + e.message, false);
-    }
+        } else { showAdminMsg('admin-remove-msg', 'No estaba en la lista.', false); }
+    } catch(e) { showAdminMsg('admin-remove-msg', 'Error: ' + e.message, false); }
 }
-
 async function adminBanUser() {
     const email = document.getElementById('admin-ban-email').value.trim();
     if (!email) return showAdminMsg('admin-ban-msg', 'Introduce un correo.', false);
@@ -1872,11 +1668,8 @@ async function adminBanUser() {
         if (snap.total === 0) return showAdminMsg('admin-ban-msg', 'Usuario no encontrado.', false);
         await databases.updateDocument(DB_ID, 'Users', snap.documents[0].$id, { isBanned: true });
         showAdminMsg('admin-ban-msg', `✓ ${email} ha sido baneado.`, true);
-    } catch(e) {
-        showAdminMsg('admin-ban-msg', 'Error: ' + e.message, false);
-    }
+    } catch(e) { showAdminMsg('admin-ban-msg', 'Error: ' + e.message, false); }
 }
-
 async function adminUnbanUser() {
     const email = document.getElementById('admin-unban-email').value.trim();
     if (!email) return showAdminMsg('admin-unban-msg', 'Introduce un correo.', false);
@@ -1885,9 +1678,7 @@ async function adminUnbanUser() {
         if (snap.total === 0) return showAdminMsg('admin-unban-msg', 'Usuario no encontrado.', false);
         await databases.updateDocument(DB_ID, 'Users', snap.documents[0].$id, { isBanned: false });
         showAdminMsg('admin-unban-msg', `✓ ${email} ha sido desbaneado.`, true);
-    } catch(e) {
-        showAdminMsg('admin-unban-msg', 'Error: ' + e.message, false);
-    }
+    } catch(e) { showAdminMsg('admin-unban-msg', 'Error: ' + e.message, false); }
 }
 </script>
 </body>
