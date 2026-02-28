@@ -742,7 +742,7 @@
             </div>
             <div class="logo-text">
                 <span class="logo-name">V1zions.top</span>
-                <span class="logo-badge">Beta</span>
+                <span class="logo-badge">v25.8</span>
             </div>
         </div>
     </div>
@@ -994,6 +994,8 @@ let projectsData     = [];
 let currentProjectId = null;
 let creditsUnsub     = null;
 let refillInterval   = null;
+let fasesPendientes  = [];  // [v25.8] Fases de roadmap que aún no se han completado
+let activePasoSid    = null; // [v25.8] SID del paso de roadmap actualmente en proceso
 
 const chatContainer = document.getElementById('chat-container');
 const projectsList  = document.getElementById('projects-list');
@@ -1123,11 +1125,18 @@ function updateCreditsDisplay(animate = false) {
 }
 
 async function deductCredits(amount) {
-    userCredits = Math.max(0, userCredits - amount);
-    const doc = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
-    await databases.updateDocument(DB_ID, 'Users', currentUser.$id, {
-        credits: Math.max(0, (doc.credits || 0) - amount)
-    });
+    try {
+        const doc          = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
+        const saldoAntes   = typeof doc.credits === 'number' ? doc.credits : 0;
+        const saldoDespues = Math.max(0, saldoAntes - amount);
+        console.log(`[deductCredits] 💳 Saldo en DB: ${saldoAntes} | A descontar: ${amount} | Nuevo saldo calculado: ${saldoDespues}`);
+        await databases.updateDocument(DB_ID, 'Users', currentUser.$id, { credits: saldoDespues });
+        userCredits = saldoDespues;
+        updateCreditsDisplay(true);
+        console.log(`[deductCredits] ✅ Descuento aplicado. Saldo final confirmado: ${saldoDespues}`);
+    } catch(e) {
+        console.error('[deductCredits] ❌ Error al descontar créditos:', e.message);
+    }
 }
 
 // ══════════════════════════════════════════
@@ -1458,6 +1467,7 @@ function escucharDocumento(docId, loadMsgId, onData, maxMs = 120000) {
     const timeoutId = setTimeout(() => {
         if (!stopped) {
             stop();
+            setLoadingState(false); // [v25.8]
             const loadEl = document.getElementById(loadMsgId);
             if (loadEl) loadEl.remove();
             addMsg('ai', '⏱️ La solicitud tardó demasiado. Intenta de nuevo.');
@@ -1589,6 +1599,58 @@ function calcularCosto(txt) {
 }
 
 // ══════════════════════════════════════════
+//  LOADING STATE [v25.8]
+//  Bloquea/desbloquea el input durante generación
+// ══════════════════════════════════════════
+function setLoadingState(isLoading) {
+    const ta  = document.getElementById('prompt');
+    const btn = document.getElementById('send-btn');
+    ta.disabled  = isLoading;
+    btn.disabled = isLoading;
+    ta.style.opacity  = isLoading ? '0.45' : '1';
+    btn.style.opacity = isLoading ? '0.45' : '1';
+    btn.style.cursor  = isLoading ? 'not-allowed' : '';
+}
+
+// ══════════════════════════════════════════
+//  FORMATTER IA PARLANTE [v25.8]
+//  Convierte \n y **texto** en HTML legible
+// ══════════════════════════════════════════
+function formatearMensajeIA(texto) {
+    if (!texto || texto.length < 5) return '';
+    return texto
+        .split('\n')
+        .filter(l => l.trim())
+        .map(l => {
+            const html = l.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+            return `<div style="margin-bottom:5px;line-height:1.55">${html}</div>`;
+        })
+        .join('');
+}
+
+// ══════════════════════════════════════════
+//  RENDER FASES RESTANTES [v25.8]
+//  Muestra los botones de pasos pendientes
+//  después de que una fase se inyecta con éxito
+// ══════════════════════════════════════════
+function renderFasesPendientes() {
+    if (fasesPendientes.length === 0) return;
+    const sistema = fasesPendientes[0].sistema;
+    let html = `<span style="font-size:12px;color:var(--green);">✅ Fase completada.</span> `;
+    html += `<span style="font-size:12px;color:var(--text-2);">Continúa con la siguiente parte de <strong>"${sistema}"</strong>:</span><br><br>`;
+    html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases restantes</div>`;
+    fasesPendientes.forEach((f, i) => {
+        html += `<button class="roadmap-step" data-step-id="${f.sid}">
+            <div class="roadmap-step-num">${i + 1}</div>
+            <div class="roadmap-step-body"><strong>${f.titulo}</strong><span>${f.desc}</span></div>
+            <div class="roadmap-step-arrow">›</div>
+        </button>`;
+    });
+    html += `</div>`;
+    addMsg('ai', html);
+}
+
+// ══════════════════════════════════════════
 //  SEND / ENVIAR  [v25.2]
 //  CAMBIO: cobro de créditos movido al éxito.
 //  Al inicio solo se verifica saldo.
@@ -1605,6 +1667,7 @@ async function enviar() {
     // ── Solo verificación de saldo — NO cobrar todavía ──
     if (userCredits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${userCredits.toFixed(1)}.`);
 
+    setLoadingState(true); // [v25.8] bloquear input
     addMsg('user', txt);
     saveMsg('user', txt);
     ta.value = ''; ta.style.height = 'auto';
@@ -1628,6 +1691,7 @@ async function enviar() {
         const loadEl = document.getElementById(lid);
         if (loadEl) loadEl.remove();
         addMsg('ai', '❌ Error de conexión con Appwrite: ' + e.message);
+        setLoadingState(false); // [v25.8]
         return;
     }
 
@@ -1638,6 +1702,7 @@ async function enviar() {
         // ── Plan listo → mostrar interfaz de aprobación ──
         if (data.estado === 'esperando_aprobacion') {
             stop(); // aprobarPlan crea su propio listener
+            setLoadingState(false); // [v25.8] re-habilitar input mientras el usuario decide
             if (!data.planData) {
                 if (loadEl) loadEl.remove();
                 addMsg('ai', '❌ El plan llegó vacío. Intenta de nuevo.');
@@ -1657,10 +1722,19 @@ async function enviar() {
         // ── Código listo → cobrar AQUÍ, solo en éxito real ──
         if (data.estado === 'inyectar' || data.estado === 'completado') {
             stop();
+            setLoadingState(false); // [v25.8]
             if (loadEl) loadEl.remove();
             await deductCredits(costo);   // [v25.2] cobro real al confirmar éxito
             flashCost(costo);
-            const resumen = data.resultado || 'Sistema inyectado correctamente.';
+
+            // [v25.8] IA Parlante: mensaje de chat con formato antes del terminal verde
+            const resumen = data.resultado || '';
+            if (resumen.length > 10) {
+                const msgFormato = formatearMensajeIA(resumen);
+                if (msgFormato) addMsg('ai', msgFormato);
+            }
+
+            // Terminal verde Injection complete
             const lineas = resumen.split('\n').filter(l => l.trim());
             const lineasHTML = lineas.map(l =>
                 `<div class="ss-line"><span class="ss-prefix">›</span><span>${l}</span></div>`
@@ -1671,15 +1745,25 @@ async function enviar() {
     <div class="success-summary-dot"></div>
     <span class="success-summary-title">Injection complete</span>
   </div>
-  <div class="success-summary-body">${lineasHTML || `<div class="ss-line"><span class="ss-prefix">›</span><span>${resumen}</span></div>`}</div>
+  <div class="success-summary-body">${lineasHTML || `<div class="ss-line"><span class="ss-prefix">›</span><span>${resumen || 'Sistema inyectado correctamente.'}</span></div>`}</div>
 </div>`;
             addMsg('ai', m); saveMsg('ai', m);
+
+            // [v25.8] Persistencia de fases: eliminar paso completado y re-renderizar restantes
+            if (activePasoSid) {
+                fasesPendientes = fasesPendientes.filter(f => f.sid !== activePasoSid);
+                activePasoSid = null;
+            }
+            if (fasesPendientes.length > 0) {
+                renderFasesPendientes();
+            }
             return;
         }
 
         // ── Roadmap → sistema muy grande, NO cobrar nada ──
         if (data.estado === 'roadmap_pendiente') {
             stop();
+            setLoadingState(false); // [v25.8]
             if (loadEl) loadEl.remove();
             // No se cobra — el usuario aún no recibió código
             let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>`;
@@ -1688,9 +1772,11 @@ async function enviar() {
             try {
                 const pasos = JSON.parse(data.pasos);
                 window._roadmapSteps = window._roadmapSteps || {};
+                fasesPendientes = []; // [v25.8] resetear y cargar nuevo roadmap
                 pasos.forEach((p, i) => {
                     const sid = 'rs_' + Date.now() + '_' + i;
                     window._roadmapSteps[sid] = { titulo: p.titulo, desc: p.descripcion, sistema: data.tituloSistema };
+                    fasesPendientes.push({ sid, titulo: p.titulo, desc: p.descripcion, sistema: data.tituloSistema });
                     html += `<button class="roadmap-step" data-step-id="${sid}">
                         <div class="roadmap-step-num">${i + 1}</div>
                         <div class="roadmap-step-body"><strong>${p.titulo}</strong><span>${p.descripcion}</span></div>
@@ -1706,6 +1792,7 @@ async function enviar() {
         // ── Error → no cobrar nada ──
         if (data.estado === 'error') {
             stop();
+            setLoadingState(false); // [v25.8]
             if (loadEl) loadEl.remove();
             addMsg('ai', `❌ ${data.resultado || 'Error en la inyección.'}`);
         }
@@ -1730,6 +1817,7 @@ function setPrompt(txt) { ta.value = txt; ta.style.height = 'auto'; ta.style.hei
 window.lanzarPasoRoadmap = function(sid) {
     const s = (window._roadmapSteps || {})[sid];
     if (!s) return;
+    activePasoSid = sid; // [v25.8] registrar cuál fase se está ejecutando
     setPrompt(`Del sistema "${s.sistema}", genera el código completo para:\n**${s.titulo}**\nDetalles: ${s.desc}\n\nGenera ÚNICAMENTE los scripts de esta parte.`);
     enviar();
 };
