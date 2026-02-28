@@ -1514,20 +1514,29 @@ window.lanzarPasoRoadmap = function(titulo, desc, sistema) {
 //  STUDIO STATUS
 // ══════════════════════════════════════════
 async function setupStudioStatus() {
+    // ── El subscribe se activa SIEMPRE, antes que cualquier await.
+    //    Así la página escucha cambios en tiempo real sin importar
+    //    si el documento existe o no en el momento de cargar.
+    client.subscribe(
+        `databases.${DB_ID}.collections.System.documents.Connection`,
+        response => {
+            const o = response.payload.status === 'online';
+            document.getElementById('studio-status').classList.toggle('online', o);
+            document.getElementById('status-text').textContent = o ? 'Studio Vinculado' : 'Esperando Studio...';
+            isConnected = o;
+        }
+    );
+
+    // ── Lectura inicial para sincronizar el estado visual al cargar.
+    //    Si falla (doc no existe aún) no importa — el subscribe ya está activo
+    //    y reaccionará en cuanto el plugin actualice Appwrite.
     try {
         const doc    = await databases.getDocument(DB_ID, 'System', 'Connection');
         const online = doc.status === 'online';
         document.getElementById('studio-status').classList.toggle('online', online);
         document.getElementById('status-text').textContent = online ? 'Studio Vinculado' : 'Esperando Studio...';
         isConnected = online;
-        client.subscribe(`databases.${DB_ID}.collections.System.documents.Connection`, response => {
-            const d = response.payload;
-            const o = d.status === 'online';
-            document.getElementById('studio-status').classList.toggle('online', o);
-            document.getElementById('status-text').textContent = o ? 'Studio Vinculado' : 'Esperando Studio...';
-            isConnected = o;
-        });
-    } catch(e) { /* Sin doc de conexión aún */ }
+    } catch(e) { /* Documento aún no existe — el subscribe lo cubrirá */ }
 }
 
 // ══════════════════════════════════════════
