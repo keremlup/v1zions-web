@@ -1349,9 +1349,11 @@ async function aprobarPlan(docId) {
             html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
             try {
                 const pasos = JSON.parse(data.pasos);
-                pasos.forEach(p => {
-                    html += `<button class="roadmap-step"
-                        onclick='window.lanzarPasoRoadmap(${JSON.stringify(p.titulo)},${JSON.stringify(p.descripcion)},${JSON.stringify(data.tituloSistema)})'>
+                window._roadmapSteps = window._roadmapSteps || {};
+                pasos.forEach((p, i) => {
+                    const sid = 'rs_' + Date.now() + '_' + i;
+                    window._roadmapSteps[sid] = { titulo: p.titulo, desc: p.descripcion, sistema: data.tituloSistema };
+                    html += `<button class="roadmap-step" data-step-id="${sid}">
                         <strong>${p.titulo}</strong><span>${p.descripcion}</span></button>`;
                 });
             } catch(err) { console.error("Error parseando pasos", err); }
@@ -1489,9 +1491,11 @@ async function enviar() {
             html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
             try {
                 const pasos = JSON.parse(data.pasos);
-                pasos.forEach(p => {
-                    html += `<button class="roadmap-step"
-                        onclick='window.lanzarPasoRoadmap(${JSON.stringify(p.titulo)},${JSON.stringify(p.descripcion)},${JSON.stringify(data.tituloSistema)})'>
+                window._roadmapSteps = window._roadmapSteps || {};
+                pasos.forEach((p, i) => {
+                    const sid = 'rs_' + Date.now() + '_' + i;
+                    window._roadmapSteps[sid] = { titulo: p.titulo, desc: p.descripcion, sistema: data.tituloSistema };
+                    html += `<button class="roadmap-step" data-step-id="${sid}">
                         <strong>${p.titulo}</strong><span>${p.descripcion}</span></button>`;
                 });
             } catch(err) { console.error("Error pasos:", err); }
@@ -1520,13 +1524,22 @@ document.getElementById('file-upload').addEventListener('change', e => {
 
 function setPrompt(txt) { ta.value = txt; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; ta.focus(); }
 
-// [v25.2] lanzarPasoRoadmap: solo pega el texto en el textarea.
-// El usuario debe presionar Enter manualmente para enviar.
-// Se eliminó el enviar() automático que causaba envíos sin intención.
-window.lanzarPasoRoadmap = function(titulo, desc, sistema) {
-    setPrompt(`Del sistema "${sistema}", genera el código completo para:\n**${titulo}**\nDetalles: ${desc}\n\nGenera ÚNICAMENTE los scripts de esta parte.`);
-    // ← enviar() eliminado intencionalmente. El usuario presiona Enter.
+// [v25.3] lanzarPasoRoadmap: recibe un ID del mapa global _roadmapSteps.
+// Los datos nunca pasan por atributos HTML, por lo que comillas simples,
+// dobles y cualquier carácter especial son 100 % seguros.
+// Al hacer clic en la fase se rellena el textarea y se envía automáticamente.
+window.lanzarPasoRoadmap = function(sid) {
+    const s = (window._roadmapSteps || {})[sid];
+    if (!s) return;
+    setPrompt(`Del sistema "${s.sistema}", genera el código completo para:\n**${s.titulo}**\nDetalles: ${s.desc}\n\nGenera ÚNICAMENTE los scripts de esta parte.`);
+    enviar();
 };
+
+// Delegación de eventos: captura clics en cualquier .roadmap-step con data-step-id
+document.addEventListener('click', function(e) {
+    const btn = e.target.closest('.roadmap-step[data-step-id]');
+    if (btn) window.lanzarPasoRoadmap(btn.dataset.stepId);
+});
 
 async function setupStudioStatus() {
     // ── El subscribe se activa SIEMPRE, antes que cualquier await.
