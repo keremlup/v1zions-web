@@ -717,6 +717,77 @@
         }
         .credits-pop { animation: creditsPop .4s ease-out; }
         @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* ─── CUSTOM SCROLLBARS (global) ─── */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(230,48,48,0.18); border-radius: 6px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(230,48,48,0.38); }
+        #chat-container::-webkit-scrollbar { width: 5px; }
+        #chat-container::-webkit-scrollbar-thumb { background: rgba(230,48,48,0.18); border-radius: 6px; }
+        #chat-container::-webkit-scrollbar-thumb:hover { background: rgba(230,48,48,0.38); }
+
+        /* ─── FADE-IN-UP: nuevos mensajes entran suavemente ─── */
+        @keyframes msgFadeUp {
+            from { opacity: 0; transform: translateY(14px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .msg { animation: msgFadeUp .28s cubic-bezier(.34,1.1,.64,1) both; }
+
+        /* ─── SEND BUTTON GLOW mejorado ─── */
+        .send-btn {
+            box-shadow: 0 0 16px rgba(230,48,48,0.45), 0 3px 12px rgba(230,48,48,0.3) !important;
+            transition: all .2s !important;
+        }
+        .send-btn:hover {
+            box-shadow: 0 0 26px rgba(230,48,48,0.7), 0 4px 18px rgba(230,48,48,0.5) !important;
+        }
+
+        /* ─── SUCCESS ALERT GLOW ─── */
+        .success-summary {
+            box-shadow: 0 4px 20px rgba(0,0,0,0.35),
+                        0 0 0 1px rgba(34,197,94,0.06),
+                        0 0 22px rgba(34,197,94,0.1) !important;
+        }
+
+        /* ─── PULSE ANIMATION cuando loading ─── */
+        @keyframes pulseGlow {
+            0%,100% { box-shadow: 0 0 8px rgba(230,48,48,0.25); opacity: 0.72; }
+            50%      { box-shadow: 0 0 24px rgba(230,48,48,0.65); opacity: 1; }
+        }
+        #send-btn:disabled { animation: pulseGlow 1.6s ease-in-out infinite !important; cursor: not-allowed; }
+        .loading-bubble    { animation: pulseGlow 1.8s ease-in-out infinite; }
+
+        /* ─── TOAST NOTIFICATIONS ─── */
+        #toast-container {
+            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            display: flex; flex-direction: column; gap: 9px;
+            pointer-events: none;
+        }
+        .toast {
+            display: flex; align-items: center; gap: 10px;
+            background: rgba(10,10,18,0.97); backdrop-filter: blur(20px);
+            border: 1px solid var(--border-2); border-radius: 10px;
+            padding: 11px 16px; font-size: 12.5px; font-weight: 600; color: var(--text);
+            box-shadow: 0 8px 28px rgba(0,0,0,0.55);
+            pointer-events: all; min-width: 220px; max-width: 320px;
+            animation: toastIn .3s cubic-bezier(.34,1.2,.64,1) both;
+        }
+        .toast.ok   { border-color: rgba(34,197,94,0.35); }
+        .toast.err  { border-color: rgba(230,48,48,0.4);  }
+        .toast.info { border-color: rgba(88,101,242,0.4);  }
+        .toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+        .toast.ok   .toast-dot { background: var(--green);   box-shadow: 0 0 7px var(--green);   }
+        .toast.err  .toast-dot { background: var(--red);     box-shadow: 0 0 7px var(--red);     }
+        .toast.info .toast-dot { background: var(--discord); box-shadow: 0 0 7px var(--discord); }
+        @keyframes toastIn  { from{opacity:0;transform:translateX(26px);} to{opacity:1;transform:translateX(0);} }
+        @keyframes toastOut { from{opacity:1;transform:translateX(0);}   to{opacity:0;transform:translateX(26px);} }
+
+        /* ─── CHAR COUNTER ─── */
+        .input-footer-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+        .char-counter { font-size: 10.5px; font-weight: 600; color: var(--text-3); transition: color .2s; }
+        .char-counter.warn   { color: var(--yellow); }
+        .char-counter.danger { color: var(--red); }
     </style>
 </head>
 <body>
@@ -842,8 +913,9 @@
             <textarea id="prompt" rows="1" placeholder="Describe el sistema que necesitas..."></textarea>
             <button class="action-btn send-btn" id="send-btn">➤</button>
         </div>
-        <div class="input-footer">
-            ⚠️ V1zions puede cometer errores — revisa el código antes de usarlo en producción.
+        <div class="input-footer-row">
+            <span class="input-footer">⚠️ V1zions puede cometer errores — revisa el código antes de usarlo en producción.</span>
+            <span class="char-counter" id="char-counter">0 / 1000</span>
         </div>
     </div>
 </main>
@@ -965,6 +1037,9 @@
     </div>
 </div>
 
+<!-- ─── TOAST CONTAINER ─── -->
+<div id="toast-container"></div>
+
 <!-- ─── JAVASCRIPT ─── -->
 <script>
 // ══════════════════════════════════════════
@@ -975,6 +1050,66 @@ const MAX_CREDITS   = 10;
 const VIP_CREDITS   = 50;
 const REFILL_HOURS  = 24;
 const REFILL_AMOUNT = 1;
+
+// ══════════════════════════════════════════
+//  ANTI-INSPECCIÓN — bloquea F12, Ctrl+Shift+I/J, Ctrl+U, clic derecho
+//  Disuade inspección casual sin romper el flujo normal de la app
+// ══════════════════════════════════════════
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+    if (e.key === 'F12') { e.preventDefault(); return false; }
+    if (e.ctrlKey && e.shiftKey && ['I','i','J','j','C','c'].includes(e.key)) { e.preventDefault(); return false; }
+    if (e.ctrlKey && ['u','U'].includes(e.key)) { e.preventDefault(); return false; }
+});
+
+// ══════════════════════════════════════════
+//  TOAST — notificaciones visuales en esquina
+// ══════════════════════════════════════════
+function showToast(msg, type = 'ok', duration = 3200) {
+    const container = document.getElementById('toast-container');
+    const t = document.createElement('div');
+    t.className = 'toast ' + type;
+    t.innerHTML = `<div class="toast-dot"></div><span>${msg}</span>`;
+    container.appendChild(t);
+    setTimeout(() => {
+        t.style.animation = 'toastOut .3s ease forwards';
+        setTimeout(() => { if (t.parentNode) t.remove(); }, 310);
+    }, duration);
+}
+
+// ══════════════════════════════════════════
+//  RATE LIMITING — máx 1 mensaje cada 5s
+// ══════════════════════════════════════════
+let lastSendTime  = 0;
+const RATE_LIMIT_MS = 5000;
+
+// ══════════════════════════════════════════
+//  SANITIZACIÓN DE INPUT — anti prompt-injection
+// ══════════════════════════════════════════
+const INJECTION_PATTERNS = [
+    /ignora\s+(tus\s+)?instrucciones/gi,
+    /olvida\s+(todo|tus\s+instrucciones|lo\s+anterior)/gi,
+    /ignore\s+(all\s+)?(previous\s+)?instructions/gi,
+    /forget\s+(your|all|previous)/gi,
+    /\bsystem\s*:/gi,
+    /\[SYSTEM\]/gi,
+    /\[INST\]/gi,
+    /<\|system\|>/gi,
+    /\bjailbreak\b/gi,
+    /prompt\s*injection/gi,
+    /act\s+as\s+(a\s+)?(dan|jailbreak|unrestricted)/gi,
+    /pretend\s+(you\s+are|to\s+be)\s+(un|a\s+free|an?\s+evil)/gi,
+    /new\s+conversation\s+start/gi,
+    /\bDAN\b/g,
+];
+
+function sanitizeInput(txt) {
+    let clean = txt;
+    INJECTION_PATTERNS.forEach(p => { clean = clean.replace(p, '[removed]'); });
+    // Truncar a 1000 chars máximo
+    if (clean.length > 1000) clean = clean.substring(0, 1000);
+    return clean.trim();
+}
 
 const client = new Appwrite.Client()
     .setEndpoint('https://nyc.cloud.appwrite.io/v1')
@@ -1239,7 +1374,7 @@ function loadProject(id) {
 
 function deleteProject(id, e) {
     e.stopPropagation();
-    if (projectsData.length <= 1) { alert('⚠️ Debes tener al menos un proyecto.'); return; }
+    if (projectsData.length <= 1) { showToast('⚠️ Debes tener al menos un proyecto.', 'err'); return; }
     if (!confirm('¿Eliminar este proyecto?')) return;
     projectsData = projectsData.filter(p => p.id !== id);
     saveData();
@@ -1537,10 +1672,17 @@ async function aprobarPlan(docId) {
         } else if (data.estado === 'roadmap_pendiente') {
             stop();
             if (loadEl) loadEl.remove();
-            let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
-            html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
             try {
-                const pasos = JSON.parse(data.pasos);
+                const pasos = JSON.parse(data.pasos || '[]');
+
+                // ── FIX cajón vacío: sin fases, skip roadmap ──
+                if (!pasos || pasos.length === 0) {
+                    addMsg('ai', `<span style="color:var(--text-2);font-size:13px;">🔧 El sistema es pequeño, <strong style="color:var(--text)">se generará en una sola fase.</strong></span>`);
+                    return;
+                }
+
+                let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
+                html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
                 window._roadmapSteps = window._roadmapSteps || {};
                 pasos.forEach((p, i) => {
                     const sid = 'rs_' + Date.now() + '_' + i;
@@ -1551,14 +1693,55 @@ async function aprobarPlan(docId) {
                         <div class="roadmap-step-arrow">›</div>
                     </button>`;
                 });
+                html += `</div>`;
+                addMsg('ai', html); saveMsg('ai', 'Roadmap generado.');
             } catch(err) { console.error("Error parseando pasos", err); }
-            html += `</div>`;
-            addMsg('ai', html); saveMsg('ai', 'Roadmap generado.');
-
         } else if (data.estado === 'error') {
             stop();
             if (loadEl) loadEl.remove();
+
+            // ── AUTO-RETRY: 1 intento automático antes de mostrar error al usuario ──
+            if (!this._retried) {
+                this._retried = true;
+                addMsg('ai', `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Reintentando generación...</div>`, lid);
+                try {
+                    await databases.updateDocument(DB_ID, 'PeticionesRoblox', docId, { estado: 'aprobado' });
+                    const retryStop = escucharDocumento(docId, lid, async (retryData) => {
+                        const retryEl = document.getElementById(lid);
+                        if (retryData.estado === 'inyectar' || retryData.estado === 'completado') {
+                            retryStop();
+                            if (retryEl) retryEl.remove();
+                            const resumen = retryData.resultado || '';
+                            const lineas = resumen.split('\n').filter(l => l.trim());
+                            const lineasHTML = lineas.map(l =>
+                                `<div class="ss-line"><span class="ss-prefix">›</span><span>${l}</span></div>`
+                            ).join('');
+                            const m = `<strong style="color:var(--green);font-size:13px;">✓ Sistema inyectado</strong>
+<div class="success-summary">
+  <div class="success-summary-header">
+    <div class="success-summary-dot"></div>
+    <span class="success-summary-title">Injection complete</span>
+  </div>
+  <div class="success-summary-body">${lineasHTML || `<div class="ss-line"><span class="ss-prefix">›</span><span>${resumen || 'Sistema inyectado.'}</span></div>`}</div>
+</div>`;
+                            addMsg('ai', m); saveMsg('ai', m);
+                            showToast('✓ Sistema inyectado en Studio', 'ok');
+                        } else if (retryData.estado === 'error') {
+                            retryStop();
+                            if (retryEl) retryEl.remove();
+                            addMsg('ai', `❌ ${retryData.resultado || 'Error generando el código.'}`);
+                            showToast('❌ Error al generar el sistema', 'err');
+                        }
+                    });
+                } catch(retryErr) {
+                    addMsg('ai', `❌ ${data.resultado || 'Error generando el código.'}`);
+                    showToast('❌ Error al generar el sistema', 'err');
+                }
+                return;
+            }
+
             addMsg('ai', `❌ ${data.resultado || 'Error generando el código.'}`);
+            showToast('❌ Error al generar el sistema', 'err');
         }
     });
 }
@@ -1584,7 +1767,18 @@ async function rechazarPlan(docId) {
 //  SEND / ENVIAR
 // ══════════════════════════════════════════
 const ta = document.getElementById('prompt');
-ta.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
+ta.setAttribute('maxlength', '1000');
+ta.addEventListener('input', function() {
+    this.style.height = 'auto';
+    this.style.height = this.scrollHeight + 'px';
+    // Char counter
+    const len     = this.value.length;
+    const counter = document.getElementById('char-counter');
+    if (counter) {
+        counter.textContent = len + ' / 1000';
+        counter.className   = 'char-counter' + (len > 900 ? ' danger' : len > 750 ? ' warn' : '');
+    }
+});
 
 let isConnected = false;
 
@@ -1660,21 +1854,44 @@ function renderFasesPendientes() {
 //  Si hay error o roadmap_pendiente → sin cobro.
 // ══════════════════════════════════════════
 async function enviar() {
-    const txt = ta.value.trim(); if (!txt) return;
-    if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
+    const raw = ta.value.trim(); if (!raw) return;
+
+    // ── Rate limiting ──
+    const now = Date.now();
+    if (now - lastSendTime < RATE_LIMIT_MS) {
+        const left = Math.ceil((RATE_LIMIT_MS - (now - lastSendTime)) / 1000);
+        showToast(`⏳ Espera ${left}s antes de enviar otro mensaje.`, 'err', 2500);
+        return;
+    }
+
+    if (!isConnected) {
+        showToast('⚠️ Conecta el plugin de Roblox Studio primero.', 'err');
+        return;
+    }
+
+    // ── Sanitización ──
+    const txt   = sanitizeInput(raw);
     const costo = calcularCosto(txt);
 
     // ── Solo verificación de saldo — NO cobrar todavía ──
-    if (userCredits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${userCredits.toFixed(1)}.`);
+    if (userCredits < costo) {
+        showToast(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${userCredits.toFixed(1)}.`, 'err');
+        return;
+    }
+
+    lastSendTime = Date.now(); // registrar tiempo de envío para rate limit
 
     setLoadingState(true); // [v25.8] bloquear input
     addMsg('user', txt);
     saveMsg('user', txt);
     ta.value = ''; ta.style.height = 'auto';
+    // Reset char counter
+    const counter = document.getElementById('char-counter');
+    if (counter) { counter.textContent = '0 / 1000'; counter.className = 'char-counter'; }
 
     const lid = 'load-' + Date.now();
     addMsg('ai',
-        `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Analizando y planificando...</div>`,
+        `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Analizando arquitectura...</div>`,
         lid
     );
 
@@ -1748,6 +1965,7 @@ async function enviar() {
   <div class="success-summary-body">${lineasHTML || `<div class="ss-line"><span class="ss-prefix">›</span><span>${resumen || 'Sistema inyectado correctamente.'}</span></div>`}</div>
 </div>`;
             addMsg('ai', m); saveMsg('ai', m);
+            showToast('✓ Sistema inyectado en Studio', 'ok');
 
             // [v25.8] Persistencia de fases: eliminar paso completado y re-renderizar restantes
             if (activePasoSid) {
@@ -1766,11 +1984,21 @@ async function enviar() {
             setLoadingState(false); // [v25.8]
             if (loadEl) loadEl.remove();
             // No se cobra — el usuario aún no recibió código
-            let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>`;
-            html += `<span style="font-size:12px;color:var(--text-2);">Este sistema es muy grande para generarse de golpe. Elige una fase para empezar:</span><br><br>`;
-            html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
             try {
-                const pasos = JSON.parse(data.pasos);
+                const pasos = JSON.parse(data.pasos || '[]');
+
+                // ── FIX cajón vacío: si no hay fases, generar directo sin roadmap box ──
+                if (!pasos || pasos.length === 0) {
+                    addMsg('ai', `<span style="color:var(--text-2);font-size:13px;">🔧 El sistema es pequeño, <strong style="color:var(--text)">se generará en una sola fase.</strong> Procesando...</span>`);
+                    // Re-enviar con instrucción de generar todo directo
+                    ta.value = `Genera TODOS los scripts completos para: ${txt}. Genera el código en una sola entrega.`;
+                    setTimeout(() => enviar(), 400);
+                    return;
+                }
+
+                let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>`;
+                html += `<span style="font-size:12px;color:var(--text-2);">Este sistema es muy grande para generarse de golpe. Elige una fase para empezar:</span><br><br>`;
+                html += `<div class="roadmap-box"><div class="roadmap-box-title">📋 Fases del sistema</div>`;
                 window._roadmapSteps = window._roadmapSteps || {};
                 fasesPendientes = []; // [v25.8] resetear y cargar nuevo roadmap
                 pasos.forEach((p, i) => {
@@ -1783,9 +2011,12 @@ async function enviar() {
                         <div class="roadmap-step-arrow">›</div>
                     </button>`;
                 });
-            } catch(err) { console.error("Error pasos:", err); }
-            html += `</div>`;
-            addMsg('ai', html); saveMsg('ai', 'Roadmap generado.');
+                html += `</div>`;
+                addMsg('ai', html); saveMsg('ai', 'Roadmap generado.');
+            } catch(err) {
+                console.error("Error pasos:", err);
+                addMsg('ai', '❌ Error al leer las fases del sistema. Intenta de nuevo.');
+            }
             return;
         }
 
@@ -1847,7 +2078,10 @@ async function setupStudioStatus() {
             const o = response.payload.status === 'online';
             document.getElementById('studio-status').classList.toggle('online', o);
             document.getElementById('status-text').textContent = o ? 'Studio Vinculado' : 'Esperando Studio...';
+            const wasConnected = isConnected;
             isConnected = o;
+            if (o && !wasConnected)  showToast('🎮 Studio conectado correctamente', 'ok');
+            if (!o && wasConnected) showToast('⚠️ Studio desconectado', 'err', 4000);
         }
     );
 
@@ -1929,7 +2163,7 @@ function setupPayPalButton(containerId, price, credits, isVip) {
         onApprove: async (data, actions) => {
             const order   = await actions.order.capture();
             const orderID = order.id;
-            try { await databases.getDocument(DB_ID, 'ProcessedPayments', orderID); alert('⚠️ Pago ya procesado.'); return; } catch(e) {}
+            try { await databases.getDocument(DB_ID, 'ProcessedPayments', orderID); showToast('⚠️ Pago ya procesado.', 'info'); return; } catch(e) {}
             await databases.createDocument(DB_ID, 'ProcessedPayments', orderID, {
                 uid: currentUser.$id, email: currentUser.email, credits, price, isVip,
                 timestamp: new Date().toISOString()
@@ -1939,9 +2173,9 @@ function setupPayPalButton(containerId, price, credits, isVip) {
             const newC  = Math.min((snap.credits || 0) + credits, isVip ? 999 : maxC);
             const upd   = { credits: newC }; if (isVip) upd.vip = true;
             await databases.updateDocument(DB_ID, 'Users', currentUser.$id, upd);
-            closeModal('credits'); alert(`✅ ¡Pago confirmado! +${credits} V-Credits añadidos.`);
+            closeModal('credits'); showToast(`✅ ¡Pago confirmado! +${credits} V-Credits añadidos.`, 'ok', 5000);
         },
-        onError: err => { console.error('PayPal:', err); alert('❌ Error en el pago. Intenta de nuevo.'); }
+        onError: err => { console.error('PayPal:', err); showToast('❌ Error en el pago. Intenta de nuevo.', 'err'); }
     }).render('#' + containerId);
 }
 
