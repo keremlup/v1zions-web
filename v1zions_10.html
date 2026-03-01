@@ -1648,7 +1648,8 @@ async function aprobarPlan(docId) {
         lid
     );
 
-    const stop = escucharDocumento(docId, lid, (data) => {
+    let retried = false;
+    const stop = escucharDocumento(docId, lid, async (data) => {
         const loadEl = document.getElementById(lid);
 
         if (data.estado === 'inyectar' || data.estado === 'completado') {
@@ -1701,8 +1702,8 @@ async function aprobarPlan(docId) {
             if (loadEl) loadEl.remove();
 
             // ── AUTO-RETRY: 1 intento automático antes de mostrar error al usuario ──
-            if (!this._retried) {
-                this._retried = true;
+            if (!retried) {
+                retried = true;
                 addMsg('ai', `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Reintentando generación...</div>`, lid);
                 try {
                     await databases.updateDocument(DB_ID, 'PeticionesRoblox', docId, { estado: 'aprobado' });
