@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>V1zions</title>
+    <link rel="icon" type="image/png" href="logo.png">
+    <link rel="shortcut icon" type="image/png" href="logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
@@ -726,8 +728,61 @@
         .admin-msg.ok { background: var(--green-dim); border: 1px solid rgba(34,197,94,0.22); color: var(--green); display: block; }
         .admin-msg.err { background: var(--red-dim); border: 1px solid var(--red-border); color: var(--red); display: block; }
 
-        /* Animations */
-        @keyframes creditsPop {
+        /* ─── WELCOME ENHANCED ─── */
+        .welcome-badge {
+            display: inline-flex; align-items: center; gap: 7px;
+            background: rgba(230,48,48,0.1); border: 1px solid rgba(230,48,48,0.28);
+            border-radius: 20px; padding: 5px 14px; font-size: 11px; font-weight: 700;
+            color: var(--red); letter-spacing: 0.6px; text-transform: uppercase;
+            margin-bottom: 4px;
+            animation: badgePulse 3s ease-in-out infinite;
+        }
+        @keyframes badgePulse {
+            0%,100% { box-shadow: 0 0 0 0 rgba(230,48,48,0.15); }
+            50%      { box-shadow: 0 0 0 8px rgba(230,48,48,0); }
+        }
+        .badge-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--red); animation: blink 1.2s infinite; }
+
+        /* Floating code snippets decoration */
+        .code-float {
+            position: absolute; font-family: 'Courier New', monospace;
+            font-size: 11px; color: rgba(230,48,48,0.18); font-weight: 600;
+            pointer-events: none; white-space: nowrap; letter-spacing: -0.3px;
+            animation: floatCode 12s ease-in-out infinite;
+        }
+        .code-float:nth-child(2) { animation-delay: -3s; animation-duration: 15s; }
+        .code-float:nth-child(3) { animation-delay: -7s; animation-duration: 11s; }
+        .code-float:nth-child(4) { animation-delay: -9s; animation-duration: 14s; }
+        @keyframes floatCode {
+            0%,100% { opacity: 0.6; transform: translateY(0px); }
+            50%      { opacity: 1; transform: translateY(-12px); }
+        }
+        .welcome-decorations {
+            position: absolute; inset: 0; pointer-events: none; overflow: hidden;
+        }
+
+        /* Welcome divider */
+        .welcome-divider {
+            width: 120px; height: 1px;
+            background: linear-gradient(90deg, transparent, rgba(230,48,48,0.4), transparent);
+            margin: 4px auto;
+        }
+
+        /* Powered by badge */
+        .powered-by {
+            display: flex; align-items: center; gap: 8px; margin-top: 4px;
+            font-size: 11px; color: var(--text-3); font-weight: 600;
+        }
+        .powered-by span { color: rgba(230,48,48,0.7); font-weight: 700; }
+
+        /* Stat pills rework - smaller, cleaner */
+        .mini-stats { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+        .mini-stat {
+            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 6px; padding: 4px 10px; font-size: 10.5px; font-weight: 600;
+            color: var(--text-3); letter-spacing: 0.3px;
+        }
+        .mini-stat b { color: var(--text-2); }
             0%{transform:scale(1);} 50%{transform:scale(1.12);color:var(--green);} 100%{transform:scale(1);}
         }
         .credits-pop { animation: creditsPop .4s ease-out; }
@@ -809,7 +864,7 @@
             <div class="credits-bar-fill" id="credits-bar" style="width:0%"></div>
         </div>
         <button class="get-credits-btn" id="get-credits-btn">
-            Obtener más V-Credits
+            Shop
         </button>
     </div>
 
@@ -824,7 +879,7 @@
     </div>
 
     <!-- Discord -->
-    <a class="discord-section" href="https://discord.gg/tQKwmT3u" target="_blank" rel="noopener">
+    <a class="discord-section" href="https://discord.gg/xQD3W5w5tP" target="_blank" rel="noopener">
         <div class="discord-top">
             <div class="discord-icon">
                 <!-- Discord Official Logo SVG -->
@@ -985,6 +1040,16 @@
 
 <!-- ─── JAVASCRIPT ─── -->
 <script>
+// ══════════════════════════════════════════
+//  ANTI-INSPECCIÓN — Bloquea F12, DevTools, clic derecho
+// ══════════════════════════════════════════
+document.addEventListener('contextmenu', e => e.preventDefault());
+document.addEventListener('keydown', e => {
+    if (e.key === 'F12') { e.preventDefault(); return false; }
+    if (e.ctrlKey && e.shiftKey && ['I','i','J','j','C','c'].includes(e.key)) { e.preventDefault(); return false; }
+    if (e.ctrlKey && ['u','U'].includes(e.key)) { e.preventDefault(); return false; }
+});
+
 // ══════════════════════════════════════════
 //  CONFIG APPWRITE
 // ══════════════════════════════════════════
@@ -1329,10 +1394,39 @@ function typeStep() {
 
 function showWelcome() {
     chatContainer.innerHTML = `
-        <div class="welcome" id="welcome-screen">
-            <div class="welcome-eyebrow"><div class="eyebrow-line"></div>Roblox AI Studio<div class="eyebrow-line"></div></div>
+        <div class="welcome" id="welcome-screen" style="position:relative;min-height:70vh">
+
+            <!-- Floating code decoration -->
+            <div class="welcome-decorations">
+                <div class="code-float" style="top:12%;left:4%">local function init()</div>
+                <div class="code-float" style="top:22%;right:6%">game:GetService("Players")</div>
+                <div class="code-float" style="top:65%;left:3%">RemoteEvent:FireClient(plr)</div>
+                <div class="code-float" style="top:75%;right:5%">workspace:FindFirstChild()</div>
+            </div>
+
+            <!-- Live badge -->
+            <div class="welcome-badge">
+                <div class="badge-dot"></div>
+                Roblox AI Studio
+            </div>
+
+            <!-- Headline -->
             <h1 class="welcome-headline" id="typewriter-el">&nbsp;</h1>
+
+            <!-- Description -->
             <p class="welcome-desc">Describe cualquier sistema de Roblox en lenguaje natural y lo generaré en Luau de producción, listo para inyectar en tu Studio al instante.</p>
+
+            <!-- Mini stats -->
+            <div class="mini-stats">
+                <div class="mini-stat"><b>105K</b> tokens</div>
+                <div class="mini-stat"><b>Gemini</b> 2.5 Flash</div>
+                <div class="mini-stat"><b>Luau</b> production-ready</div>
+                <div class="mini-stat"><b>Studio</b> instant inject</div>
+            </div>
+
+            <div class="welcome-divider"></div>
+
+            <!-- Chips -->
             <div class="welcome-chips">
                 <div class="chip" onclick="setPrompt('Sistema de leaderstats con monedas y gemas persistentes')">LeaderStats</div>
                 <div class="chip" onclick="setPrompt('GUI de tienda con productos, precios y botones de compra')">Tienda GUI</div>
@@ -1340,7 +1434,13 @@ function showWelcome() {
                 <div class="chip" onclick="setPrompt('Sistema de correr con Shift, animación y sonido')">Sprinting</div>
                 <div class="chip" onclick="setPrompt('Sistema de cofre con animación de apertura y partículas')">Cofre</div>
                 <div class="chip" onclick="setPrompt('Sistema de pets con movimiento orbital y multiplicadores')">Pets</div>
+                <div class="chip" onclick="setPrompt('Sistema de DataStore con session locking y auto-save')">DataStore</div>
+                <div class="chip" onclick="setPrompt('Sistema de combate melee con hitbox server-side')">Combat</div>
             </div>
+
+            <!-- Powered by -->
+            <div class="powered-by">Powered by <span>Gemini 2.5 Flash</span></div>
+
             <div class="disclaimer">V1zions puede cometer errores — revisa el código antes de usarlo en producción.</div>
         </div>
     `;
@@ -1550,21 +1650,28 @@ async function aprobarPlan(docId) {
         } else if (data.estado === 'roadmap_pendiente') {
             stop();
             if (loadEl) loadEl.remove();
+
+            // ── PARCHE CAJA VACIA ──
+            let pasosArr2 = [];
+            try { pasosArr2 = JSON.parse(data.pasos || '[]'); } catch(e) { pasosArr2 = []; }
+
+            if (!pasosArr2 || pasosArr2.length === 0) {
+                addMsg('ai', `<span style="color:var(--text-2);font-size:13px;">El sistema es pequeño. <strong style="color:var(--text)">Se generará directamente.</strong></span>`);
+                return;
+            }
+
             let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
             html += `<div class="roadmap-box"><div class="roadmap-box-title">Fases del sistema</div>`;
-            try {
-                const pasos = JSON.parse(data.pasos);
-                window._roadmapSteps = window._roadmapSteps || {};
-                pasos.forEach((p, i) => {
-                    const sid = 'rs_' + Date.now() + '_' + i;
-                    window._roadmapSteps[sid] = { titulo: p.titulo, desc: p.descripcion, sistema: data.tituloSistema };
-                    html += `<button class="roadmap-step" data-step-id="${sid}">
-                        <div class="roadmap-step-num">${i + 1}</div>
-                        <div class="roadmap-step-body"><strong>${p.titulo}</strong><span>${p.descripcion}</span></div>
-                        <div class="roadmap-step-arrow">›</div>
-                    </button>`;
-                });
-            } catch(err) { console.error("Error parseando pasos", err); }
+            window._roadmapSteps = window._roadmapSteps || {};
+            pasosArr2.forEach((p, i) => {
+                const sid = 'rs_' + Date.now() + '_' + i;
+                window._roadmapSteps[sid] = { titulo: p.titulo, desc: p.descripcion, sistema: data.tituloSistema };
+                html += `<button class="roadmap-step" data-step-id="${sid}">
+                    <div class="roadmap-step-num">${i + 1}</div>
+                    <div class="roadmap-step-body"><strong>${p.titulo}</strong><span>${p.descripcion}</span></div>
+                    <div class="roadmap-step-arrow">›</div>
+                </button>`;
+            });
             html += `</div>`;
             addMsg('ai', html); saveMsg('ai', 'Roadmap generado.');
 
@@ -1778,25 +1885,34 @@ async function enviar() {
             stop();
             setLoadingState(false); // [v25.8]
             if (loadEl) loadEl.remove();
+
+            // ── PARCHE CAJA VACIA: si no hay fases, NO dibujar el roadmap ──
+            let pasosArr = [];
+            try { pasosArr = JSON.parse(data.pasos || '[]'); } catch(e) { pasosArr = []; }
+
+            if (!pasosArr || pasosArr.length === 0) {
+                addMsg('ai', `<span style="color:var(--text-2);font-size:13px;">El sistema es pequeño. <strong style="color:var(--text)">Se generará directamente.</strong> Procesando...</span>`);
+                ta.value = `Genera el código completo y directo para: ${txt}. NO uses roadmap, genera TODO en un solo plan.`;
+                setTimeout(() => enviar(), 500);
+                return;
+            }
+
             // No se cobra — el usuario aún no recibió código
             let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>`;
-            html += `<span style="font-size:12px;color:var(--text-2);">Este sistema es muy grande para generarse de golpe. Elige una fase para empezar:</span><br><br>`;
+            html += `<span style="font-size:12px;color:var(--text-2);">Sistema grande. Elige una fase para empezar:</span><br><br>`;
             html += `<div class="roadmap-box"><div class="roadmap-box-title">Fases del sistema</div>`;
-            try {
-                const pasos = JSON.parse(data.pasos);
-                window._roadmapSteps = window._roadmapSteps || {};
-                fasesPendientes = []; // [v25.8] resetear y cargar nuevo roadmap
-                pasos.forEach((p, i) => {
-                    const sid = 'rs_' + Date.now() + '_' + i;
-                    window._roadmapSteps[sid] = { titulo: p.titulo, desc: p.descripcion, sistema: data.tituloSistema };
-                    fasesPendientes.push({ sid, titulo: p.titulo, desc: p.descripcion, sistema: data.tituloSistema });
-                    html += `<button class="roadmap-step" data-step-id="${sid}">
-                        <div class="roadmap-step-num">${i + 1}</div>
-                        <div class="roadmap-step-body"><strong>${p.titulo}</strong><span>${p.descripcion}</span></div>
-                        <div class="roadmap-step-arrow">›</div>
-                    </button>`;
-                });
-            } catch(err) { console.error("Error pasos:", err); }
+            window._roadmapSteps = window._roadmapSteps || {};
+            fasesPendientes = [];
+            pasosArr.forEach((p, i) => {
+                const sid = 'rs_' + Date.now() + '_' + i;
+                window._roadmapSteps[sid] = { titulo: p.titulo, desc: p.descripcion, sistema: data.tituloSistema };
+                fasesPendientes.push({ sid, titulo: p.titulo, desc: p.descripcion, sistema: data.tituloSistema });
+                html += `<button class="roadmap-step" data-step-id="${sid}">
+                    <div class="roadmap-step-num">${i + 1}</div>
+                    <div class="roadmap-step-body"><strong>${p.titulo}</strong><span>${p.descripcion}</span></div>
+                    <div class="roadmap-step-arrow">›</div>
+                </button>`;
+            });
             html += `</div>`;
             addMsg('ai', html); saveMsg('ai', 'Roadmap generado.');
             return;
