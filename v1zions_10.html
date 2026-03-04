@@ -329,7 +329,7 @@
             </div>
             <div class="logo-text">
                 <span class="logo-name">V1zions</span>
-                <span class="logo-badge">v27.6</span>
+                <span class="logo-badge">v27.5</span>
             </div>
         </div>
     </div>
@@ -698,11 +698,18 @@ function loadProjects() {
 function saveData() { localStorage.setItem(projectStorageKey(), JSON.stringify(projectsData)); renderProjects(); updateProjectsQuota(); }
 
 function updateProjectsQuota() {
-    const maxProj = userIsVip ? 5 : 1;
+    // [v27.7] Owner tiene proyectos ilimitados
+    const isOwner = currentUser && currentUser.email && currentUser.email.toLowerCase() === OWNER_EMAIL.toLowerCase();
+    const maxProj = isOwner ? Infinity : (userIsVip ? 5 : 1);
     const used    = projectsData.length;
     const q = document.getElementById('projects-quota');
-    q.textContent = `${used} / ${maxProj} proyectos ${userIsVip ? '(VIP)' : '(Free)'}`;
-    q.style.color = used >= maxProj ? 'var(--red)' : 'var(--text-3)';
+    if (isOwner) {
+        q.textContent = `${used} proyectos (Owner ∞)`;
+        q.style.color = 'var(--gold)';
+    } else {
+        q.textContent = `${used} / ${maxProj} proyectos ${userIsVip ? '(VIP)' : '(Free)'}`;
+        q.style.color = used >= maxProj ? 'var(--red)' : 'var(--text-3)';
+    }
 }
 
 function renderProjects() {
@@ -737,7 +744,9 @@ function deleteProject(id, e) {
 }
 
 document.getElementById('new-btn').addEventListener('click', () => {
-    const maxProj = userIsVip ? 5 : 1;
+    // [v27.7] Owner sin límite de proyectos
+    const isOwner = currentUser && currentUser.email && currentUser.email.toLowerCase() === OWNER_EMAIL.toLowerCase();
+    const maxProj = isOwner ? Infinity : (userIsVip ? 5 : 1);
     if (projectsData.length >= maxProj) { openModal('credits'); return; }
     const p = { id: Date.now(), title: 'Proyecto ' + (projectsData.length + 1), chats: [] };
     projectsData.unshift(p); saveData(); loadProject(p.id);
@@ -875,7 +884,7 @@ function renderizarPlan(plan, docId, loadMsgId) {
     saveMsg('ai', `Plan: "${plan.titulo}" (${archivos.length} archivo${archivos.length !== 1 ? 's' : ''})`);
 }
 
-function escucharDocumento(docId, loadMsgId, onData, maxMs = 120000) {
+function escucharDocumento(docId, loadMsgId, onData, maxMs = 180000) { // [v27.7] 180s (era 120s) — más margen para backends lentos
     let stopped       = false;
     let pollingId     = null;
     let realtimeUnsub = null;
@@ -946,28 +955,7 @@ async function aprobarPlan(docId) {
 
     const stop = escucharDocumento(docId, lid, (data) => {
         const loadEl = document.getElementById(lid);
-        // [v27.6 FIX BUG1] 'inyectar' = backend listo, plugin AÚN no confirmó.
-        // Solo mostramos éxito real en 'completado' (cuando el plugin confirma).
-        if (data.estado === 'inyectar') {
-            // Reemplazar el spinner por "esperando Studio" — no parar el listener
-            if (loadEl) loadEl.innerHTML = `<div class="loading-bubble" style="border-color:rgba(240,180,41,0.4);color:var(--gold)"><div class="dots"><span style="background:var(--gold)"></span><span style="background:var(--gold)"></span><span style="background:var(--gold)"></span></div>Código listo — esperando confirmación de Studio...</div>`;
-            // Timeout de 40s: si el plugin no responde, mostrar éxito con aviso
-            setTimeout(() => {
-                if (stopped) return;
-                stop();
-                if (loadEl) loadEl.remove();
-                const resumen = data.resultado || 'Sistema generado.';
-                const m = `<strong style="color:var(--gold);font-size:13px;">⚠ Código generado — Studio no confirmó</strong>
-<div class="success-summary" style="border-color:rgba(240,180,41,0.22)">
-  <div class="success-summary-header" style="background:rgba(240,180,41,0.07);border-color:rgba(240,180,41,0.12)"><div class="success-summary-dot" style="background:var(--gold);box-shadow:0 0 6px var(--gold)"></div><span class="success-summary-title" style="color:var(--gold)">Verificar plugin</span></div>
-  <div class="success-summary-body"><div class="ss-line"><span class="ss-prefix">›</span><span>${resumen}</span></div><div class="ss-line" style="margin-top:6px;color:rgba(240,180,41,0.7)"><span class="ss-prefix">!</span><span>El código se generó pero el plugin de Studio no respondió. ¿Está el plugin activo y conectado?</span></div></div>
-</div>`;
-                addMsg('ai', m); saveMsg('ai', m);
-            }, 40000);
-            return;
-        }
-
-        if (data.estado === 'completado') {
+        if (data.estado === 'inyectar' || data.estado === 'completado') {
             stop();
             if (loadEl) loadEl.remove();
             const resumen = data.resultado || 'Sistema inyectado correctamente.';
@@ -1113,33 +1101,7 @@ async function enviar() {
             return;
         }
 
-        // [v27.6 FIX BUG1] 'inyectar' = backend listo, plugin AÚN no confirmó.
-        if (data.estado === 'inyectar') {
-            // Desbloquear input y descontar créditos ya (el código fue generado)
-            setLoadingState(false);
-            await deductCredits(costo);
-            flashCost(costo);
-            // Cambiar spinner por "esperando Studio"
-            if (loadEl) loadEl.innerHTML = `<div class="loading-bubble" style="border-color:rgba(240,180,41,0.4);color:var(--gold)"><div class="dots"><span style="background:var(--gold)"></span><span style="background:var(--gold)"></span><span style="background:var(--gold)"></span></div>Código listo — esperando confirmación de Studio...</div>`;
-            // Timeout 40s sin confirmación de plugin
-            setTimeout(() => {
-                if (stopped) return;
-                stop();
-                if (loadEl) loadEl.remove();
-                const resumen = data.resultado || 'Sistema generado.';
-                const m = `<strong style="color:var(--gold);font-size:13px;">⚠ Código generado — Studio no confirmó</strong>
-<div class="success-summary" style="border-color:rgba(240,180,41,0.22)">
-  <div class="success-summary-header" style="background:rgba(240,180,41,0.07);border-color:rgba(240,180,41,0.12)"><div class="success-summary-dot" style="background:var(--gold);box-shadow:0 0 6px var(--gold)"></div><span class="success-summary-title" style="color:var(--gold)">Verificar plugin</span></div>
-  <div class="success-summary-body"><div class="ss-line"><span class="ss-prefix">›</span><span>${resumen}</span></div><div class="ss-line" style="margin-top:6px;color:rgba(240,180,41,0.7)"><span class="ss-prefix">!</span><span>El código se generó pero el plugin de Studio no respondió. ¿Está el plugin activo y conectado?</span></div></div>
-</div>`;
-                addMsg('ai', m); saveMsg('ai', m);
-                if (activePasoSid) { fasesPendientes = fasesPendientes.filter(f => f.sid !== activePasoSid); activePasoSid = null; }
-                if (fasesPendientes.length > 0) renderFasesPendientes();
-            }, 40000);
-            return;
-        }
-
-        if (data.estado === 'completado') {
+        if (data.estado === 'inyectar' || data.estado === 'completado') {
             stop();
             setLoadingState(false);
             if (loadEl) loadEl.remove();
