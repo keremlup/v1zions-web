@@ -1290,7 +1290,7 @@ async function setupStudioStatus() {
     } catch(e) { console.warn('[Studio] Realtime no disponible:', e.message); }
 
     // 3. Polling cada 3s — red de seguridad si Realtime falla
-    setInterval(pollStatus, 3000);
+    setInterval(pollStatus, 15000);
 
     // 4. [FIX] Al volver a la pestaña (Alt+Tab, etc.) verificar estado inmediatamente
     //    Esto resuelve el bug de "requiere recargar" — el usuario vuelve de Studio
