@@ -329,7 +329,7 @@
             </div>
             <div class="logo-text">
                 <span class="logo-name">V1zions</span>
-                <span class="logo-badge">v27.5</span>
+                <span class="logo-badge">v27.6</span>
             </div>
         </div>
     </div>
@@ -946,7 +946,28 @@ async function aprobarPlan(docId) {
 
     const stop = escucharDocumento(docId, lid, (data) => {
         const loadEl = document.getElementById(lid);
-        if (data.estado === 'inyectar' || data.estado === 'completado') {
+        // [v27.6 FIX BUG1] 'inyectar' = backend listo, plugin AÚN no confirmó.
+        // Solo mostramos éxito real en 'completado' (cuando el plugin confirma).
+        if (data.estado === 'inyectar') {
+            // Reemplazar el spinner por "esperando Studio" — no parar el listener
+            if (loadEl) loadEl.innerHTML = `<div class="loading-bubble" style="border-color:rgba(240,180,41,0.4);color:var(--gold)"><div class="dots"><span style="background:var(--gold)"></span><span style="background:var(--gold)"></span><span style="background:var(--gold)"></span></div>Código listo — esperando confirmación de Studio...</div>`;
+            // Timeout de 40s: si el plugin no responde, mostrar éxito con aviso
+            setTimeout(() => {
+                if (stopped) return;
+                stop();
+                if (loadEl) loadEl.remove();
+                const resumen = data.resultado || 'Sistema generado.';
+                const m = `<strong style="color:var(--gold);font-size:13px;">⚠ Código generado — Studio no confirmó</strong>
+<div class="success-summary" style="border-color:rgba(240,180,41,0.22)">
+  <div class="success-summary-header" style="background:rgba(240,180,41,0.07);border-color:rgba(240,180,41,0.12)"><div class="success-summary-dot" style="background:var(--gold);box-shadow:0 0 6px var(--gold)"></div><span class="success-summary-title" style="color:var(--gold)">Verificar plugin</span></div>
+  <div class="success-summary-body"><div class="ss-line"><span class="ss-prefix">›</span><span>${resumen}</span></div><div class="ss-line" style="margin-top:6px;color:rgba(240,180,41,0.7)"><span class="ss-prefix">!</span><span>El código se generó pero el plugin de Studio no respondió. ¿Está el plugin activo y conectado?</span></div></div>
+</div>`;
+                addMsg('ai', m); saveMsg('ai', m);
+            }, 40000);
+            return;
+        }
+
+        if (data.estado === 'completado') {
             stop();
             if (loadEl) loadEl.remove();
             const resumen = data.resultado || 'Sistema inyectado correctamente.';
@@ -1092,7 +1113,33 @@ async function enviar() {
             return;
         }
 
-        if (data.estado === 'inyectar' || data.estado === 'completado') {
+        // [v27.6 FIX BUG1] 'inyectar' = backend listo, plugin AÚN no confirmó.
+        if (data.estado === 'inyectar') {
+            // Desbloquear input y descontar créditos ya (el código fue generado)
+            setLoadingState(false);
+            await deductCredits(costo);
+            flashCost(costo);
+            // Cambiar spinner por "esperando Studio"
+            if (loadEl) loadEl.innerHTML = `<div class="loading-bubble" style="border-color:rgba(240,180,41,0.4);color:var(--gold)"><div class="dots"><span style="background:var(--gold)"></span><span style="background:var(--gold)"></span><span style="background:var(--gold)"></span></div>Código listo — esperando confirmación de Studio...</div>`;
+            // Timeout 40s sin confirmación de plugin
+            setTimeout(() => {
+                if (stopped) return;
+                stop();
+                if (loadEl) loadEl.remove();
+                const resumen = data.resultado || 'Sistema generado.';
+                const m = `<strong style="color:var(--gold);font-size:13px;">⚠ Código generado — Studio no confirmó</strong>
+<div class="success-summary" style="border-color:rgba(240,180,41,0.22)">
+  <div class="success-summary-header" style="background:rgba(240,180,41,0.07);border-color:rgba(240,180,41,0.12)"><div class="success-summary-dot" style="background:var(--gold);box-shadow:0 0 6px var(--gold)"></div><span class="success-summary-title" style="color:var(--gold)">Verificar plugin</span></div>
+  <div class="success-summary-body"><div class="ss-line"><span class="ss-prefix">›</span><span>${resumen}</span></div><div class="ss-line" style="margin-top:6px;color:rgba(240,180,41,0.7)"><span class="ss-prefix">!</span><span>El código se generó pero el plugin de Studio no respondió. ¿Está el plugin activo y conectado?</span></div></div>
+</div>`;
+                addMsg('ai', m); saveMsg('ai', m);
+                if (activePasoSid) { fasesPendientes = fasesPendientes.filter(f => f.sid !== activePasoSid); activePasoSid = null; }
+                if (fasesPendientes.length > 0) renderFasesPendientes();
+            }, 40000);
+            return;
+        }
+
+        if (data.estado === 'completado') {
             stop();
             setLoadingState(false);
             if (loadEl) loadEl.remove();
