@@ -7,11 +7,7 @@
     <link rel="icon" type="image/png" href="logo.png">
     <link rel="shortcut icon" type="image/png" href="logo.png">
     <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-
     <script src="https://cdn.jsdelivr.net/npm/appwrite@14.0.1"></script>
-
-
-
     <style>
         :root {
             --red:        #e63030;
@@ -39,349 +35,115 @@
             --radius-sm:  8px;
             --font:       'Montserrat', sans-serif;
         }
-
         *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
         html { scroll-behavior: smooth; }
-        body {
-            background: var(--bg);
-            color: var(--text);
-            font-family: var(--font);
-            height: 100vh;
-            display: flex;
-            overflow: hidden;
-        }
+        body { background: var(--bg); color: var(--text); font-family: var(--font); height: 100vh; display: flex; overflow: hidden; }
         button { font-family: var(--font); cursor: pointer; }
         input, textarea { font-family: var(--font); }
 
-        /* ─── BACKGROUND ─── */
-        .bg-grid {
-            position: fixed; inset: 0; z-index: 0; pointer-events: none;
-            background-image:
-                linear-gradient(rgba(255,60,60,0.04) 1px, transparent 1px),
-                linear-gradient(90deg, rgba(255,60,60,0.04) 1px, transparent 1px);
-            background-size: 44px 44px;
-            mask-image: radial-gradient(ellipse 80% 80% at 60% 40%, transparent 40%, black 100%);
-        }
-        .bg-orb {
-            position: fixed; border-radius: 50%; pointer-events: none; z-index: 0;
-        }
-        .bg-orb-1 {
-            width: 900px; height: 900px;
-            background: radial-gradient(circle, rgba(230,48,48,0.22) 0%, rgba(180,20,20,0.08) 45%, transparent 72%);
-            top: -220px; right: -5%;
-            filter: blur(40px);
-            animation: orbFloat 14s ease-in-out infinite;
-        }
-        .bg-orb-2 {
-            width: 650px; height: 650px;
-            background: radial-gradient(circle, rgba(200,30,30,0.18) 0%, rgba(160,15,15,0.06) 50%, transparent 72%);
-            bottom: -120px; left: 5%;
-            filter: blur(50px);
-            animation: orbFloat 18s ease-in-out infinite reverse;
-        }
-        .bg-orb-3 {
-            width: 500px; height: 500px;
-            background: radial-gradient(circle, rgba(240,60,60,0.12) 0%, transparent 68%);
-            top: 30%; left: 35%;
-            filter: blur(60px);
-            animation: orbFloat 22s ease-in-out infinite 4s;
-        }
-        @keyframes orbFloat {
-            0%,100% { transform: translate(0,0) scale(1); }
-            33%      { transform: translate(30px,-45px) scale(1.08); }
-            66%      { transform: translate(-20px,25px) scale(0.94); }
-        }
+        .bg-grid { position: fixed; inset: 0; z-index: 0; pointer-events: none; background-image: linear-gradient(rgba(255,60,60,0.04) 1px, transparent 1px), linear-gradient(90deg, rgba(255,60,60,0.04) 1px, transparent 1px); background-size: 44px 44px; mask-image: radial-gradient(ellipse 80% 80% at 60% 40%, transparent 40%, black 100%); }
+        .bg-orb { position: fixed; border-radius: 50%; pointer-events: none; z-index: 0; }
+        .bg-orb-1 { width: 900px; height: 900px; background: radial-gradient(circle, rgba(230,48,48,0.22) 0%, rgba(180,20,20,0.08) 45%, transparent 72%); top: -220px; right: -5%; filter: blur(40px); animation: orbFloat 14s ease-in-out infinite; }
+        .bg-orb-2 { width: 650px; height: 650px; background: radial-gradient(circle, rgba(200,30,30,0.18) 0%, rgba(160,15,15,0.06) 50%, transparent 72%); bottom: -120px; left: 5%; filter: blur(50px); animation: orbFloat 18s ease-in-out infinite reverse; }
+        .bg-orb-3 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(240,60,60,0.12) 0%, transparent 68%); top: 30%; left: 35%; filter: blur(60px); animation: orbFloat 22s ease-in-out infinite 4s; }
+        @keyframes orbFloat { 0%,100% { transform: translate(0,0) scale(1); } 33% { transform: translate(30px,-45px) scale(1.08); } 66% { transform: translate(-20px,25px) scale(0.94); } }
 
-        /* ─── GATE SCREEN ─── */
-        #gate-screen {
-            position: fixed; inset: 0; z-index: 9999;
-            background: var(--bg);
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 18px; text-align: center;
-        }
+        #gate-screen { position: fixed; inset: 0; z-index: 9999; background: var(--bg); display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; text-align: center; }
         #gate-screen.hidden { display: none; }
         .gate-icon { font-size: 48px; margin-bottom: 4px; }
         .gate-title { font-size: 22px; font-weight: 800; }
         .gate-sub { font-size: 14px; color: var(--text-2); max-width: 340px; line-height: 1.65; }
-        .gate-back-btn {
-            background: var(--red); color: white; border: none;
-            padding: 11px 26px; border-radius: 8px; font-size: 13px; font-weight: 700;
-            margin-top: 6px; transition: all .2s;
-        }
+        .gate-back-btn { background: var(--red); color: white; border: none; padding: 11px 26px; border-radius: 8px; font-size: 13px; font-weight: 700; margin-top: 6px; transition: all .2s; }
         .gate-back-btn:hover { background: var(--red-light); transform: translateY(-1px); }
 
-        /* ─── SIDEBAR ─── */
-        #sidebar {
-            width: var(--sidebar-w);
-            flex-shrink: 0;
-            background: var(--panel);
-            backdrop-filter: blur(40px) saturate(180%);
-            border-right: 1px solid var(--border);
-            display: flex; flex-direction: column;
-            z-index: 20; position: relative;
-        }
-        #sidebar::after {
-            content: ''; position: absolute; right: -1px; top: 10%; bottom: 10%;
-            width: 1px;
-            background: linear-gradient(to bottom, transparent, rgba(230,48,48,0.5), transparent);
-        }
+        #sidebar { width: var(--sidebar-w); flex-shrink: 0; background: var(--panel); backdrop-filter: blur(40px) saturate(180%); border-right: 1px solid var(--border); display: flex; flex-direction: column; z-index: 20; position: relative; }
+        #sidebar::after { content: ''; position: absolute; right: -1px; top: 10%; bottom: 10%; width: 1px; background: linear-gradient(to bottom, transparent, rgba(230,48,48,0.5), transparent); }
 
-        /* Logo */
-        .logo-area {
-            padding: 18px 18px 14px;
-            border-bottom: 1px solid var(--border);
-        }
+        .logo-area { padding: 18px 18px 14px; border-bottom: 1px solid var(--border); }
         .logo { display: flex; align-items: center; gap: 10px; }
-        .logo-mark {
-            width: 34px; height: 34px;
-            border-radius: 9px; overflow: hidden;
-            flex-shrink: 0;
-            box-shadow: 0 0 22px rgba(230,48,48,0.5);
-            background: var(--red);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 900; color: white;
-            position: relative;
-        }
+        .logo-mark { width: 34px; height: 34px; border-radius: 9px; overflow: hidden; flex-shrink: 0; box-shadow: 0 0 22px rgba(230,48,48,0.5); background: var(--red); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 900; color: white; position: relative; }
         .logo-mark img { width: 100%; height: 100%; object-fit: cover; }
-        .logo-mark::after {
-            content: ''; position: absolute; inset: -4px;
-            border-radius: 12px;
-            border: 1px solid rgba(230,48,48,0.3);
-            animation: ringPulse 3s ease-in-out infinite;
-        }
-        @keyframes ringPulse {
-            0%,100% { opacity:.25; transform:scale(1); }
-            50%      { opacity:.7;  transform:scale(1.08); }
-        }
+        .logo-mark::after { content: ''; position: absolute; inset: -4px; border-radius: 12px; border: 1px solid rgba(230,48,48,0.3); animation: ringPulse 3s ease-in-out infinite; }
+        @keyframes ringPulse { 0%,100% { opacity:.25; transform:scale(1); } 50% { opacity:.7; transform:scale(1.08); } }
         .logo-text { display: flex; flex-direction: column; gap: 1px; }
         .logo-name { font-size: 15px; font-weight: 800; letter-spacing: -0.3px; line-height: 1; }
-        .logo-badge {
-            display: inline-flex; align-items: center;
-            background: rgba(230,48,48,0.12); border: 1px solid rgba(230,48,48,0.2);
-            border-radius: 4px; padding: 1px 6px;
-            font-size: 9px; font-weight: 700; color: var(--red);
-            letter-spacing: 0.8px; text-transform: uppercase; width: fit-content; margin-top: 2px;
-        }
+        .logo-badge { display: inline-flex; align-items: center; background: rgba(230,48,48,0.12); border: 1px solid rgba(230,48,48,0.2); border-radius: 4px; padding: 1px 6px; font-size: 9px; font-weight: 700; color: var(--red); letter-spacing: 0.8px; text-transform: uppercase; width: fit-content; margin-top: 2px; }
 
-        /* User Profile */
-        .user-profile {
-            margin: 10px 14px 6px;
-            background: var(--bg-2);
-            border: 1px solid var(--border);
-            border-radius: var(--radius-sm);
-            padding: 10px 12px;
-            display: flex; align-items: center; gap: 10px;
-        }
-        .user-avatar {
-            width: 34px; height: 34px;
-            border-radius: 50%;
-            background: var(--red);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 13px; font-weight: 800; color: white;
-            flex-shrink: 0; overflow: hidden;
-        }
+        .user-profile { margin: 10px 14px 6px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius-sm); padding: 10px 12px; display: flex; align-items: center; gap: 10px; }
+        .user-avatar { width: 34px; height: 34px; border-radius: 50%; background: var(--red); display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 800; color: white; flex-shrink: 0; overflow: hidden; }
         .user-avatar img { width: 100%; height: 100%; object-fit: cover; }
         .user-info { flex: 1; min-width: 0; }
         .user-name { font-size: 12px; font-weight: 700; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .user-email { font-size: 10px; color: var(--text-3); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .user-vip-badge {
-            font-size: 9px; font-weight: 700; color: var(--gold);
-            background: rgba(240,180,41,0.12); border: 1px solid rgba(240,180,41,0.22);
-            border-radius: 4px; padding: 1px 5px; margin-top: 2px; display: inline-block;
-        }
-        .logout-btn {
-            background: transparent; border: none; color: var(--text-3);
-            font-size: 14px; width: 26px; height: 26px;
-            border-radius: 6px; display: flex; align-items: center; justify-content: center;
-            transition: all .15s; flex-shrink: 0;
-        }
+        .user-vip-badge { font-size: 9px; font-weight: 700; color: var(--gold); background: rgba(240,180,41,0.12); border: 1px solid rgba(240,180,41,0.22); border-radius: 4px; padding: 1px 5px; margin-top: 2px; display: inline-block; }
+        .logout-btn { background: transparent; border: none; color: var(--text-3); font-size: 14px; width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; }
         .logout-btn:hover { color: var(--red); background: var(--red-dim); }
 
-        /* Admin btn */
-        .admin-btn {
-            margin: 4px 14px 2px;
-            width: calc(100% - 28px);
-            background: rgba(240,180,41,0.1);
-            border: 1px solid rgba(240,180,41,0.25);
-            color: var(--gold);
-            padding: 8px 12px;
-            border-radius: 7px; font-size: 11px; font-weight: 700;
-            display: flex; align-items: center; gap: 7px;
-            transition: all .15s;
-        }
+        .admin-btn { margin: 4px 14px 2px; width: calc(100% - 28px); background: rgba(240,180,41,0.1); border: 1px solid rgba(240,180,41,0.25); color: var(--gold); padding: 8px 12px; border-radius: 7px; font-size: 11px; font-weight: 700; display: flex; align-items: center; gap: 7px; transition: all .15s; }
         .admin-btn:hover { background: rgba(240,180,41,0.18); }
         .admin-btn.hidden { display: none; }
 
-        /* New project */
         .sidebar-section { padding: 10px 14px 6px; }
-        .new-btn {
-            width: 100%; background: var(--red); color: white; border: none;
-            padding: 10px 14px; border-radius: var(--radius-sm);
-            font-size: 13px; font-weight: 700; letter-spacing: 0.2px;
-            display: flex; align-items: center; justify-content: center; gap: 8px;
-            transition: all .2s;
-            box-shadow: 0 4px 18px rgba(230,48,48,0.28);
-            position: relative; overflow: hidden;
-        }
-        .new-btn::before {
-            content: ''; position: absolute; top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent);
-            transition: left .5s;
-        }
+        .new-btn { width: 100%; background: var(--red); color: white; border: none; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 13px; font-weight: 700; letter-spacing: 0.2px; display: flex; align-items: center; justify-content: center; gap: 8px; transition: all .2s; box-shadow: 0 4px 18px rgba(230,48,48,0.28); position: relative; overflow: hidden; }
+        .new-btn::before { content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.14), transparent); transition: left .5s; }
         .new-btn:hover::before { left: 100%; }
         .new-btn:hover { background: var(--red-light); box-shadow: 0 6px 24px rgba(230,48,48,0.42); transform: translateY(-1px); }
 
-        /* Project counter */
-        .projects-quota {
-            font-size: 10px; color: var(--text-3); text-align: center;
-            margin: 2px 14px 4px; font-weight: 600;
-        }
-
-        /* Sidebar sections */
-        .sidebar-label {
-            font-size: 10px; font-weight: 700; color: var(--text-3);
-            text-transform: uppercase; letter-spacing: 1.5px; padding: 10px 18px 5px;
-        }
-        .projects-scroll {
-            flex: 1; overflow-y: auto; padding: 0 10px; min-height: 0;
-        }
+        .projects-quota { font-size: 10px; color: var(--text-3); text-align: center; margin: 2px 14px 4px; font-weight: 600; }
+        .sidebar-label { font-size: 10px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 1.5px; padding: 10px 18px 5px; }
+        .projects-scroll { flex: 1; overflow-y: auto; padding: 0 10px; min-height: 0; }
         .projects-scroll::-webkit-scrollbar { width: 3px; }
         .projects-scroll::-webkit-scrollbar-thumb { background: rgba(230,48,48,0.2); border-radius: 3px; }
 
-        .project-item {
-            display: flex; align-items: center; gap: 7px;
-            padding: 8px 8px 8px 10px;
-            border-radius: 8px; cursor: pointer;
-            color: var(--text-2); font-size: 12px; font-weight: 500;
-            transition: all .15s;
-            border: 1px solid transparent;
-            margin-bottom: 2px; overflow: hidden;
-        }
+        .project-item { display: flex; align-items: center; gap: 7px; padding: 8px 8px 8px 10px; border-radius: 8px; cursor: pointer; color: var(--text-2); font-size: 12px; font-weight: 500; transition: all .15s; border: 1px solid transparent; margin-bottom: 2px; overflow: hidden; }
         .proj-title { flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .project-item:hover { background: rgba(255,255,255,0.04); color: var(--text); }
-        .project-item.active {
-            background: var(--red-dim); color: var(--red); border-color: var(--red-border); font-weight: 600;
-        }
-        .proj-delete {
-            background: transparent; border: none; color: transparent;
-            width: 20px; height: 20px; border-radius: 4px;
-            font-size: 11px; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-            transition: all .15s;
-        }
+        .project-item.active { background: var(--red-dim); color: var(--red); border-color: var(--red-border); font-weight: 600; }
+        .proj-delete { background: transparent; border: none; color: transparent; width: 20px; height: 20px; border-radius: 4px; font-size: 11px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; transition: all .15s; }
         .project-item:hover .proj-delete { color: var(--text-3); }
         .proj-delete:hover { color: var(--red) !important; background: var(--red-dim); }
 
-        /* Sidebar divider */
         .sidebar-divider { height: 1px; background: var(--border); margin: 6px 14px; }
 
-        /* Credits panel */
-        .credits-panel {
-            margin: 0 14px;
-            background: var(--bg-2); border: 1px solid var(--border);
-            border-radius: var(--radius); padding: 12px 13px 10px;
-            position: relative; overflow: hidden;
-        }
-        .credits-panel::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(230,48,48,0.5), transparent);
-        }
+        .credits-panel { margin: 0 14px; background: var(--bg-2); border: 1px solid var(--border); border-radius: var(--radius); padding: 12px 13px 10px; position: relative; overflow: hidden; }
+        .credits-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(230,48,48,0.5), transparent); }
         .credits-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px; }
         .credits-label { font-size: 10px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 1px; }
         .credits-value { font-size: 24px; font-weight: 800; color: var(--text); line-height: 1; margin-top: 2px; }
         .credits-sub { font-size: 11px; color: var(--text-3); font-weight: 500; margin-top: 2px; }
-        .credits-refill {
-            display: flex; align-items: center; gap: 5px;
-            font-size: 10px; color: var(--green); font-weight: 600; margin-top: 2px;
-        }
-        .credits-refill-dot {
-            width: 5px; height: 5px; border-radius: 50%; background: var(--green);
-            animation: blink 1.4s ease-in-out infinite;
-        }
+        .credits-refill { display: flex; align-items: center; gap: 5px; font-size: 10px; color: var(--green); font-weight: 600; margin-top: 2px; }
+        .credits-refill-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--green); animation: blink 1.4s ease-in-out infinite; }
         @keyframes blink { 0%,100%{opacity:1;} 50%{opacity:.3;} }
-        .credits-bar-bg {
-            height: 4px; background: rgba(255,255,255,0.06);
-            border-radius: 4px; margin: 8px 0; overflow: hidden;
-        }
-        .credits-bar-fill {
-            height: 100%; border-radius: 4px;
-            background: linear-gradient(90deg, var(--green), var(--gold));
-            transition: width .6s cubic-bezier(.34,1.56,.64,1);
-            box-shadow: 0 0 10px rgba(34,197,94,0.5), 0 0 22px rgba(240,180,41,0.25);
-            filter: blur(0.4px);
-        }
-        .get-credits-btn {
-            width: 100%; background: transparent; border: 1px solid var(--border-2);
-            color: var(--text-2); padding: 7px; border-radius: 7px;
-            font-size: 11.5px; font-weight: 600; transition: all .15s;
-            display: flex; align-items: center; justify-content: center; gap: 6px;
-        }
+        .credits-bar-bg { height: 4px; background: rgba(255,255,255,0.06); border-radius: 4px; margin: 8px 0; overflow: hidden; }
+        .credits-bar-fill { height: 100%; border-radius: 4px; background: linear-gradient(90deg, var(--green), var(--gold)); transition: width .6s cubic-bezier(.34,1.56,.64,1); box-shadow: 0 0 10px rgba(34,197,94,0.5), 0 0 22px rgba(240,180,41,0.25); filter: blur(0.4px); }
+        .get-credits-btn { width: 100%; background: transparent; border: 1px solid var(--border-2); color: var(--text-2); padding: 7px; border-radius: 7px; font-size: 11.5px; font-weight: 600; transition: all .15s; display: flex; align-items: center; justify-content: center; gap: 6px; }
         .get-credits-btn:hover { border-color: var(--red-border); color: var(--red); background: var(--red-dim); }
-        .cost-flash {
-            position: absolute; top: 10px; right: 12px; font-size: 11px; font-weight: 700;
-            color: var(--red); opacity: 0; transition: all .3s; pointer-events: none;
-        }
+        .cost-flash { position: absolute; top: 10px; right: 12px; font-size: 11px; font-weight: 700; color: var(--red); opacity: 0; transition: all .3s; pointer-events: none; }
 
-        /* Studio status */
-        .studio-status {
-            margin: 8px 14px 6px; padding: 8px 12px; border-radius: 8px;
-            border: 1px solid var(--border);
-            display: flex; align-items: center; gap: 9px;
-            font-size: 11px; font-weight: 600; color: var(--text-3);
-            background: transparent; transition: all .2s;
-        }
+        /* ── STUDIO STATUS [v1zions-fix] ── */
+        .studio-status { margin: 8px 14px 6px; padding: 8px 12px; border-radius: 8px; border: 1px solid var(--border); display: flex; align-items: center; gap: 9px; font-size: 11px; font-weight: 600; color: var(--text-3); background: transparent; transition: all .4s; }
         .studio-status.online { background: var(--green-dim); border-color: rgba(34,197,94,0.25); color: var(--green); }
-        .status-icon {
-            width: 22px; height: 22px; border-radius: 6px; overflow: hidden;
-            flex-shrink: 0; background: var(--red); opacity: 0.7; transition: opacity .2s;
-            display: flex; align-items: center; justify-content: center;
-        }
+        .status-icon { width: 22px; height: 22px; border-radius: 6px; overflow: hidden; flex-shrink: 0; background: var(--red); opacity: 0.7; transition: opacity .2s; display: flex; align-items: center; justify-content: center; }
         .studio-status.online .status-icon { opacity: 1; box-shadow: 0 0 8px rgba(34,197,94,0.4); animation: blink 1.5s infinite; }
         .status-icon img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* Discord section */
-        .discord-section {
-            margin: 6px 14px 14px;
-            background: var(--discord-dim); border: 1px solid rgba(88,101,242,0.2);
-            border-radius: var(--radius); padding: 12px 13px;
-            cursor: pointer; transition: all .2s; text-decoration: none; display: block;
-            position: relative; overflow: hidden;
-        }
-        .discord-section::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(88,101,242,0.5), transparent);
-        }
+        .discord-section { margin: 6px 14px 14px; background: var(--discord-dim); border: 1px solid rgba(88,101,242,0.2); border-radius: var(--radius); padding: 12px 13px; cursor: pointer; transition: all .2s; text-decoration: none; display: block; position: relative; overflow: hidden; }
+        .discord-section::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent, rgba(88,101,242,0.5), transparent); }
         .discord-section:hover { background: rgba(88,101,242,0.18); border-color: rgba(88,101,242,0.35); transform: translateY(-1px); }
         .discord-top { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
-        .discord-icon {
-            width: 30px; height: 30px; background: var(--discord); border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden;
-        }
+        .discord-icon { width: 30px; height: 30px; background: var(--discord); border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; overflow: hidden; }
         .discord-icon svg { width: 18px; height: 18px; }
         .discord-name { font-size: 12px; font-weight: 700; color: var(--text); }
         .discord-members { font-size: 10px; color: rgba(88,101,242,0.9); font-weight: 600; margin-top: 1px; }
         .discord-desc { font-size: 11px; color: var(--text-2); line-height: 1.45; }
-        .discord-reward {
-            display: inline-flex; align-items: center; gap: 5px;
-            background: rgba(240,180,41,0.1); border: 1px solid rgba(240,180,41,0.2);
-            border-radius: 5px; padding: 3px 8px; font-size: 10px; font-weight: 700; color: var(--gold); margin-top: 7px;
-        }
+        .discord-reward { display: inline-flex; align-items: center; gap: 5px; background: rgba(240,180,41,0.1); border: 1px solid rgba(240,180,41,0.2); border-radius: 5px; padding: 3px 8px; font-size: 10px; font-weight: 700; color: var(--gold); margin-top: 7px; }
 
-        /* ─── MAIN CONTENT ─── */
         #main-content { flex: 1; display: flex; flex-direction: column; min-width: 0; position: relative; z-index: 1; }
-        #chat-container {
-            flex: 1; overflow-y: auto; padding: 28px 9%;
-            display: flex; flex-direction: column; gap: 18px;
-        }
+        #chat-container { flex: 1; overflow-y: auto; padding: 28px 9%; display: flex; flex-direction: column; gap: 18px; }
         #chat-container::-webkit-scrollbar { width: 4px; }
         #chat-container::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.07); border-radius: 4px; }
 
-        /* Welcome */
-        .welcome {
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 65vh; gap: 24px; animation: fadeUp .5s ease-out;
-        }
+        .welcome { display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 65vh; gap: 24px; animation: fadeUp .5s ease-out; }
         @keyframes fadeUp { from{opacity:0;transform:translateY(18px);} to{opacity:1;transform:translateY(0);} }
         .welcome-eyebrow { display: flex; align-items: center; gap: 8px; font-size: 11px; font-weight: 700; color: var(--red); text-transform: uppercase; letter-spacing: 1.5px; }
         .eyebrow-line { width: 28px; height: 1px; background: var(--red); opacity: .5; }
@@ -390,335 +152,132 @@
         @keyframes cursor { 0%,100%{opacity:1;} 50%{opacity:0;} }
         .welcome-desc { font-size: 14px; color: var(--text-2); text-align: center; max-width: 440px; line-height: 1.65; }
         .welcome-stats { display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
-        .stat-pill {
-            background: var(--bg-2); border: 1px solid var(--border); border-radius: 20px;
-            padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--text-2);
-            display: flex; align-items: center; gap: 7px; transition: all .15s;
-        }
+        .stat-pill { background: var(--bg-2); border: 1px solid var(--border); border-radius: 20px; padding: 6px 14px; font-size: 12px; font-weight: 600; color: var(--text-2); display: flex; align-items: center; gap: 7px; transition: all .15s; }
         .stat-pill:hover { border-color: var(--red-border); color: var(--text); }
         .stat-pill .stat-num { color: var(--text); font-weight: 800; }
         .welcome-chips { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; max-width: 520px; }
-        .chip {
-            background: var(--bg-2); border: 1px solid var(--border); border-radius: 20px;
-            padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--text-2);
-            cursor: pointer; transition: all .15s;
-        }
+        .chip { background: var(--bg-2); border: 1px solid var(--border); border-radius: 20px; padding: 7px 14px; font-size: 12px; font-weight: 600; color: var(--text-2); cursor: pointer; transition: all .15s; }
         .chip:hover { border-color: var(--red-border); color: var(--text); background: var(--red-dim); transform: translateY(-1px); }
         .disclaimer { font-size: 11px; color: var(--text-3); text-align: center; max-width: 380px; line-height: 1.5; }
 
-        /* Messages */
         .msg { display: flex; gap: 12px; font-size: 13.5px; line-height: 1.65; animation: fadeUp .22s ease-out; }
         .msg.user { justify-content: flex-end; }
         .msg.user .bubble { background: var(--bg-2); border: 1px solid var(--border-2); padding: 13px 18px; border-radius: 14px 14px 4px 14px; max-width: 78%; }
         .msg.ai .bubble { color: #b4b4cc; padding: 4px 0; max-width: 88%; }
-        .ai-ava {
-            width: 32px; height: 32px; background: var(--red); border-radius: 9px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 12px; font-weight: 800; flex-shrink: 0; margin-top: 2px;
-            box-shadow: 0 0 14px rgba(230,48,48,0.4); overflow: hidden;
-        }
+        .ai-ava { width: 32px; height: 32px; background: var(--red); border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; margin-top: 2px; box-shadow: 0 0 14px rgba(230,48,48,0.4); overflow: hidden; }
         .ai-ava img { width: 100%; height: 100%; object-fit: cover; }
-        .loading-bubble {
-            display: inline-flex; align-items: center; gap: 10px;
-            background: var(--bg-2); border: 1px solid var(--red-border);
-            border-radius: 10px; padding: 10px 16px; color: var(--red); font-size: 12.5px; font-weight: 600;
-        }
+        .loading-bubble { display: inline-flex; align-items: center; gap: 10px; background: var(--bg-2); border: 1px solid var(--red-border); border-radius: 10px; padding: 10px 16px; color: var(--red); font-size: 12.5px; font-weight: 600; }
         .dots { display: flex; gap: 4px; }
         .dots span { width: 5px; height: 5px; border-radius: 50%; background: var(--red); animation: dotBounce 1.2s infinite; }
         .dots span:nth-child(2) { animation-delay:.2s; }
         .dots span:nth-child(3) { animation-delay:.4s; }
         @keyframes dotBounce { 0%,100%{transform:translateY(0);opacity:.4;} 50%{transform:translateY(-5px);opacity:1;} }
-        .sys-msg {
-            display: inline-block; background: var(--green-dim); border: 1px solid rgba(34,197,94,0.2);
-            border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; color: var(--green); margin-top: 7px;
-        }
-        /* ─── PLAN BOX — premium Cursor/Vercel style ─── */
-        .plan-box {
-            background: rgba(10,10,18,0.92);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px;
-            padding: 20px 22px 18px;
-            margin-top: 8px;
-            position: relative;
-            overflow: hidden;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.04) inset;
-            transition: border-color .2s;
-        }
-        .plan-box::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, transparent 0%, rgba(230,48,48,0.55) 40%, rgba(120,80,255,0.35) 70%, transparent 100%);
-        }
-        .plan-box-header {
-            display: flex; align-items: center; gap: 10px; margin-bottom: 5px;
-        }
-        .plan-box-icon { font-size: 18px; line-height: 1; flex-shrink: 0; }
-        .plan-box-title {
-            font-size: 14px; font-weight: 800; color: var(--text); letter-spacing: -.2px;
-        }
-        .plan-box-subtitle {
-            font-size: 12px; color: var(--text-2); margin-bottom: 16px; padding-left: 28px; line-height: 1.55;
-        }
-        .plan-changes-label {
-            font-size: 9.5px; font-weight: 700; color: var(--text-3);
-            text-transform: uppercase; letter-spacing: 1.4px;
-            margin-bottom: 8px; padding-bottom: 7px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-        }
+        .sys-msg { display: inline-block; background: var(--green-dim); border: 1px solid rgba(34,197,94,0.2); border-radius: 6px; padding: 5px 10px; font-size: 12px; font-weight: 600; color: var(--green); margin-top: 7px; }
+
+        .plan-box { background: rgba(10,10,18,0.92); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 20px 22px 18px; margin-top: 8px; position: relative; overflow: hidden; backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(0,0,0,0.45), 0 1px 0 rgba(255,255,255,0.04) inset; transition: border-color .2s; }
+        .plan-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent 0%, rgba(230,48,48,0.55) 40%, rgba(120,80,255,0.35) 70%, transparent 100%); }
+        .plan-box-header { display: flex; align-items: center; gap: 10px; margin-bottom: 5px; }
+        .plan-box-title { font-size: 14px; font-weight: 800; color: var(--text); letter-spacing: -.2px; }
+        .plan-box-subtitle { font-size: 12px; color: var(--text-2); margin-bottom: 16px; padding-left: 28px; line-height: 1.55; }
+        .plan-changes-label { font-size: 9.5px; font-weight: 700; color: var(--text-3); text-transform: uppercase; letter-spacing: 1.4px; margin-bottom: 8px; padding-bottom: 7px; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .plan-files-list { display: flex; flex-direction: column; gap: 4px; margin-bottom: 16px; }
-        .plan-file-item {
-            display: flex; align-items: center; gap: 10px;
-            padding: 9px 12px; border-radius: 8px;
-            background: rgba(255,255,255,0.025);
-            border: 1px solid rgba(255,255,255,0.05);
-            transition: background .15s;
-        }
+        .plan-file-item { display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; background: rgba(255,255,255,0.025); border: 1px solid rgba(255,255,255,0.05); transition: background .15s; }
         .plan-file-item:hover { background: rgba(255,255,255,0.045); }
-        .plan-file-dot {
-            width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 11px; font-weight: 800; line-height: 1;
-        }
+        .plan-file-dot { width: 20px; height: 20px; border-radius: 6px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; line-height: 1; }
         .plan-file-dot.crear  { background: rgba(34,197,94,0.15);  color: #22c55e; border: 1px solid rgba(34,197,94,0.25); }
         .plan-file-dot.modificar { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.22); }
         .plan-file-info { flex: 1; min-width: 0; }
-        .plan-file-ruta {
-            font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.3;
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-        }
+        .plan-file-ruta { font-size: 12px; font-weight: 600; color: var(--text); line-height: 1.3; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .plan-ruta-parent { color: var(--text-3); }
         .plan-ruta-sep    { color: var(--text-3); margin: 0 1px; }
         .plan-ruta-name   { color: var(--text); }
-        .plan-file-type-badge {
-            display: inline-flex; align-items: center;
-            font-size: 9px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase;
-            background: rgba(88,101,242,0.14); border: 1px solid rgba(88,101,242,0.25); color: #818cf8;
-            border-radius: 4px; padding: 1px 5px; margin-left: 6px; vertical-align: middle;
-        }
+        .plan-file-type-badge { display: inline-flex; align-items: center; font-size: 9px; font-weight: 700; letter-spacing: .6px; text-transform: uppercase; background: rgba(88,101,242,0.14); border: 1px solid rgba(88,101,242,0.25); color: #818cf8; border-radius: 4px; padding: 1px 5px; margin-left: 6px; vertical-align: middle; }
         .plan-file-desc { font-size: 11px; color: var(--text-3); margin-top: 2px; line-height: 1.4; }
-        .plan-action-tag {
-            font-size: 9px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase;
-            border-radius: 5px; padding: 3px 7px; flex-shrink: 0;
-        }
+        .plan-action-tag { font-size: 9px; font-weight: 700; letter-spacing: .7px; text-transform: uppercase; border-radius: 5px; padding: 3px 7px; flex-shrink: 0; }
         .plan-action-tag.crear    { background: rgba(34,197,94,0.12);  color: #22c55e;  border: 1px solid rgba(34,197,94,0.2); }
         .plan-action-tag.modificar{ background: rgba(251,191,36,0.10); color: #fbbf24;  border: 1px solid rgba(251,191,36,0.2); }
         .plan-actions { display: flex; gap: 8px; margin-top: 4px; }
-        .plan-btn {
-            flex: 1; padding: 10px 16px; border-radius: 9px; font-size: 12.5px; font-weight: 700;
-            border: none; cursor: pointer; font-family: var(--font);
-            transition: all .18s cubic-bezier(.34,1.2,.64,1); letter-spacing: .1px;
-        }
-        .plan-btn-accept {
-            background: var(--red); color: white;
-            box-shadow: 0 4px 18px rgba(230,48,48,0.32);
-        }
-        .plan-btn-accept:hover:not(:disabled) {
-            background: var(--red-light); transform: translateY(-1px);
-            box-shadow: 0 6px 24px rgba(230,48,48,0.48);
-        }
+        .plan-btn { flex: 1; padding: 10px 16px; border-radius: 9px; font-size: 12.5px; font-weight: 700; border: none; cursor: pointer; font-family: var(--font); transition: all .18s cubic-bezier(.34,1.2,.64,1); letter-spacing: .1px; }
+        .plan-btn-accept { background: var(--red); color: white; box-shadow: 0 4px 18px rgba(230,48,48,0.32); }
+        .plan-btn-accept:hover:not(:disabled) { background: var(--red-light); transform: translateY(-1px); box-shadow: 0 6px 24px rgba(230,48,48,0.48); }
         .plan-btn-accept:disabled { opacity: .55; cursor: not-allowed; transform: none; box-shadow: none; }
-        .plan-btn-reject {
-            background: rgba(255,255,255,0.04); color: var(--text-2);
-            border: 1px solid rgba(255,255,255,0.08);
-        }
+        .plan-btn-reject { background: rgba(255,255,255,0.04); color: var(--text-2); border: 1px solid rgba(255,255,255,0.08); }
         .plan-btn-reject:hover:not(:disabled) { background: rgba(255,255,255,0.08); color: var(--text); border-color: rgba(255,255,255,0.14); }
         .plan-btn-reject:disabled { opacity: .45; cursor: not-allowed; }
 
-        /* ─── ROADMAP BOX — premium style ─── */
-        .roadmap-box {
-            background: rgba(10,10,18,0.92);
-            border: 1px solid rgba(255,255,255,0.08);
-            border-radius: 14px; padding: 18px 20px 16px;
-            margin-top: 8px; position: relative; overflow: hidden;
-            backdrop-filter: blur(20px);
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.04) inset;
-            transition: opacity .3s, pointer-events .3s;
-        }
-        .roadmap-box::before {
-            content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px;
-            background: linear-gradient(90deg, transparent 0%, rgba(88,101,242,0.6) 40%, rgba(230,48,48,0.35) 75%, transparent 100%);
-        }
+        .roadmap-box { background: rgba(10,10,18,0.92); border: 1px solid rgba(255,255,255,0.08); border-radius: 14px; padding: 18px 20px 16px; margin-top: 8px; position: relative; overflow: hidden; backdrop-filter: blur(20px); box-shadow: 0 8px 32px rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.04) inset; transition: opacity .3s, pointer-events .3s; }
+        .roadmap-box::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 1px; background: linear-gradient(90deg, transparent 0%, rgba(88,101,242,0.6) 40%, rgba(230,48,48,0.35) 75%, transparent 100%); }
         .roadmap-box.used { pointer-events: none; opacity: 0.45; }
-        .roadmap-box-title {
-            font-size: 12px; font-weight: 800; color: var(--text);
-            text-transform: uppercase; letter-spacing: 1.2px;
-            margin-bottom: 12px; padding-bottom: 10px;
-            border-bottom: 1px solid rgba(255,255,255,0.05);
-            display: flex; align-items: center; gap: 7px;
-        }
-        .roadmap-step {
-            display: flex; align-items: flex-start; gap: 12px; width: 100%; text-align: left;
-            background: rgba(255,255,255,0.028); border: 1px solid rgba(255,255,255,0.06);
-            color: var(--text); padding: 12px 14px; border-radius: 9px;
-            margin-bottom: 6px; cursor: pointer;
-            transition: background .18s, border-color .18s, transform .18s;
-            position: relative; overflow: hidden;
-        }
-        .roadmap-step::before {
-            content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px;
-            background: var(--red); border-radius: 3px 0 0 3px;
-            transform: scaleY(0); transform-origin: center;
-            transition: transform .2s cubic-bezier(.34,1.2,.64,1);
-        }
+        .roadmap-box-title { font-size: 12px; font-weight: 800; color: var(--text); text-transform: uppercase; letter-spacing: 1.2px; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.05); display: flex; align-items: center; gap: 7px; }
+        .roadmap-step { display: flex; align-items: flex-start; gap: 12px; width: 100%; text-align: left; background: rgba(255,255,255,0.028); border: 1px solid rgba(255,255,255,0.06); color: var(--text); padding: 12px 14px; border-radius: 9px; margin-bottom: 6px; cursor: pointer; transition: background .18s, border-color .18s, transform .18s; position: relative; overflow: hidden; }
+        .roadmap-step::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--red); border-radius: 3px 0 0 3px; transform: scaleY(0); transform-origin: center; transition: transform .2s cubic-bezier(.34,1.2,.64,1); }
         .roadmap-step:hover { background: rgba(230,48,48,0.07); border-color: rgba(230,48,48,0.22); transform: translateX(2px); }
         .roadmap-step:hover::before { transform: scaleY(1); }
-        .roadmap-step-num {
-            width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0;
-            background: rgba(88,101,242,0.15); border: 1px solid rgba(88,101,242,0.25);
-            color: #818cf8; font-size: 10px; font-weight: 800;
-            display: flex; align-items: center; justify-content: center; margin-top: 1px;
-        }
+        .roadmap-step-num { width: 22px; height: 22px; border-radius: 6px; flex-shrink: 0; background: rgba(88,101,242,0.15); border: 1px solid rgba(88,101,242,0.25); color: #818cf8; font-size: 10px; font-weight: 800; display: flex; align-items: center; justify-content: center; margin-top: 1px; }
         .roadmap-step-body { flex: 1; min-width: 0; }
-        .roadmap-step strong {
-            color: var(--text); display: block; font-size: 13px;
-            font-weight: 700; margin-bottom: 3px; line-height: 1.3;
-        }
+        .roadmap-step strong { color: var(--text); display: block; font-size: 13px; font-weight: 700; margin-bottom: 3px; line-height: 1.3; }
         .roadmap-step span { font-size: 11.5px; color: var(--text-2); line-height: 1.45; display: block; }
-        .roadmap-step-arrow {
-            color: var(--text-3); font-size: 14px; flex-shrink: 0; margin-top: 2px;
-            transition: color .18s, transform .18s;
-        }
+        .roadmap-step-arrow { color: var(--text-3); font-size: 14px; flex-shrink: 0; margin-top: 2px; transition: color .18s, transform .18s; }
         .roadmap-step:hover .roadmap-step-arrow { color: var(--red); transform: translateX(2px); }
 
-        /* ─── SUCCESS SUMMARY — consola profesional ─── */
-        .success-summary {
-            margin-top: 10px;
-            background: rgba(5, 20, 12, 0.85);
-            border: 1px solid rgba(34,197,94,0.22);
-            border-radius: 10px; overflow: hidden;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.35), 0 0 0 1px rgba(34,197,94,0.06);
-        }
-        .success-summary-header {
-            display: flex; align-items: center; gap: 8px;
-            padding: 9px 14px; border-bottom: 1px solid rgba(34,197,94,0.12);
-            background: rgba(34,197,94,0.07);
-        }
-        .success-summary-dot {
-            width: 7px; height: 7px; border-radius: 50%; background: var(--green);
-            box-shadow: 0 0 6px var(--green); flex-shrink: 0;
-        }
-        .success-summary-title {
-            font-size: 11px; font-weight: 800; color: var(--green);
-            text-transform: uppercase; letter-spacing: 1px;
-        }
-        .success-summary-body {
-            padding: 12px 14px;
-            font-size: 12px; color: rgba(134,239,172,0.85);
-            line-height: 1.7; font-family: 'Montserrat', monospace;
-            white-space: pre-wrap; word-break: break-word;
-        }
-        .success-summary-body .ss-line {
-            display: flex; align-items: baseline; gap: 7px; padding: 1px 0;
-        }
-        .success-summary-body .ss-prefix {
-            color: rgba(34,197,94,0.5); font-weight: 700; flex-shrink: 0;
-        }
+        .success-summary { margin-top: 10px; background: rgba(5, 20, 12, 0.85); border: 1px solid rgba(34,197,94,0.22); border-radius: 10px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.35), 0 0 0 1px rgba(34,197,94,0.06); }
+        .success-summary-header { display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-bottom: 1px solid rgba(34,197,94,0.12); background: rgba(34,197,94,0.07); }
+        .success-summary-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 6px var(--green); flex-shrink: 0; }
+        .success-summary-title { font-size: 11px; font-weight: 800; color: var(--green); text-transform: uppercase; letter-spacing: 1px; }
+        .success-summary-body { padding: 12px 14px; font-size: 12px; color: rgba(134,239,172,0.85); line-height: 1.7; font-family: 'Montserrat', monospace; white-space: pre-wrap; word-break: break-word; }
+        .success-summary-body .ss-line { display: flex; align-items: baseline; gap: 7px; padding: 1px 0; }
+        .success-summary-body .ss-prefix { color: rgba(34,197,94,0.5); font-weight: 700; flex-shrink: 0; }
 
-        /* Input area */
         .input-area { padding: 10px 9% 18px; background: linear-gradient(to top, var(--bg) 65%, transparent); }
         .input-chips { display: flex; gap: 6px; margin-bottom: 9px; flex-wrap: wrap; }
-        .input-chip {
-            background: transparent; border: 1px solid var(--border); border-radius: 5px;
-            padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--text-3); cursor: pointer; transition: all .15s;
-        }
+        .input-chip { background: transparent; border: 1px solid var(--border); border-radius: 5px; padding: 4px 10px; font-size: 11px; font-weight: 600; color: var(--text-3); cursor: pointer; transition: all .15s; }
         .input-chip:hover { border-color: var(--red-border); color: var(--red); }
-        .input-box {
-            background: rgba(10,10,16,0.97); border: 1px solid var(--border); border-radius: 14px;
-            display: flex; align-items: flex-end; padding: 6px;
-            box-shadow: 0 6px 30px rgba(0,0,0,0.5); transition: border-color .2s, box-shadow .2s;
-        }
+        .input-box { background: rgba(10,10,16,0.97); border: 1px solid var(--border); border-radius: 14px; display: flex; align-items: flex-end; padding: 6px; box-shadow: 0 6px 30px rgba(0,0,0,0.5); transition: border-color .2s, box-shadow .2s; }
         .input-box:focus-within { border-color: rgba(230,48,48,0.35); box-shadow: 0 6px 30px rgba(0,0,0,0.5), 0 0 0 3px rgba(230,48,48,0.06); }
-        textarea#prompt {
-            flex: 1; background: transparent; border: none; color: var(--text);
-            padding: 11px 12px; font-size: 13.5px; resize: none; outline: none;
-            max-height: 120px; min-height: 24px; line-height: 1.55;
-        }
+        textarea#prompt { flex: 1; background: transparent; border: none; color: var(--text); padding: 11px 12px; font-size: 13.5px; resize: none; outline: none; max-height: 120px; min-height: 24px; line-height: 1.55; }
         textarea#prompt::placeholder { color: var(--text-3); }
-        .action-btn {
-            background: transparent; border: none; color: var(--text-3);
-            width: 38px; height: 38px; border-radius: 8px; font-size: 15px;
-            display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0;
-        }
+        .action-btn { background: transparent; border: none; color: var(--text-3); width: 38px; height: 38px; border-radius: 8px; font-size: 15px; display: flex; align-items: center; justify-content: center; transition: all .15s; flex-shrink: 0; }
         .action-btn:hover { color: var(--text); background: rgba(255,255,255,0.05); }
         .send-btn { background: var(--red); color: white; margin-left: 4px; box-shadow: 0 3px 12px rgba(230,48,48,0.3); }
         .send-btn:hover { background: var(--red-light); box-shadow: 0 4px 18px rgba(230,48,48,0.48); color: white; }
         .input-footer { text-align: center; font-size: 11px; color: var(--text-3); margin-top: 8px; }
 
-        /* ─── MODAL BASE ─── */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.75);
-            backdrop-filter: blur(8px); z-index: 100;
-            display: flex; align-items: center; justify-content: center;
-            opacity: 0; pointer-events: none; transition: opacity .25s;
-        }
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); backdrop-filter: blur(8px); z-index: 100; display: flex; align-items: center; justify-content: center; opacity: 0; pointer-events: none; transition: opacity .25s; }
         .modal-overlay.open { opacity: 1; pointer-events: all; }
-        .modal {
-            background: var(--bg-1); border: 1px solid var(--border-2); border-radius: 18px;
-            padding: 28px; width: 500px; max-width: 94vw; max-height: 88vh; overflow-y: auto;
-            transform: translateY(20px) scale(0.97);
-            transition: all .3s cubic-bezier(.34,1.2,.64,1); position: relative;
-        }
+        .modal { background: var(--bg-1); border: 1px solid var(--border-2); border-radius: 18px; padding: 28px; width: 500px; max-width: 94vw; max-height: 88vh; overflow-y: auto; transform: translateY(20px) scale(0.97); transition: all .3s cubic-bezier(.34,1.2,.64,1); position: relative; }
         .modal-overlay.open .modal { transform: translateY(0) scale(1); }
         .modal-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px; }
         .modal-title { font-size: 19px; font-weight: 800; letter-spacing: -.3px; }
-        .modal-close {
-            background: transparent; border: none; color: var(--text-3); font-size: 20px;
-            width: 32px; height: 32px; border-radius: 8px;
-            display: flex; align-items: center; justify-content: center; transition: all .15s;
-        }
+        .modal-close { background: transparent; border: none; color: var(--text-3); font-size: 20px; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; transition: all .15s; }
         .modal-close:hover { background: rgba(255,255,255,0.06); color: var(--text); }
         .modal-sub { font-size: 13px; color: var(--text-2); margin-bottom: 20px; }
 
-        /* Plans */
         .plans { display: flex; flex-direction: column; gap: 10px; }
-        .plan-card {
-            background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px;
-            padding: 14px 16px; cursor: pointer; transition: all .15s;
-            display: flex; align-items: center; justify-content: space-between; position: relative;
-        }
+        .plan-card { background: var(--bg-2); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; cursor: pointer; transition: all .15s; display: flex; align-items: center; justify-content: space-between; position: relative; }
         .plan-card:hover { border-color: var(--red-border); background: var(--red-dim); transform: translateX(3px); }
         .plan-card.featured { border-color: var(--red-border); background: var(--red-dim); }
-        .plan-badge {
-            position: absolute; top: -10px; left: 16px; background: var(--red); color: white;
-            font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
-            text-transform: uppercase; letter-spacing: .8px;
-        }
+        .plan-badge { position: absolute; top: -10px; left: 16px; background: var(--red); color: white; font-size: 9px; font-weight: 700; padding: 2px 8px; border-radius: 4px; text-transform: uppercase; letter-spacing: .8px; }
         .plan-name { font-size: 14px; font-weight: 700; margin-bottom: 2px; }
         .plan-desc { font-size: 12px; color: var(--text-2); }
         .plan-credits { font-size: 20px; font-weight: 800; color: var(--red); line-height: 1; }
         .plan-price { font-size: 11px; color: var(--text-3); margin-top: 2px; }
         .plan-paypal-container { margin-top: 10px; min-height: 44px; }
-
         .modal-note { margin-top: 16px; font-size: 11px; color: var(--text-3); text-align: center; line-height: 1.5; }
 
-        /* ─── ADMIN PANEL ─── */
         .admin-modal { width: 540px; }
         .admin-tabs { display: flex; gap: 3px; background: var(--bg-2); border-radius: 9px; padding: 3px; margin-bottom: 20px; }
-        .admin-tab {
-            flex: 1; background: transparent; border: none;
-            color: rgba(255,255,255,0.4); font-family: var(--font); font-size: 12px; font-weight: 700;
-            padding: 8px; border-radius: 7px; cursor: pointer; transition: all .18s;
-        }
+        .admin-tab { flex: 1; background: transparent; border: none; color: rgba(255,255,255,0.4); font-family: var(--font); font-size: 12px; font-weight: 700; padding: 8px; border-radius: 7px; cursor: pointer; transition: all .18s; }
         .admin-tab.active { background: var(--bg-3); color: var(--text); box-shadow: 0 2px 8px rgba(0,0,0,0.32); }
         .admin-section { display: none; }
         .admin-section.active { display: block; }
         .admin-field { margin-bottom: 13px; }
         .admin-label { display: block; font-size: 12px; font-weight: 700; color: var(--text-2); margin-bottom: 6px; }
-        .admin-input {
-            width: 100%; background: var(--bg-2); border: 1px solid var(--border); color: var(--text);
-            font-family: var(--font); font-size: 13px; padding: 10px 12px; border-radius: 8px;
-            outline: none; transition: border-color .18s;
-        }
+        .admin-input { width: 100%; background: var(--bg-2); border: 1px solid var(--border); color: var(--text); font-family: var(--font); font-size: 13px; padding: 10px 12px; border-radius: 8px; outline: none; transition: border-color .18s; }
         .admin-input:focus { border-color: rgba(230,48,48,0.4); box-shadow: 0 0 0 3px rgba(230,48,48,0.07); }
         .admin-input::placeholder { color: rgba(255,255,255,0.28); }
         .admin-input-row { display: flex; gap: 8px; }
         .admin-input-row .admin-input { flex: 1; }
-        .admin-btn-submit {
-            width: 100%; background: var(--red); color: white; border: none;
-            font-family: var(--font); font-size: 13px; font-weight: 700;
-            padding: 11px; border-radius: 8px; cursor: pointer;
-            box-shadow: 0 4px 18px rgba(230,48,48,0.28); transition: all .2s; margin-top: 4px;
-        }
+        .admin-btn-submit { width: 100%; background: var(--red); color: white; border: none; font-family: var(--font); font-size: 13px; font-weight: 700; padding: 11px; border-radius: 8px; cursor: pointer; box-shadow: 0 4px 18px rgba(230,48,48,0.28); transition: all .2s; margin-top: 4px; }
         .admin-btn-submit:hover { background: var(--red-light); transform: translateY(-1px); }
         .admin-btn-submit.gold { background: rgba(240,180,41,0.15); color: var(--gold); border: 1px solid rgba(240,180,41,0.3); box-shadow: none; }
         .admin-btn-submit.gold:hover { background: rgba(240,180,41,0.25); }
@@ -728,65 +287,24 @@
         .admin-msg.ok { background: var(--green-dim); border: 1px solid rgba(34,197,94,0.22); color: var(--green); display: block; }
         .admin-msg.err { background: var(--red-dim); border: 1px solid var(--red-border); color: var(--red); display: block; }
 
-        /* ─── WELCOME ENHANCED ─── */
-        .welcome-badge {
-            display: inline-flex; align-items: center; gap: 7px;
-            background: rgba(230,48,48,0.1); border: 1px solid rgba(230,48,48,0.28);
-            border-radius: 20px; padding: 5px 14px; font-size: 11px; font-weight: 700;
-            color: var(--red); letter-spacing: 0.6px; text-transform: uppercase;
-            margin-bottom: 4px;
-            animation: badgePulse 3s ease-in-out infinite;
-        }
-        @keyframes badgePulse {
-            0%,100% { box-shadow: 0 0 0 0 rgba(230,48,48,0.15); }
-            50%      { box-shadow: 0 0 0 8px rgba(230,48,48,0); }
-        }
+        .welcome-badge { display: inline-flex; align-items: center; gap: 7px; background: rgba(230,48,48,0.1); border: 1px solid rgba(230,48,48,0.28); border-radius: 20px; padding: 5px 14px; font-size: 11px; font-weight: 700; color: var(--red); letter-spacing: 0.6px; text-transform: uppercase; margin-bottom: 4px; animation: badgePulse 3s ease-in-out infinite; }
+        @keyframes badgePulse { 0%,100% { box-shadow: 0 0 0 0 rgba(230,48,48,0.15); } 50% { box-shadow: 0 0 0 8px rgba(230,48,48,0); } }
         .badge-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--red); animation: blink 1.2s infinite; }
 
-        /* Floating code snippets decoration */
-        .code-float {
-            position: absolute; font-family: 'Courier New', monospace;
-            font-size: 11px; color: rgba(230,48,48,0.18); font-weight: 600;
-            pointer-events: none; white-space: nowrap; letter-spacing: -0.3px;
-            animation: floatCode 12s ease-in-out infinite;
-        }
+        .code-float { position: absolute; font-family: 'Courier New', monospace; font-size: 11px; color: rgba(230,48,48,0.18); font-weight: 600; pointer-events: none; white-space: nowrap; letter-spacing: -0.3px; animation: floatCode 12s ease-in-out infinite; }
         .code-float:nth-child(2) { animation-delay: -3s; animation-duration: 15s; }
         .code-float:nth-child(3) { animation-delay: -7s; animation-duration: 11s; }
         .code-float:nth-child(4) { animation-delay: -9s; animation-duration: 14s; }
-        @keyframes floatCode {
-            0%,100% { opacity: 0.6; transform: translateY(0px); }
-            50%      { opacity: 1; transform: translateY(-12px); }
-        }
-        .welcome-decorations {
-            position: absolute; inset: 0; pointer-events: none; overflow: hidden;
-        }
-
-        /* Welcome divider */
-        .welcome-divider {
-            width: 120px; height: 1px;
-            background: linear-gradient(90deg, transparent, rgba(230,48,48,0.4), transparent);
-            margin: 4px auto;
-        }
-
-        /* Powered by badge */
-        .powered-by {
-            display: flex; align-items: center; gap: 8px; margin-top: 4px;
-            font-size: 11px; color: var(--text-3); font-weight: 600;
-        }
+        @keyframes floatCode { 0%,100% { opacity: 0.6; transform: translateY(0px); } 50% { opacity: 1; transform: translateY(-12px); } }
+        .welcome-decorations { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+        .welcome-divider { width: 120px; height: 1px; background: linear-gradient(90deg, transparent, rgba(230,48,48,0.4), transparent); margin: 4px auto; }
+        .powered-by { display: flex; align-items: center; gap: 8px; margin-top: 4px; font-size: 11px; color: var(--text-3); font-weight: 600; }
         .powered-by span { color: rgba(230,48,48,0.7); font-weight: 700; }
-
-        /* Stat pills rework - smaller, cleaner */
         .mini-stats { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
-        .mini-stat {
-            background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 6px; padding: 4px 10px; font-size: 10.5px; font-weight: 600;
-            color: var(--text-3); letter-spacing: 0.3px;
-        }
+        .mini-stat { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.07); border-radius: 6px; padding: 4px 10px; font-size: 10.5px; font-weight: 600; color: var(--text-3); letter-spacing: 0.3px; }
         .mini-stat b { color: var(--text-2); }
-            0%{transform:scale(1);} 50%{transform:scale(1.12);color:var(--green);} 100%{transform:scale(1);}
-        }
         .credits-pop { animation: creditsPop .4s ease-out; }
-        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes creditsPop { 0%{transform:scale(1);} 50%{transform:scale(1.12);color:var(--green);} 100%{transform:scale(1);} }
     </style>
 </head>
 <body>
@@ -796,7 +314,6 @@
 <div class="bg-orb bg-orb-2"></div>
 <div class="bg-orb bg-orb-3"></div>
 
-<!-- ─── GATE SCREEN (blocked/banned) ─── -->
 <div id="gate-screen">
     <div class="gate-icon" id="gate-icon">🔒</div>
     <div class="gate-title" id="gate-title">Verificando acceso...</div>
@@ -804,7 +321,6 @@
     <button class="gate-back-btn" id="gate-back" style="display:none" onclick="doLogout()">← Volver al inicio</button>
 </div>
 
-<!-- ─── SIDEBAR ─── -->
 <aside id="sidebar" style="display:none">
     <div class="logo-area">
         <div class="logo">
@@ -813,12 +329,10 @@
             </div>
             <div class="logo-text">
                 <span class="logo-name">V1zions</span>
-                <span class="logo-badge">v25.8</span>
+                <span class="logo-badge">v27.5</span>
             </div>
         </div>
     </div>
-
-    <!-- User profile -->
     <div class="user-profile">
         <div class="user-avatar" id="user-avatar">?</div>
         <div class="user-info">
@@ -828,26 +342,16 @@
         </div>
         <button class="logout-btn" title="Cerrar sesión" onclick="doLogout()">⏻</button>
     </div>
-
-    <!-- Admin button (only visible for owner) -->
-    <button class="admin-btn hidden" id="admin-btn" onclick="openModal('admin')">
-        Panel Admin
-    </button>
-
-    <!-- New project -->
+    <button class="admin-btn hidden" id="admin-btn" onclick="openModal('admin')">Panel Admin</button>
     <div class="sidebar-section">
         <button class="new-btn" id="new-btn">
             <span style="font-size:16px;line-height:1">+</span> Nuevo Proyecto
         </button>
     </div>
     <div class="projects-quota" id="projects-quota"></div>
-
     <div class="sidebar-label">Proyectos</div>
     <div class="projects-scroll" id="projects-list"></div>
-
     <div class="sidebar-divider"></div>
-
-    <!-- Credits -->
     <div class="credits-panel" id="credits-panel">
         <div class="cost-flash" id="cost-flash"></div>
         <div class="credits-top">
@@ -863,14 +367,11 @@
         <div class="credits-bar-bg">
             <div class="credits-bar-fill" id="credits-bar" style="width:0%"></div>
         </div>
-        <button class="get-credits-btn" id="get-credits-btn">
-            Shop
-        </button>
+        <button class="get-credits-btn" id="get-credits-btn">Shop</button>
     </div>
-
     <div class="sidebar-divider"></div>
 
-    <!-- Studio status -->
+    <!-- STUDIO STATUS -->
     <div class="studio-status" id="studio-status">
         <div class="status-icon">
             <img src="logo.png" alt="AI" onerror="this.parentElement.innerHTML='<span style=\'font-size:10px;font-weight:800;color:white\'>AI</span>'">
@@ -878,11 +379,9 @@
         <span id="status-text">Esperando Studio...</span>
     </div>
 
-    <!-- Discord -->
     <a class="discord-section" href="https://discord.gg/xQD3W5w5tP" target="_blank" rel="noopener">
         <div class="discord-top">
             <div class="discord-icon">
-                <!-- Discord Official Logo SVG -->
                 <svg viewBox="0 0 127.14 96.36" xmlns="http://www.w3.org/2000/svg" fill="white">
                     <path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1A105.25,105.25,0,0,0,126.6,80.22h0C129.24,52.84,122.09,29.11,107.7,8.07ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,46,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,46,96.12,53,91.08,65.69,84.69,65.69Z"/>
                 </svg>
@@ -897,10 +396,8 @@
     </a>
 </aside>
 
-<!-- ─── MAIN ─── -->
 <main id="main-content" style="display:none">
     <div id="chat-container"></div>
-
     <div class="input-area">
         <div class="input-chips">
             <button class="input-chip" onclick="setPrompt('Sistema de DataStore con session locking')">DataStore</button>
@@ -915,13 +412,11 @@
             <textarea id="prompt" rows="1" placeholder="Describe el sistema que necesitas..."></textarea>
             <button class="action-btn send-btn" id="send-btn">➤</button>
         </div>
-        <div class="input-footer">
-            V1zions puede cometer errores — revisa el código antes de usarlo en producción.
-        </div>
+        <div class="input-footer">V1zions puede cometer errores — revisa el código antes de usarlo en producción.</div>
     </div>
 </main>
 
-<!-- ─── CREDITS MODAL ─── -->
+<!-- CREDITS MODAL -->
 <div class="modal-overlay" id="credits-modal">
     <div class="modal">
         <div class="modal-top">
@@ -930,54 +425,28 @@
         </div>
         <div class="modal-sub">Desbloquea más capacidad para generar sistemas avanzados.</div>
         <div class="plans">
-            <!-- Starter: free daily claim -->
             <div class="plan-card" id="starter-plan">
-                <div>
-                    <div class="plan-name">Starter</div>
-                    <div class="plan-desc">Reclama 5 créditos gratis (una vez al día)</div>
-                </div>
-                <div style="text-align:right">
-                    <div class="plan-credits">+5</div>
-                    <div class="plan-price">Gratis</div>
-                </div>
+                <div><div class="plan-name">Starter</div><div class="plan-desc">Reclama 5 créditos gratis (una vez al día)</div></div>
+                <div style="text-align:right"><div class="plan-credits">+5</div><div class="plan-price">Gratis</div></div>
             </div>
             <div id="starter-paypal" class="plan-paypal-container"></div>
-
-            <!-- Developer: $4.99 -->
             <div class="plan-card featured">
                 <div class="plan-badge">Popular</div>
-                <div>
-                    <div class="plan-name">Developer</div>
-                    <div class="plan-desc">Para proyectos activos y equipos pequeños</div>
-                </div>
-                <div style="text-align:right">
-                    <div class="plan-credits">+50</div>
-                    <div class="plan-price">$4.99</div>
-                </div>
+                <div><div class="plan-name">Developer</div><div class="plan-desc">Para proyectos activos y equipos pequeños</div></div>
+                <div style="text-align:right"><div class="plan-credits">+50</div><div class="plan-price">$4.99</div></div>
             </div>
             <div id="developer-paypal" class="plan-paypal-container"></div>
-
-            <!-- Studio Pro: $14.99/mo — VIP -->
             <div class="plan-card">
-                <div>
-                    <div class="plan-name">Studio Pro</div>
-                    <div class="plan-desc">VIP: proyectos ilimitados + créditos extra</div>
-                </div>
-                <div style="text-align:right">
-                    <div class="plan-credits">+200</div>
-                    <div class="plan-price">$14.99/mes</div>
-                </div>
+                <div><div class="plan-name">Studio Pro</div><div class="plan-desc">VIP: proyectos ilimitados + créditos extra</div></div>
+                <div style="text-align:right"><div class="plan-credits">+200</div><div class="plan-price">$14.99/mes</div></div>
             </div>
             <div id="pro-paypal" class="plan-paypal-container"></div>
         </div>
-        <div class="modal-note">
-            También puedes ganar créditos uniéndote al Discord.<br>
-            Los pagos son seguros y procesados por PayPal.
-        </div>
+        <div class="modal-note">También puedes ganar créditos uniéndote al Discord.<br>Los pagos son seguros y procesados por PayPal.</div>
     </div>
 </div>
 
-<!-- ─── ADMIN PANEL MODAL ─── -->
+<!-- ADMIN MODAL -->
 <div class="modal-overlay" id="admin-modal">
     <div class="modal admin-modal">
         <div class="modal-top">
@@ -989,27 +458,14 @@
             <button class="admin-tab" onclick="adminTab('whitelist')">Early Access</button>
             <button class="admin-tab" onclick="adminTab('ban')">Banear</button>
         </div>
-
-        <!-- Give Credits -->
         <div class="admin-section active" id="admin-credits">
-            <div class="admin-field">
-                <label class="admin-label">Correo del usuario</label>
-                <input class="admin-input" type="email" id="admin-credit-email" placeholder="usuario@ejemplo.com">
-            </div>
-            <div class="admin-field">
-                <label class="admin-label">Cantidad de V-Credits a sumar</label>
-                <input class="admin-input" type="number" id="admin-credit-amount" placeholder="10" min="1" max="9999">
-            </div>
+            <div class="admin-field"><label class="admin-label">Correo del usuario</label><input class="admin-input" type="email" id="admin-credit-email" placeholder="usuario@ejemplo.com"></div>
+            <div class="admin-field"><label class="admin-label">Cantidad de V-Credits a sumar</label><input class="admin-input" type="number" id="admin-credit-amount" placeholder="10" min="1" max="9999"></div>
             <button class="admin-btn-submit" onclick="adminGiveCredits()">✓ Dar Créditos</button>
             <div class="admin-msg" id="admin-credits-msg"></div>
         </div>
-
-        <!-- Whitelist -->
         <div class="admin-section" id="admin-whitelist">
-            <div class="admin-field">
-                <label class="admin-label">Correo para Early Access</label>
-                <input class="admin-input" type="email" id="admin-whitelist-email" placeholder="usuario@ejemplo.com">
-            </div>
+            <div class="admin-field"><label class="admin-label">Correo para Early Access</label><input class="admin-input" type="email" id="admin-whitelist-email" placeholder="usuario@ejemplo.com"></div>
             <button class="admin-btn-submit gold" onclick="adminAddWhitelist()">✓ Dar Early Access</button>
             <div class="admin-msg" id="admin-whitelist-msg"></div>
             <div style="margin-top:18px; border-top:1px solid var(--border); padding-top:14px;">
@@ -1019,13 +475,8 @@
                 <div class="admin-msg" id="admin-remove-msg"></div>
             </div>
         </div>
-
-        <!-- Ban -->
         <div class="admin-section" id="admin-ban">
-            <div class="admin-field">
-                <label class="admin-label">Correo del usuario a banear</label>
-                <input class="admin-input" type="email" id="admin-ban-email" placeholder="usuario@ejemplo.com">
-            </div>
+            <div class="admin-field"><label class="admin-label">Correo del usuario a banear</label><input class="admin-input" type="email" id="admin-ban-email" placeholder="usuario@ejemplo.com"></div>
             <button class="admin-btn-submit danger" onclick="adminBanUser()">🔨 Banear usuario</button>
             <div class="admin-msg" id="admin-ban-msg"></div>
             <div style="margin-top:18px; border-top:1px solid var(--border); padding-top:14px;">
@@ -1038,11 +489,7 @@
     </div>
 </div>
 
-<!-- ─── JAVASCRIPT ─── -->
 <script>
-// ══════════════════════════════════════════
-//  ANTI-INSPECCIÓN — Bloquea F12, DevTools, clic derecho
-// ══════════════════════════════════════════
 document.addEventListener('contextmenu', e => e.preventDefault());
 document.addEventListener('keydown', e => {
     if (e.key === 'F12') { e.preventDefault(); return false; }
@@ -1050,9 +497,6 @@ document.addEventListener('keydown', e => {
     if (e.ctrlKey && ['u','U'].includes(e.key)) { e.preventDefault(); return false; }
 });
 
-// ══════════════════════════════════════════
-//  CONFIG APPWRITE
-// ══════════════════════════════════════════
 const OWNER_EMAIL   = "dekeremsa@gmail.com";
 const MAX_CREDITS   = 10;
 const VIP_CREDITS   = 50;
@@ -1067,9 +511,6 @@ const account   = new Appwrite.Account(client);
 const databases = new Appwrite.Databases(client);
 const DB_ID     = "V1zions";
 
-// ══════════════════════════════════════════
-//  ESTADO GLOBAL
-// ══════════════════════════════════════════
 let currentUser      = null;
 let userCredits      = 0;
 let userIsVip        = false;
@@ -1077,15 +518,12 @@ let projectsData     = [];
 let currentProjectId = null;
 let creditsUnsub     = null;
 let refillInterval   = null;
-let fasesPendientes  = [];  // [v25.8] Fases de roadmap que aún no se han completado
-let activePasoSid    = null; // [v25.8] SID del paso de roadmap actualmente en proceso
+let fasesPendientes  = [];
+let activePasoSid    = null;
 
 const chatContainer = document.getElementById('chat-container');
 const projectsList  = document.getElementById('projects-list');
 
-// ══════════════════════════════════════════
-//  GATE & AUTH
-// ══════════════════════════════════════════
 function showGate(icon, title, sub, showBtn = true) {
     document.getElementById('gate-icon').textContent   = icon;
     document.getElementById('gate-title').textContent  = title;
@@ -1134,12 +572,10 @@ window.addEventListener('load', async () => {
         }
 
         await databases.updateDocument(DB_ID, 'Users', currentUser.$id, { lastSeen: new Date().toISOString() });
-
         userIsVip = userData.vip || false;
         const lastUid = localStorage.getItem('v1_last_uid');
         if (lastUid && lastUid !== currentUser.$id) { localStorage.clear(); }
         localStorage.setItem('v1_last_uid', currentUser.$id);
-
         loadUI();
     } catch (e) {
         showGate('❌', 'Error Crítico', 'Ocurrió un error al cargar: ' + e.message);
@@ -1152,9 +588,6 @@ async function doLogout() {
     window.location.replace('index.html');
 }
 
-// ══════════════════════════════════════════
-//  UI INIT
-// ══════════════════════════════════════════
 function loadUI() {
     hideGate();
     setupUserProfile();
@@ -1169,15 +602,12 @@ function loadUI() {
 
 function setupUserProfile() {
     const initials = (currentUser.name || currentUser.email || '?').charAt(0).toUpperCase();
-    document.getElementById('user-avatar').textContent      = initials;
+    document.getElementById('user-avatar').textContent       = initials;
     document.getElementById('user-display-name').textContent = currentUser.name || currentUser.email.split('@')[0];
     document.getElementById('user-email-display').textContent = currentUser.email;
     if (userIsVip) document.getElementById('vip-badge').style.display = 'inline-block';
 }
 
-// ══════════════════════════════════════════
-//  CREDITS — APPWRITE REAL-TIME
-// ══════════════════════════════════════════
 async function setupCreditsListener() {
     const data  = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
     userCredits = typeof data.credits === 'number' ? data.credits : 0;
@@ -1212,19 +642,12 @@ async function deductCredits(amount) {
         const doc          = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
         const saldoAntes   = typeof doc.credits === 'number' ? doc.credits : 0;
         const saldoDespues = Math.max(0, saldoAntes - amount);
-        console.log(`[deductCredits] 💳 Saldo en DB: ${saldoAntes} | A descontar: ${amount} | Nuevo saldo calculado: ${saldoDespues}`);
         await databases.updateDocument(DB_ID, 'Users', currentUser.$id, { credits: saldoDespues });
         userCredits = saldoDespues;
         updateCreditsDisplay(true);
-        console.log(`[deductCredits] ✅ Descuento aplicado. Saldo final confirmado: ${saldoDespues}`);
-    } catch(e) {
-        console.error('[deductCredits] ❌ Error al descontar créditos:', e.message);
-    }
+    } catch(e) { console.error('[deductCredits] Error:', e.message); }
 }
 
-// ══════════════════════════════════════════
-//  DAILY REFILL
-// ══════════════════════════════════════════
 async function setupDailyRefill() {
     const data      = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
     const lastRefill = data.lastRefill ? new Date(data.lastRefill) : new Date(0);
@@ -1237,9 +660,7 @@ async function setupDailyRefill() {
             lastRefill: new Date().toISOString()
         });
         updateRefillTimer(new Date());
-    } else {
-        updateRefillTimer(lastRefill);
-    }
+    } else { updateRefillTimer(lastRefill); }
 }
 
 function updateRefillTimer(lastRefill) {
@@ -1247,15 +668,11 @@ function updateRefillTimer(lastRefill) {
     const msRefill = REFILL_HOURS * 3600 * 1000;
     function tick() {
         const msLeft = msRefill - (new Date() - lastRefill);
-        if (msLeft <= 0) {
-            document.getElementById('refill-text').textContent = 'Recargando...';
-            setupDailyRefill(); clearInterval(refillInterval); return;
-        }
+        if (msLeft <= 0) { document.getElementById('refill-text').textContent = 'Recargando...'; setupDailyRefill(); clearInterval(refillInterval); return; }
         const h = Math.floor(msLeft / 3600000);
         const m = Math.floor((msLeft % 3600000) / 60000);
         const s = Math.floor((msLeft % 60000) / 1000);
-        document.getElementById('refill-text').textContent =
-            `Recarga en ${h}h ${m}m ${s}s · +${REFILL_AMOUNT} crédito`;
+        document.getElementById('refill-text').textContent = `Recarga en ${h}h ${m}m ${s}s · +${REFILL_AMOUNT} crédito`;
     }
     tick(); refillInterval = setInterval(tick, 1000);
 }
@@ -1267,9 +684,6 @@ function flashCost(cost) {
     setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translateY(0)'; }, 1800);
 }
 
-// ══════════════════════════════════════════
-//  PROJECTS
-// ══════════════════════════════════════════
 function projectStorageKey() { return 'v1_projects_' + currentUser.$id; }
 
 function loadProjects() {
@@ -1281,10 +695,7 @@ function loadProjects() {
     loadProject(projectsData[0].id);
 }
 
-function saveData() {
-    localStorage.setItem(projectStorageKey(), JSON.stringify(projectsData));
-    renderProjects(); updateProjectsQuota();
-}
+function saveData() { localStorage.setItem(projectStorageKey(), JSON.stringify(projectsData)); renderProjects(); updateProjectsQuota(); }
 
 function updateProjectsQuota() {
     const maxProj = userIsVip ? 5 : 1;
@@ -1299,11 +710,7 @@ function renderProjects() {
     projectsData.forEach(p => {
         const d = document.createElement('div');
         d.className = 'project-item' + (p.id === currentProjectId ? ' active' : '');
-        d.innerHTML = `
-            <span style="font-size:12px;flex-shrink:0;opacity:.7">📄</span>
-            <span class="proj-title">${p.title}</span>
-            <button class="proj-delete" title="Eliminar proyecto" onclick="deleteProject(${p.id}, event)">✕</button>
-        `;
+        d.innerHTML = `<span style="font-size:12px;flex-shrink:0;opacity:.7">📄</span><span class="proj-title">${p.title}</span><button class="proj-delete" title="Eliminar proyecto" onclick="deleteProject(${p.id}, event)">✕</button>`;
         d.addEventListener('click', e => { if (!e.target.classList.contains('proj-delete')) loadProject(p.id); });
         projectsList.appendChild(d);
     });
@@ -1336,9 +743,6 @@ document.getElementById('new-btn').addEventListener('click', () => {
     projectsData.unshift(p); saveData(); loadProject(p.id);
 });
 
-// ══════════════════════════════════════════
-//  CHAT RENDER
-// ══════════════════════════════════════════
 function addMsg(role, html, id = null) {
     const welcome = chatContainer.querySelector('.welcome');
     if (welcome) { chatContainer.innerHTML = ''; clearTimeout(twTimeout); }
@@ -1361,16 +765,7 @@ function saveMsg(role, html) {
     p.chats.push({ role, html }); saveData();
 }
 
-// ══════════════════════════════════════════
-//  WELCOME SCREEN
-// ══════════════════════════════════════════
-const PHRASES = [
-    "What will you build today?",
-    "Inject powerful systems into your game.",
-    "From idea to Luau in seconds.",
-    "Production-ready Roblox code, instantly.",
-    "Build smarter. Ship faster.",
-];
+const PHRASES = ["What will you build today?","Inject powerful systems into your game.","From idea to Luau in seconds.","Production-ready Roblox code, instantly.","Build smarter. Ship faster."];
 let twPhrase = 0, twChar = 0, twDeleting = false, twTimeout = null;
 
 function startTypewriter() { clearTimeout(twTimeout); twPhrase = 0; twChar = 0; twDeleting = false; typeStep(); }
@@ -1385,48 +780,30 @@ function typeStep() {
     } else {
         twChar--;
         el.innerHTML = phrase.slice(0, twChar) + '<span class="typewriter-cursor"></span>';
-        if (twChar === 0) {
-            twDeleting = false; twPhrase = (twPhrase + 1) % PHRASES.length;
-            twTimeout = setTimeout(typeStep, 300);
-        } else { twTimeout = setTimeout(typeStep, 30); }
+        if (twChar === 0) { twDeleting = false; twPhrase = (twPhrase + 1) % PHRASES.length; twTimeout = setTimeout(typeStep, 300); }
+        else { twTimeout = setTimeout(typeStep, 30); }
     }
 }
 
 function showWelcome() {
     chatContainer.innerHTML = `
         <div class="welcome" id="welcome-screen" style="position:relative;min-height:70vh">
-
-            <!-- Floating code decoration -->
             <div class="welcome-decorations">
                 <div class="code-float" style="top:12%;left:4%">local function init()</div>
                 <div class="code-float" style="top:22%;right:6%">game:GetService("Players")</div>
                 <div class="code-float" style="top:65%;left:3%">RemoteEvent:FireClient(plr)</div>
                 <div class="code-float" style="top:75%;right:5%">workspace:FindFirstChild()</div>
             </div>
-
-            <!-- Live badge -->
-            <div class="welcome-badge">
-                <div class="badge-dot"></div>
-                Roblox AI Studio
-            </div>
-
-            <!-- Headline -->
+            <div class="welcome-badge"><div class="badge-dot"></div>Roblox AI Studio</div>
             <h1 class="welcome-headline" id="typewriter-el">&nbsp;</h1>
-
-            <!-- Description -->
             <p class="welcome-desc">Describe cualquier sistema de Roblox en lenguaje natural y lo generaré en Luau de producción, listo para inyectar en tu Studio al instante.</p>
-
-            <!-- Mini stats -->
             <div class="mini-stats">
                 <div class="mini-stat"><b>105K</b> tokens</div>
                 <div class="mini-stat"><b>Gemini</b> 2.5 Flash</div>
                 <div class="mini-stat"><b>Luau</b> production-ready</div>
                 <div class="mini-stat"><b>Studio</b> instant inject</div>
             </div>
-
             <div class="welcome-divider"></div>
-
-            <!-- Chips -->
             <div class="welcome-chips">
                 <div class="chip" onclick="setPrompt('Sistema de leaderstats con monedas y gemas persistentes')">LeaderStats</div>
                 <div class="chip" onclick="setPrompt('GUI de tienda con productos, precios y botones de compra')">Tienda GUI</div>
@@ -1437,25 +814,12 @@ function showWelcome() {
                 <div class="chip" onclick="setPrompt('Sistema de DataStore con session locking y auto-save')">DataStore</div>
                 <div class="chip" onclick="setPrompt('Sistema de combate melee con hitbox server-side')">Combat</div>
             </div>
-
-            <!-- Powered by -->
             <div class="powered-by">Powered by <span>Gemini 2.5 Flash</span></div>
-
             <div class="disclaimer">V1zions puede cometer errores — revisa el código antes de usarlo en producción.</div>
-        </div>
-    `;
+        </div>`;
     startTypewriter();
 }
 
-// ══════════════════════════════════════════
-//  PLAN DE APROBACIÓN [v25.1]
-//  FIX: polling activo como base fiable
-//  + Realtime como complemento opcional
-// ══════════════════════════════════════════
-
-/**
- * Formatea la ruta con el parent en gris y el nombre en verde.
- */
 function formatearRuta(ruta, type) {
     if (!ruta) return '<span class="plan-ruta-name">?</span>';
     const parts  = ruta.split('/');
@@ -1467,28 +831,21 @@ function formatearRuta(ruta, type) {
         : `<span class="plan-ruta-name">${nombre}</span>${badge}`;
 }
 
-/**
- * Renderiza el cuadro visual del plan con los botones Sí / No.
- * Recibe el objeto plan ya parseado.
- */
 function renderizarPlan(plan, docId, loadMsgId) {
-    // Eliminar el loading bubble si existe
     const loadEl = document.getElementById(loadMsgId);
     if (loadEl) loadEl.remove();
-
-    // Evitar renderizar el mismo plan dos veces
     if (document.getElementById('plan-box-' + docId)) return;
 
     const archivos = plan.archivos || [];
-
     let archivosHTML = '';
     archivos.forEach(archivo => {
-        const esCrear   = (archivo.accion || '').toLowerCase() === 'crear';
+        // [v27.5 FIX FRONTEND] Forzar CREAR si el script no está confirmado en el contexto.
+        // Esto evita que se muestre MODIFICAR en la UI cuando el backend no alcanzó a corregirlo.
+        const accionFinal = (archivo.accion || 'crear').toLowerCase();
+        const esCrear   = accionFinal === 'crear';
         const dotClass  = esCrear ? 'crear' : 'modificar';
-        const tagClass  = esCrear ? 'crear' : 'modificar';
         const dotSymbol = esCrear ? '+' : '~';
         const tagText   = esCrear ? 'CREAR' : 'MODIFICAR';
-
         archivosHTML += `
             <div class="plan-file-item">
                 <div class="plan-file-dot ${dotClass}">${dotSymbol}</div>
@@ -1496,28 +853,21 @@ function renderizarPlan(plan, docId, loadMsgId) {
                     <div class="plan-file-ruta">${formatearRuta(archivo.ruta, archivo.type)}</div>
                     <div class="plan-file-desc">${archivo.descripcion || ''}</div>
                 </div>
-                <div class="plan-action-tag ${tagClass}">${tagText}</div>
+                <div class="plan-action-tag ${dotClass}">${tagText}</div>
             </div>`;
     });
 
     const planHTML = `
         <div class="plan-box" id="plan-box-${docId}">
             <div class="plan-box-header">
-                
                 <div class="plan-box-title">${plan.titulo || 'Plan del sistema'}</div>
             </div>
             <div class="plan-box-subtitle">${plan.resumen || ''}</div>
             <div class="plan-changes-label">What has changed</div>
             <div class="plan-files-list">${archivosHTML}</div>
             <div class="plan-actions">
-                <button class="plan-btn plan-btn-accept" id="btn-accept-${docId}"
-                    onclick="aprobarPlan('${docId}')">
-                    ✓ Sí, generar código
-                </button>
-                <button class="plan-btn plan-btn-reject" id="btn-reject-${docId}"
-                    onclick="rechazarPlan('${docId}')">
-                    ✕ No, modificar plan
-                </button>
+                <button class="plan-btn plan-btn-accept" id="btn-accept-${docId}" onclick="aprobarPlan('${docId}')">✓ Sí, generar código</button>
+                <button class="plan-btn plan-btn-reject" id="btn-reject-${docId}" onclick="rechazarPlan('${docId}')">✕ No, modificar plan</button>
             </div>
         </div>`;
 
@@ -1525,62 +875,38 @@ function renderizarPlan(plan, docId, loadMsgId) {
     saveMsg('ai', `Plan: "${plan.titulo}" (${archivos.length} archivo${archivos.length !== 1 ? 's' : ''})`);
 }
 
-/**
- * [FIX v25.1] Escucha el estado de un documento usando POLLING ACTIVO
- * como mecanismo principal (100% confiable) + Realtime como complemento.
- * Resuelve el bug de race condition donde unsub era llamado antes de
- * estar asignado, y el bug de eventos Realtime perdidos en WebSocket.
- *
- * @param {string} docId         - ID del documento PeticionesRoblox
- * @param {string} loadMsgId     - ID del elemento loading a remover
- * @param {Function} onData      - Callback que recibe el payload del doc
- * @param {number} [maxMs=120000] - Timeout máximo en ms (default 2 min)
- * @returns {Function} stopListening - llama para limpiar todo
- */
 function escucharDocumento(docId, loadMsgId, onData, maxMs = 120000) {
     let stopped       = false;
     let pollingId     = null;
     let realtimeUnsub = null;
     let lastEstado    = null;
 
-    // ── Función de procesamiento (compartida por polling y realtime) ──
     function procesarDoc(payload) {
         if (stopped) return;
-        // Solo disparar si el estado cambió para evitar procesamiento doble
         if (payload.estado === lastEstado) return;
         lastEstado = payload.estado;
         onData(payload);
     }
 
-    // ── POLLING: lee el doc directamente cada 2.5s ──
     pollingId = setInterval(async () => {
         if (stopped) { clearInterval(pollingId); return; }
         try {
             const doc = await databases.getDocument(DB_ID, 'PeticionesRoblox', docId);
             procesarDoc(doc);
-        } catch(e) {
-            // Si el doc ya no existe (eliminado) parar
-            if (e.code === 404) { stop(); }
-        }
+        } catch(e) { if (e.code === 404) { stop(); } }
     }, 2500);
 
-    // ── REALTIME: complemento para respuesta instantánea ──
-    // Se suscribe DESPUÉS de que pollingId está asignado para evitar la
-    // race condition. Si falla no es crítico porque el polling lo cubre.
     try {
         realtimeUnsub = client.subscribe(
             `databases.${DB_ID}.collections.PeticionesRoblox.documents.${docId}`,
             response => { procesarDoc(response.payload); }
         );
-    } catch(e) {
-        console.warn('[v25.1] Realtime no disponible, usando solo polling:', e.message);
-    }
+    } catch(e) { console.warn('[escuchar] Realtime no disponible, usando solo polling:', e.message); }
 
-    // ── Timeout de seguridad ──
     const timeoutId = setTimeout(() => {
         if (!stopped) {
             stop();
-            setLoadingState(false); // [v25.8]
+            setLoadingState(false);
             const loadEl = document.getElementById(loadMsgId);
             if (loadEl) loadEl.remove();
             addMsg('ai', 'La solicitud tardó demasiado. Intenta de nuevo.');
@@ -1594,18 +920,13 @@ function escucharDocumento(docId, loadMsgId, onData, maxMs = 120000) {
         clearTimeout(timeoutId);
         if (realtimeUnsub) { try { realtimeUnsub(); } catch(e) {} }
     }
-
     return stop;
 }
 
-/**
- * El usuario aprueba el plan — actualiza a 'aprobado' y espera el código.
- */
 async function aprobarPlan(docId) {
     const btnAccept = document.getElementById('btn-accept-' + docId);
     const btnReject = document.getElementById('btn-reject-' + docId);
     if (!btnAccept) return;
-
     btnAccept.disabled    = true;
     btnReject.disabled    = true;
     btnAccept.textContent = '⏳ Generando código...';
@@ -1621,60 +942,41 @@ async function aprobarPlan(docId) {
     }
 
     const lid = 'load-code-' + Date.now();
-    addMsg('ai',
-        `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Generando código completo...</div>`,
-        lid
-    );
+    addMsg('ai', `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Generando código completo...</div>`, lid);
 
     const stop = escucharDocumento(docId, lid, (data) => {
         const loadEl = document.getElementById(lid);
-
         if (data.estado === 'inyectar' || data.estado === 'completado') {
             stop();
             if (loadEl) loadEl.remove();
             const resumen = data.resultado || 'Sistema inyectado correctamente.';
             const lineas = resumen.split('\n').filter(l => l.trim());
-            const lineasHTML = lineas.map(l =>
-                `<div class="ss-line"><span class="ss-prefix">›</span><span>${l}</span></div>`
-            ).join('');
+            const lineasHTML = lineas.map(l => `<div class="ss-line"><span class="ss-prefix">›</span><span>${l}</span></div>`).join('');
             const m = `<strong style="color:var(--green);font-size:13px;">✓ Sistema inyectado</strong>
 <div class="success-summary">
-  <div class="success-summary-header">
-    <div class="success-summary-dot"></div>
-    <span class="success-summary-title">Injection complete</span>
-  </div>
+  <div class="success-summary-header"><div class="success-summary-dot"></div><span class="success-summary-title">Injection complete</span></div>
   <div class="success-summary-body">${lineasHTML || `<div class="ss-line"><span class="ss-prefix">›</span><span>${resumen}</span></div>`}</div>
 </div>`;
             addMsg('ai', m); saveMsg('ai', m);
-
         } else if (data.estado === 'roadmap_pendiente') {
             stop();
             if (loadEl) loadEl.remove();
-
-            // ── PARCHE CAJA VACIA ──
             let pasosArr2 = [];
             try { pasosArr2 = JSON.parse(data.pasos || '[]'); } catch(e) { pasosArr2 = []; }
-
             if (!pasosArr2 || pasosArr2.length === 0) {
                 addMsg('ai', `<span style="color:var(--text-2);font-size:13px;">El sistema es pequeño. <strong style="color:var(--text)">Se generará directamente.</strong></span>`);
                 return;
             }
-
             let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>Selecciona qué parte inyectar primero:<br><br>`;
             html += `<div class="roadmap-box"><div class="roadmap-box-title">Fases del sistema</div>`;
             window._roadmapSteps = window._roadmapSteps || {};
             pasosArr2.forEach((p, i) => {
                 const sid = 'rs_' + Date.now() + '_' + i;
                 window._roadmapSteps[sid] = { titulo: p.titulo, desc: p.descripcion, sistema: data.tituloSistema };
-                html += `<button class="roadmap-step" data-step-id="${sid}">
-                    <div class="roadmap-step-num">${i + 1}</div>
-                    <div class="roadmap-step-body"><strong>${p.titulo}</strong><span>${p.descripcion}</span></div>
-                    <div class="roadmap-step-arrow">›</div>
-                </button>`;
+                html += `<button class="roadmap-step" data-step-id="${sid}"><div class="roadmap-step-num">${i + 1}</div><div class="roadmap-step-body"><strong>${p.titulo}</strong><span>${p.descripcion}</span></div><div class="roadmap-step-arrow">›</div></button>`;
             });
             html += `</div>`;
             addMsg('ai', html); saveMsg('ai', 'Roadmap generado.');
-
         } else if (data.estado === 'error') {
             stop();
             if (loadEl) loadEl.remove();
@@ -1683,26 +985,16 @@ async function aprobarPlan(docId) {
     });
 }
 
-/**
- * El usuario rechaza el plan — limpia y pide reformulación.
- */
 async function rechazarPlan(docId) {
     try {
-        await databases.updateDocument(DB_ID, 'PeticionesRoblox', docId, {
-            estado: 'error', resultado: 'Plan rechazado por el usuario.'
-        });
+        await databases.updateDocument(DB_ID, 'PeticionesRoblox', docId, { estado: 'error', resultado: 'Plan rechazado por el usuario.' });
     } catch(e) { console.warn("No se pudo marcar el plan:", e.message); }
-
     const planBox = document.getElementById('plan-box-' + docId);
     if (planBox) { const msg = planBox.closest('.msg'); if (msg) msg.remove(); }
-
     addMsg('ai', `<span style="color:var(--text-2);font-size:13px;">Entendido. ¿Qué quieres cambiar del plan? Descríbelo y generaré uno nuevo.</span>`);
     document.getElementById('prompt').focus();
 }
 
-// ══════════════════════════════════════════
-//  SEND / ENVIAR
-// ══════════════════════════════════════════
 const ta = document.getElementById('prompt');
 ta.addEventListener('input', function() { this.style.height = 'auto'; this.style.height = this.scrollHeight + 'px'; });
 
@@ -1713,15 +1005,10 @@ function calcularCosto(txt) {
     if (txt.length > 100) c += .1;
     if (txt.length > 300) c += .2;
     if (txt.length > 600) c += .3;
-    ['datastore','framework','oop','raycast','combat','inventario','servidor','modulo','avanzado']
-        .forEach(w => { if (txt.toLowerCase().includes(w)) c += .1; });
+    ['datastore','framework','oop','raycast','combat','inventario','servidor','modulo','avanzado'].forEach(w => { if (txt.toLowerCase().includes(w)) c += .1; });
     return Math.min(1.0, c);
 }
 
-// ══════════════════════════════════════════
-//  LOADING STATE [v25.8]
-//  Bloquea/desbloquea el input durante generación
-// ══════════════════════════════════════════
 function setLoadingState(isLoading) {
     const ta  = document.getElementById('prompt');
     const btn = document.getElementById('send-btn');
@@ -1732,27 +1019,14 @@ function setLoadingState(isLoading) {
     btn.style.cursor  = isLoading ? 'not-allowed' : '';
 }
 
-// ══════════════════════════════════════════
-//  FORMATTER IA PARLANTE [v25.8]
-//  Convierte \n y **texto** en HTML legible
-// ══════════════════════════════════════════
 function formatearMensajeIA(texto) {
     if (!texto || texto.length < 5) return '';
-    return texto
-        .split('\n')
-        .filter(l => l.trim())
-        .map(l => {
-            const html = l.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-            return `<div style="margin-bottom:5px;line-height:1.55">${html}</div>`;
-        })
-        .join('');
+    return texto.split('\n').filter(l => l.trim()).map(l => {
+        const html = l.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+        return `<div style="margin-bottom:5px;line-height:1.55">${html}</div>`;
+    }).join('');
 }
 
-// ══════════════════════════════════════════
-//  RENDER FASES RESTANTES [v25.8]
-//  Muestra los botones de pasos pendientes
-//  después de que una fase se inyecta con éxito
-// ══════════════════════════════════════════
 function renderFasesPendientes() {
     if (fasesPendientes.length === 0) return;
     const sistema = fasesPendientes[0].sistema;
@@ -1760,43 +1034,25 @@ function renderFasesPendientes() {
     html += `<span style="font-size:12px;color:var(--text-2);">Continúa con la siguiente parte de <strong>"${sistema}"</strong>:</span><br><br>`;
     html += `<div class="roadmap-box"><div class="roadmap-box-title">Fases restantes</div>`;
     fasesPendientes.forEach((f, i) => {
-        html += `<button class="roadmap-step" data-step-id="${f.sid}">
-            <div class="roadmap-step-num">${i + 1}</div>
-            <div class="roadmap-step-body"><strong>${f.titulo}</strong><span>${f.desc}</span></div>
-            <div class="roadmap-step-arrow">›</div>
-        </button>`;
+        html += `<button class="roadmap-step" data-step-id="${f.sid}"><div class="roadmap-step-num">${i + 1}</div><div class="roadmap-step-body"><strong>${f.titulo}</strong><span>${f.desc}</span></div><div class="roadmap-step-arrow">›</div></button>`;
     });
     html += `</div>`;
     addMsg('ai', html);
 }
 
-// ══════════════════════════════════════════
-//  SEND / ENVIAR  [v25.2]
-//  CAMBIO: cobro de créditos movido al éxito.
-//  Al inicio solo se verifica saldo.
-//  El descuento real ocurre dentro de
-//  escucharDocumento, ÚNICAMENTE cuando
-//  el estado llega a 'inyectar' o 'completado'.
-//  Si hay error o roadmap_pendiente → sin cobro.
-// ══════════════════════════════════════════
 async function enviar() {
     const txt = ta.value.trim(); if (!txt) return;
     if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
     const costo = calcularCosto(txt);
-
-    // ── Solo verificación de saldo — NO cobrar todavía ──
     if (userCredits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${userCredits.toFixed(1)}.`);
 
-    setLoadingState(true); // [v25.8] bloquear input
+    setLoadingState(true);
     addMsg('user', txt);
     saveMsg('user', txt);
     ta.value = ''; ta.style.height = 'auto';
 
     const lid = 'load-' + Date.now();
-    addMsg('ai',
-        `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Analizando y planificando...</div>`,
-        lid
-    );
+    addMsg('ai', `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Analizando y planificando...</div>`, lid);
 
     let ref;
     try {
@@ -1811,18 +1067,16 @@ async function enviar() {
         const loadEl = document.getElementById(lid);
         if (loadEl) loadEl.remove();
         addMsg('ai', '❌ Error de conexión con Appwrite: ' + e.message);
-        setLoadingState(false); // [v25.8]
+        setLoadingState(false);
         return;
     }
 
-    // [v25.2] costo capturado en closure — se usará al éxito
     const stop = escucharDocumento(ref.$id, lid, async (data) => {
         const loadEl = document.getElementById(lid);
 
-        // ── Plan listo → mostrar interfaz de aprobación ──
         if (data.estado === 'esperando_aprobacion') {
-            stop(); // aprobarPlan crea su propio listener
-            setLoadingState(false); // [v25.8] re-habilitar input mientras el usuario decide
+            stop();
+            setLoadingState(false);
             if (!data.planData) {
                 if (loadEl) loadEl.remove();
                 addMsg('ai', '❌ El plan llegó vacío. Intenta de nuevo.');
@@ -1832,72 +1086,45 @@ async function enviar() {
                 const plan = JSON.parse(data.planData);
                 renderizarPlan(plan, ref.$id, lid);
             } catch(parseErr) {
-                console.error('[v25.2] Error parseando planData:', parseErr);
                 if (loadEl) loadEl.remove();
                 addMsg('ai', '❌ Error al leer el plan generado. Intenta de nuevo.');
             }
             return;
         }
 
-        // ── Código listo → cobrar AQUÍ, solo en éxito real ──
         if (data.estado === 'inyectar' || data.estado === 'completado') {
             stop();
-            setLoadingState(false); // [v25.8]
+            setLoadingState(false);
             if (loadEl) loadEl.remove();
-            await deductCredits(costo);   // [v25.2] cobro real al confirmar éxito
+            await deductCredits(costo);
             flashCost(costo);
-
-            // [v25.8] IA Parlante: mensaje de chat con formato antes del terminal verde
             const resumen = data.resultado || '';
-            if (resumen.length > 10) {
-                const msgFormato = formatearMensajeIA(resumen);
-                if (msgFormato) addMsg('ai', msgFormato);
-            }
-
-            // Terminal verde Injection complete
+            if (resumen.length > 10) { const msgFormato = formatearMensajeIA(resumen); if (msgFormato) addMsg('ai', msgFormato); }
             const lineas = resumen.split('\n').filter(l => l.trim());
-            const lineasHTML = lineas.map(l =>
-                `<div class="ss-line"><span class="ss-prefix">›</span><span>${l}</span></div>`
-            ).join('');
+            const lineasHTML = lineas.map(l => `<div class="ss-line"><span class="ss-prefix">›</span><span>${l}</span></div>`).join('');
             const m = `<strong style="color:var(--green);font-size:13px;">✓ Sistema inyectado</strong>
 <div class="success-summary">
-  <div class="success-summary-header">
-    <div class="success-summary-dot"></div>
-    <span class="success-summary-title">Injection complete</span>
-  </div>
+  <div class="success-summary-header"><div class="success-summary-dot"></div><span class="success-summary-title">Injection complete</span></div>
   <div class="success-summary-body">${lineasHTML || `<div class="ss-line"><span class="ss-prefix">›</span><span>${resumen || 'Sistema inyectado correctamente.'}</span></div>`}</div>
 </div>`;
             addMsg('ai', m); saveMsg('ai', m);
-
-            // [v25.8] Persistencia de fases: eliminar paso completado y re-renderizar restantes
-            if (activePasoSid) {
-                fasesPendientes = fasesPendientes.filter(f => f.sid !== activePasoSid);
-                activePasoSid = null;
-            }
-            if (fasesPendientes.length > 0) {
-                renderFasesPendientes();
-            }
+            if (activePasoSid) { fasesPendientes = fasesPendientes.filter(f => f.sid !== activePasoSid); activePasoSid = null; }
+            if (fasesPendientes.length > 0) renderFasesPendientes();
             return;
         }
 
-        // ── Roadmap → sistema muy grande, NO cobrar nada ──
         if (data.estado === 'roadmap_pendiente') {
             stop();
-            setLoadingState(false); // [v25.8]
+            setLoadingState(false);
             if (loadEl) loadEl.remove();
-
-            // ── PARCHE CAJA VACIA: si no hay fases, NO dibujar el roadmap ──
             let pasosArr = [];
             try { pasosArr = JSON.parse(data.pasos || '[]'); } catch(e) { pasosArr = []; }
-
             if (!pasosArr || pasosArr.length === 0) {
                 addMsg('ai', `<span style="color:var(--text-2);font-size:13px;">El sistema es pequeño. <strong style="color:var(--text)">Se generará directamente.</strong> Procesando...</span>`);
                 ta.value = `Genera el código completo y directo para: ${txt}. NO uses roadmap, genera TODO en un solo plan.`;
                 setTimeout(() => enviar(), 500);
                 return;
             }
-
-            // No se cobra — el usuario aún no recibió código
             let html = `<strong>Arquitectura lista para "${data.tituloSistema}"</strong><br>`;
             html += `<span style="font-size:12px;color:var(--text-2);">Sistema grande. Elige una fase para empezar:</span><br><br>`;
             html += `<div class="roadmap-box"><div class="roadmap-box-title">Fases del sistema</div>`;
@@ -1907,21 +1134,16 @@ async function enviar() {
                 const sid = 'rs_' + Date.now() + '_' + i;
                 window._roadmapSteps[sid] = { titulo: p.titulo, desc: p.descripcion, sistema: data.tituloSistema };
                 fasesPendientes.push({ sid, titulo: p.titulo, desc: p.descripcion, sistema: data.tituloSistema });
-                html += `<button class="roadmap-step" data-step-id="${sid}">
-                    <div class="roadmap-step-num">${i + 1}</div>
-                    <div class="roadmap-step-body"><strong>${p.titulo}</strong><span>${p.descripcion}</span></div>
-                    <div class="roadmap-step-arrow">›</div>
-                </button>`;
+                html += `<button class="roadmap-step" data-step-id="${sid}"><div class="roadmap-step-num">${i + 1}</div><div class="roadmap-step-body"><strong>${p.titulo}</strong><span>${p.descripcion}</span></div><div class="roadmap-step-arrow">›</div></button>`;
             });
             html += `</div>`;
             addMsg('ai', html); saveMsg('ai', 'Roadmap generado.');
             return;
         }
 
-        // ── Error → no cobrar nada ──
         if (data.estado === 'error') {
             stop();
-            setLoadingState(false); // [v25.8]
+            setLoadingState(false);
             if (loadEl) loadEl.remove();
             addMsg('ai', `❌ ${data.resultado || 'Error en la inyección.'}`);
         }
@@ -1939,83 +1161,81 @@ document.getElementById('file-upload').addEventListener('change', e => {
 
 function setPrompt(txt) { ta.value = txt; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; ta.focus(); }
 
-// [v25.3] lanzarPasoRoadmap: recibe un ID del mapa global _roadmapSteps.
-// Los datos nunca pasan por atributos HTML, por lo que comillas simples,
-// dobles y cualquier carácter especial son 100 % seguros.
-// Al hacer clic en la fase se rellena el textarea y se envía automáticamente.
 window.lanzarPasoRoadmap = function(sid) {
     const s = (window._roadmapSteps || {})[sid];
     if (!s) return;
-    activePasoSid = sid; // [v25.8] registrar cuál fase se está ejecutando
+    activePasoSid = sid;
     setPrompt(`Del sistema "${s.sistema}", genera el código completo para:\n**${s.titulo}**\nDetalles: ${s.desc}\n\nGenera ÚNICAMENTE los scripts de esta parte.`);
     enviar();
 };
 
-// Delegación de eventos: captura clics en cualquier .roadmap-step con data-step-id
 document.addEventListener('click', function(e) {
     const btn = e.target.closest('.roadmap-step[data-step-id]');
     if (!btn) return;
-    // Deshabilitar todo el roadmap-box padre de forma permanente (anti-doble clic)
     const box = btn.closest('.roadmap-box');
-    if (box) {
-        box.style.transition = 'opacity 0.3s';
-        box.style.opacity    = '0.45';
-        box.style.pointerEvents = 'none';
-        box.classList.add('used');
-    }
+    if (box) { box.style.transition = 'opacity 0.3s'; box.style.opacity = '0.45'; box.style.pointerEvents = 'none'; box.classList.add('used'); }
     window.lanzarPasoRoadmap(btn.dataset.stepId);
 });
 
+// ══════════════════════════════════════════
+//  STUDIO STATUS — FIXED v27.5
+//  Bug: requería recargar para actualizarse.
+//  Fix: polling cada 3s + realtime + evento
+//  de foco de ventana para refresh inmediato.
+// ══════════════════════════════════════════
 async function setupStudioStatus() {
-    // Función compartida para actualizar UI del estado
     function applyStatus(online) {
-        document.getElementById('studio-status').classList.toggle('online', online);
-        document.getElementById('status-text').textContent = online ? 'Studio Vinculado' : 'Esperando Studio...';
+        const el   = document.getElementById('studio-status');
+        const text = document.getElementById('status-text');
+        const wasOnline = el.classList.contains('online');
+        el.classList.toggle('online', online);
+        text.textContent = online ? 'Studio Vinculado' : 'Esperando Studio...';
         isConnected = online;
+        // Log solo si cambió
+        if (wasOnline !== online) console.log('[Studio] Estado cambiado:', online ? 'ONLINE' : 'OFFLINE');
     }
 
-    // ── Lectura inicial ──
-    try {
-        const doc = await databases.getDocument(DB_ID, 'System', 'Connection');
-        applyStatus(doc.status === 'online');
-    } catch(e) {}
-
-    // ── Realtime: reacción instantánea a cambios ──
-    client.subscribe(
-        `databases.${DB_ID}.collections.System.documents.Connection`,
-        response => { applyStatus(response.payload.status === 'online'); }
-    );
-
-    // ── Polling cada 5s como red de seguridad (por si Realtime falla) ──
-    setInterval(async () => {
+    async function pollStatus() {
         try {
             const doc = await databases.getDocument(DB_ID, 'System', 'Connection');
             applyStatus(doc.status === 'online');
-        } catch(e) {}
-    }, 5000);
+        } catch(e) {
+            // Si el doc no existe, Studio desconectado
+            applyStatus(false);
+        }
+    }
+
+    // 1. Lectura inmediata al cargar
+    await pollStatus();
+
+    // 2. Realtime: respuesta instantánea a cambios del plugin
+    try {
+        client.subscribe(
+            `databases.${DB_ID}.collections.System.documents.Connection`,
+            response => { applyStatus(response.payload.status === 'online'); }
+        );
+    } catch(e) { console.warn('[Studio] Realtime no disponible:', e.message); }
+
+    // 3. Polling cada 3s — red de seguridad si Realtime falla
+    setInterval(pollStatus, 3000);
+
+    // 4. [FIX] Al volver a la pestaña (Alt+Tab, etc.) verificar estado inmediatamente
+    //    Esto resuelve el bug de "requiere recargar" — el usuario vuelve de Studio
+    //    y la página se actualiza al instante sin esperar el próximo poll.
+    window.addEventListener('focus', pollStatus);
+    document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible') pollStatus();
+    });
 }
 
-// ══════════════════════════════════════════
-//  MODALS
-// ══════════════════════════════════════════
 function openModal(name)  { document.getElementById(name + '-modal').classList.add('open'); }
 function closeModal(name) { document.getElementById(name + '-modal').classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(el => {
-    el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); });
-});
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open'));
-});
+document.querySelectorAll('.modal-overlay').forEach(el => { el.addEventListener('click', e => { if (e.target === el) el.classList.remove('open'); }); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(m => m.classList.remove('open')); });
 document.getElementById('get-credits-btn').addEventListener('click', () => openModal('credits'));
 
-// ══════════════════════════════════════════
-//  PAYPAL INTEGRATION
-// ══════════════════════════════════════════
 function initPayPal() {
-    if (typeof paypal === 'undefined') {
-        // PayPal no configurado — no mostrar nada, solo iniciar el claim gratis
-        setupStarterClaim(); return;
-    }
+    if (typeof paypal === 'undefined') { setupStarterClaim(); return; }
     setupStarterClaim();
     setupPayPalButton('developer-paypal', 4.99, 50, false);
     setupPayPalButton('pro-paypal', 14.99, 200, true);
@@ -2032,15 +1252,10 @@ function setupStarterClaim() {
         const snap      = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
         const lastClaim = snap.lastFreeClaim ? new Date(snap.lastFreeClaim) : new Date(0);
         const elapsed   = new Date() - lastClaim;
-        if (elapsed < 24 * 3600 * 1000) {
-            const h = Math.ceil((24 * 3600 * 1000 - elapsed) / 3600000);
-            btn.textContent = `Ya reclamaste hoy. Vuelve en ${h}h`; return;
-        }
+        if (elapsed < 24 * 3600 * 1000) { const h = Math.ceil((24 * 3600 * 1000 - elapsed) / 3600000); btn.textContent = `Ya reclamaste hoy. Vuelve en ${h}h`; return; }
         const maxC = userIsVip ? VIP_CREDITS : MAX_CREDITS;
         const newC = Math.min((snap.credits || 0) + 5, maxC);
-        await databases.updateDocument(DB_ID, 'Users', currentUser.$id, {
-            credits: newC, lastFreeClaim: new Date().toISOString()
-        });
+        await databases.updateDocument(DB_ID, 'Users', currentUser.$id, { credits: newC, lastFreeClaim: new Date().toISOString() });
         btn.textContent = '+5 créditos añadidos';
         setTimeout(() => { btn.textContent = '🎁 Reclamar 5 créditos gratis'; }, 3000);
     };
@@ -2051,18 +1266,12 @@ function setupPayPalButton(containerId, price, credits, isVip) {
     if (typeof paypal === 'undefined') return;
     paypal.Buttons({
         style: { layout: 'horizontal', color: 'black', shape: 'rect', label: 'pay', height: 40 },
-        createOrder: (data, actions) => actions.order.create({
-            purchase_units: [{ amount: { value: price.toFixed(2), currency_code: 'USD' },
-                description: `V1zions.top - ${credits} V-Credits` }]
-        }),
+        createOrder: (data, actions) => actions.order.create({ purchase_units: [{ amount: { value: price.toFixed(2), currency_code: 'USD' }, description: `V1zions.top - ${credits} V-Credits` }] }),
         onApprove: async (data, actions) => {
             const order   = await actions.order.capture();
             const orderID = order.id;
             try { await databases.getDocument(DB_ID, 'ProcessedPayments', orderID); alert('⚠️ Pago ya procesado.'); return; } catch(e) {}
-            await databases.createDocument(DB_ID, 'ProcessedPayments', orderID, {
-                uid: currentUser.$id, email: currentUser.email, credits, price, isVip,
-                timestamp: new Date().toISOString()
-            });
+            await databases.createDocument(DB_ID, 'ProcessedPayments', orderID, { uid: currentUser.$id, email: currentUser.email, credits, price, isVip, timestamp: new Date().toISOString() });
             const snap  = await databases.getDocument(DB_ID, 'Users', currentUser.$id);
             const maxC  = isVip ? VIP_CREDITS : MAX_CREDITS;
             const newC  = Math.min((snap.credits || 0) + credits, isVip ? 999 : maxC);
@@ -2074,31 +1283,21 @@ function setupPayPalButton(containerId, price, credits, isVip) {
     }).render('#' + containerId);
 }
 
-// ══════════════════════════════════════════
-//  ADMIN PANEL
-// ══════════════════════════════════════════
 function adminTab(name) {
-    document.querySelectorAll('.admin-tab').forEach((t, i) => {
-        t.classList.toggle('active', ['credits','whitelist','ban'][i] === name);
-    });
+    document.querySelectorAll('.admin-tab').forEach((t, i) => { t.classList.toggle('active', ['credits','whitelist','ban'][i] === name); });
     document.querySelectorAll('.admin-section').forEach(s => s.classList.remove('active'));
     document.getElementById('admin-' + name).classList.add('active');
     document.querySelectorAll('.admin-msg').forEach(m => { m.className = 'admin-msg'; m.textContent = ''; });
 }
-function showAdminMsg(id, text, ok) {
-    const el = document.getElementById(id);
-    el.textContent = text; el.className = 'admin-msg ' + (ok ? 'ok' : 'err');
-}
+function showAdminMsg(id, text, ok) { const el = document.getElementById(id); el.textContent = text; el.className = 'admin-msg ' + (ok ? 'ok' : 'err'); }
 async function adminGiveCredits() {
     const email  = document.getElementById('admin-credit-email').value.trim();
     const amount = parseFloat(document.getElementById('admin-credit-amount').value);
     if (!email || isNaN(amount) || amount <= 0) return showAdminMsg('admin-credits-msg', 'Datos inválidos.', false);
     try {
-        const snap   = await databases.listDocuments(DB_ID, 'Users', [Appwrite.Query.equal('email', email)]);
+        const snap = await databases.listDocuments(DB_ID, 'Users', [Appwrite.Query.equal('email', email)]);
         if (snap.total === 0) return showAdminMsg('admin-credits-msg', 'Usuario no encontrado.', false);
-        await databases.updateDocument(DB_ID, 'Users', snap.documents[0].$id, {
-            credits: (snap.documents[0].credits || 0) + amount
-        });
+        await databases.updateDocument(DB_ID, 'Users', snap.documents[0].$id, { credits: (snap.documents[0].credits || 0) + amount });
         showAdminMsg('admin-credits-msg', `✓ +${amount} créditos añadidos a ${email}`, true);
     } catch(e) { showAdminMsg('admin-credits-msg', 'Error: ' + e.message, false); }
 }
@@ -2116,10 +1315,8 @@ async function adminRemoveWhitelist() {
     if (!email) return showAdminMsg('admin-remove-msg', 'Introduce un correo.', false);
     try {
         const snap = await databases.listDocuments(DB_ID, 'Whitelist', [Appwrite.Query.equal('email', email)]);
-        if (snap.total > 0) {
-            await databases.deleteDocument(DB_ID, 'Whitelist', snap.documents[0].$id);
-            showAdminMsg('admin-remove-msg', `✓ Acceso revocado a ${email}`, true);
-        } else { showAdminMsg('admin-remove-msg', 'No estaba en la lista.', false); }
+        if (snap.total > 0) { await databases.deleteDocument(DB_ID, 'Whitelist', snap.documents[0].$id); showAdminMsg('admin-remove-msg', `✓ Acceso revocado a ${email}`, true); }
+        else showAdminMsg('admin-remove-msg', 'No estaba en la lista.', false);
     } catch(e) { showAdminMsg('admin-remove-msg', 'Error: ' + e.message, false); }
 }
 async function adminBanUser() {
