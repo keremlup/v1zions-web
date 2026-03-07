@@ -518,8 +518,11 @@ let projectsData     = [];
 let currentProjectId = null;
 let creditsUnsub     = null;
 let refillInterval   = null;
-let fasesPendientes  = [];
-let activePasoSid    = null;
+let fasesPendientes    = [];
+let activePasoSid      = null;
+let activeFaseCosto    = 0;       // créditos a descontar por la fase activa del roadmap
+let studioUserId       = 0;       // userId de Roblox obtenido del doc Connection
+const COSTO_FASE_ROADMAP = 0.5;   // crédito fijo por cada fase de roadmap inyectada
 
 const chatContainer = document.getElementById('chat-container');
 const projectsList  = document.getElementById('projects-list');
@@ -1120,10 +1123,14 @@ async function enviar() {
 
     let ref;
     try {
+        // [FIX v29] Incluir userId de Roblox para que el plugin pueda filtrar
+        // solo sus propias peticiones (evita que testers vean codigo ajeno).
+        if (!studioUserId) return alert('⚠️ No se detectó el userId de Studio. Asegúrate de que el plugin esté conectado.');
         ref = await databases.createDocument(DB_ID, 'PeticionesRoblox', Appwrite.ID.unique(), {
             mensaje:   txt,
             estado:    'pendiente',
             uid:       currentUser.$id,
+            userId:    studioUserId,
             esVip:     userIsVip,
             timestamp: new Date().toISOString()
         });
@@ -1160,8 +1167,11 @@ async function enviar() {
             stop();
             setLoadingState(false);
             if (loadEl) loadEl.remove();
-            await deductCredits(costo);
-            flashCost(costo);
+            // [FIX v29] Roadmap: usar costo fijo por fase en vez del costo
+            // calculado del prompt (que depende del texto autogenerado).
+            const costoFinal = activePasoSid ? activeFaseCosto : costo;
+            await deductCredits(costoFinal);
+            flashCost(costoFinal);
             const resumen = data.resultado || '';
             if (resumen.length > 10) { const msgFormato = formatearMensajeIA(resumen); if (msgFormato) addMsg('ai', msgFormato); }
             const lineas = resumen.split('\n').filter(l => l.trim());
@@ -1237,7 +1247,13 @@ function setPrompt(txt) { ta.value = txt; ta.style.height = 'auto'; ta.style.hei
 window.lanzarPasoRoadmap = function(sid) {
     const s = (window._roadmapSteps || {})[sid];
     if (!s) return;
-    activePasoSid = sid;
+    // [FIX v29] Verificar saldo antes de lanzar la fase.
+    // Cada fase del roadmap cuesta COSTO_FASE_ROADMAP créditos fijos.
+    if (userCredits < COSTO_FASE_ROADMAP) {
+        return alert(`⚠️ Necesitas ${COSTO_FASE_ROADMAP} V-Credits para inyectar esta fase. Tienes ${userCredits.toFixed(1)}.`);
+    }
+    activePasoSid  = sid;
+    activeFaseCosto = COSTO_FASE_ROADMAP; // el handler de 'inyectar' lo usará para descontar
     setPrompt(`Del sistema "${s.sistema}", genera el código completo para:\n**${s.titulo}**\nDetalles: ${s.desc}\n\nGenera ÚNICAMENTE los scripts de esta parte.`);
     enviar();
 };
@@ -1270,10 +1286,21 @@ async function setupStudioStatus() {
 
     async function pollStatus() {
         try {
-            const doc = await databases.getDocument(DB_ID, 'System', 'Connection');
-            applyStatus(doc.status === 'online');
+            const doc       = await databases.getDocument(DB_ID, 'System', 'Connection');
+            // [FIX v29] El plugin actualiza $updatedAt en cada heartbeat.
+            // Si pasaron más de 2 minutos sin heartbeat → Studio desconectado,
+            // aunque el campo status siga diciendo "online".
+            const updatedAt = new Date(doc.$updatedAt);
+            const ageMs     = Date.now() - updatedAt.getTime();
+            const isRecent  = ageMs < 2 * 60 * 1000; // 2 minutos
+            const isOnline  = doc.status === 'online' && isRecent;
+            // Capturar el userId de Roblox del developer conectado
+            if (isOnline && doc.userId) studioUserId = doc.userId;
+            else if (!isOnline)         studioUserId = 0;
+            applyStatus(isOnline);
         } catch(e) {
             // Si el doc no existe, Studio desconectado
+            studioUserId = 0;
             applyStatus(false);
         }
     }
@@ -1285,7 +1312,15 @@ async function setupStudioStatus() {
     try {
         client.subscribe(
             `databases.${DB_ID}.collections.System.documents.Connection`,
-            response => { applyStatus(response.payload.status === 'online'); }
+            response => {
+                const payload   = response.payload;
+                const updatedAt = new Date(payload.$updatedAt);
+                const ageMs     = Date.now() - updatedAt.getTime();
+                const isOnline  = payload.status === 'online' && ageMs < 2 * 60 * 1000;
+                if (isOnline && payload.userId) studioUserId = payload.userId;
+                else if (!isOnline)             studioUserId = 0;
+                applyStatus(isOnline);
+            }
         );
     } catch(e) { console.warn('[Studio] Realtime no disponible:', e.message); }
 
