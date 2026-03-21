@@ -1149,7 +1149,19 @@ async function enviar() {
             // [v30.1] Mensaje inmediato de V1zions mientras el Agente 2 procesa.
             // NO llamamos stop() — seguimos escuchando el siguiente estado.
             if (loadEl) loadEl.remove();
-            addMsg('ai', `<span style="font-size:13.5px;line-height:1.6;">${data.resultado || '⚙️ Procesando...'}</span>`);
+            const previewHtml = `
+                <div style="
+                    background: linear-gradient(135deg, rgba(230,48,48,0.08) 0%, rgba(18,19,26,0.95) 60%);
+                    border: 1px solid rgba(230,48,48,0.22);
+                    border-radius: 14px;
+                    padding: 14px 18px;
+                    position: relative;
+                    overflow: hidden;
+                ">
+                    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(230,48,48,0.5),transparent);"></div>
+                    <span style="font-size:13.5px;line-height:1.65;color:var(--text);">${data.resultado || '⚙️ Procesando...'}</span>
+                </div>`;
+            addMsg('ai', previewHtml);
             const newLid = 'load-preview-' + Date.now();
             addMsg('ai', `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Generando el plan...</div>`, newLid);
             return;
@@ -1160,7 +1172,24 @@ async function enviar() {
             stop();
             setLoadingState(false);
             if (loadEl) loadEl.remove();
-            addMsg('ai', `<span style="font-size:13.5px;line-height:1.6;">${data.resultado || ''}</span>`);
+            const chatHtml = `
+                <div style="
+                    background: linear-gradient(135deg, rgba(230,48,48,0.08) 0%, rgba(18,19,26,0.95) 60%);
+                    border: 1px solid rgba(230,48,48,0.22);
+                    border-radius: 14px;
+                    padding: 16px 20px;
+                    position: relative;
+                    overflow: hidden;
+                    box-shadow: 0 4px 24px rgba(0,0,0,0.35), 0 0 0 1px rgba(230,48,48,0.06);
+                ">
+                    <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(230,48,48,0.55),rgba(120,80,255,0.3),transparent);"></div>
+                    <div style="position:absolute;top:10px;right:14px;font-size:18px;opacity:0.12;pointer-events:none;">🤖</div>
+                    <div style="display:flex;align-items:flex-start;gap:10px;">
+                        <div style="flex-shrink:0;width:6px;height:6px;border-radius:50%;background:var(--red);margin-top:7px;box-shadow:0 0 8px rgba(230,48,48,0.6);"></div>
+                        <span style="font-size:13.5px;line-height:1.7;color:var(--text);">${data.resultado || ''}</span>
+                    </div>
+                </div>`;
+            addMsg('ai', chatHtml);
             saveMsg('ai', data.resultado || '');
             return;
         }
