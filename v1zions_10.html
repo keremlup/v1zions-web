@@ -1010,6 +1010,7 @@ async function aprobarPlan(docId) {
         const loadEl = document.getElementById(lid);
         if (data.estado === 'inyectar' || data.estado === 'completado') {
             stop();
+            enviandoAhora = false;
             if (loadEl) loadEl.remove();
             const resumen = data.resultado || 'Sistema inyectado correctamente.';
             const lineas = resumen.split('\n').filter(l => l.trim());
@@ -1052,6 +1053,7 @@ async function aprobarPlan(docId) {
             addMsg('ai', html); saveMsg('ai', 'Roadmap generado.');
         } else if (data.estado === 'error') {
             stop();
+            enviandoAhora = false;
             if (loadEl) loadEl.remove();
             addMsg('ai', `❌ ${data.resultado || 'Error generando el código.'}`);
         }
@@ -1256,6 +1258,7 @@ async function enviar() {
         if (data.estado === 'esperando_aprobacion') {
             stop();
             setLoadingState(false);
+            enviandoAhora = false;
             if (!data.planData) {
                 if (loadEl) loadEl.remove();
                 addMsg('ai', '❌ El plan llegó vacío. Intenta de nuevo.');
