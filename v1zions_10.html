@@ -305,6 +305,33 @@
         .mini-stat b { color: var(--text-2); }
         .credits-pop { animation: creditsPop .4s ease-out; }
         @keyframes creditsPop { 0%{transform:scale(1);} 50%{transform:scale(1.12);color:var(--green);} 100%{transform:scale(1);} }
+
+        /* ── IMAGEN ADJUNTA [v30.2] ── */
+        .img-preview-pill {
+            display: inline-flex; align-items: center; gap: 6px;
+            background: rgba(230,48,48,0.10); border: 1px solid rgba(230,48,48,0.28);
+            border-radius: 20px; padding: 3px 10px 3px 5px;
+            font-size: 11px; font-weight: 700; color: var(--red);
+            cursor: pointer; transition: background .15s; max-width: 260px;
+        }
+        .img-preview-pill:hover { background: rgba(230,48,48,0.20); }
+        .img-preview-thumb {
+            width: 24px; height: 24px; border-radius: 6px;
+            object-fit: cover; flex-shrink: 0;
+            border: 1px solid rgba(230,48,48,0.35);
+        }
+        .img-preview-name {
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+            max-width: 140px;
+        }
+        .img-preview-remove {
+            width: 14px; height: 14px; border-radius: 50%;
+            background: rgba(230,48,48,0.22);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 9px; flex-shrink: 0; transition: background .15s;
+        }
+        .img-preview-pill:hover .img-preview-remove { background: rgba(230,48,48,0.5); }
+        .attach-btn-active { color: var(--red) !important; }
     </style>
 </head>
 <body>
@@ -408,10 +435,12 @@
         </div>
         <div class="input-box">
             <input type="file" id="file-upload" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">
-            <button class="action-btn" id="attach-btn" title="Adjuntar archivo">📎</button>
+            <button class="action-btn" id="attach-btn" title="Adjuntar imagen de interfaz">📎</button>
             <textarea id="prompt" rows="1" placeholder="Describe el sistema que necesitas..."></textarea>
             <button class="action-btn send-btn" id="send-btn">➤</button>
         </div>
+        <!-- [v30.2] Preview de imagen adjunta — se muestra bajo el input-box -->
+        <div id="img-preview-area" style="display:none; padding: 6px 4px 0;"></div>
         <div class="input-footer">V1zions puede cometer errores — revisa el código antes de usarlo en producción.</div>
     </div>
 </main>
@@ -1112,18 +1141,22 @@ let enviandoAhora = false; // [v30.2] anti-doble-envío
 
 async function enviar() {
     if (enviandoAhora) return; // [fix] anti-doble-envío
-    const txt = ta.value.trim(); if (!txt) return;
+    const rawTxt = ta.value.trim(); if (!rawTxt) return;
+    // [v30.2] Limpiar la anotación de imagen del mensaje antes de enviarlo a la IA
+    const txt = rawTxt.replace(/\[📷[^\]]*\]/g, '').trim();
+    if (!txt && !imagenAdjunta) return; // nada real que enviar
     if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
     const costo = calcularCosto(txt);
     if (userCredits < costo) return alert(`⚠️ Necesitas ${costo.toFixed(1)} V-Credits. Tienes ${userCredits.toFixed(1)}.`);
 
     enviandoAhora = true;
     setLoadingState(true);
+    // Burbuja del usuario: texto limpio + miniatura de imagen si la hay
     const userHtml = imagenAdjunta
-        ? `${txt}<br><img src="data:${imagenAdjunta.mime};base64,${imagenAdjunta.base64}" style="max-width:180px;max-height:120px;border-radius:8px;margin-top:8px;border:1px solid rgba(230,48,48,0.3);display:block;" alt="adjunto">`
+        ? `${txt || ''}${txt ? '<br>' : ''}<img src="data:${imagenAdjunta.mime};base64,${imagenAdjunta.base64}" style="max-width:180px;max-height:120px;border-radius:8px;margin-top:8px;border:1px solid rgba(230,48,48,0.3);display:block;" alt="adjunto">`
         : txt;
     addMsg('user', userHtml);
-    saveMsg('user', txt);
+    saveMsg('user', txt || '[imagen adjunta]');
     ta.value = ''; ta.style.height = 'auto';
 
     const lid = 'load-' + Date.now();
@@ -1131,9 +1164,12 @@ async function enviar() {
 
     let ref;
     try {
-        // [FIX v29] Incluir userId de Roblox para que el plugin pueda filtrar
-        // solo sus propias peticiones (evita que testers vean codigo ajeno).
-        if (!studioUserId) return alert('⚠️ No se detectó el userId de Studio. Asegúrate de que el plugin esté conectado.');
+        if (!studioUserId) {
+            enviandoAhora = false; setLoadingState(false);
+            const loadElCheck = document.getElementById(lid);
+            if (loadElCheck) loadElCheck.remove();
+            return alert('⚠️ No se detectó el userId de Studio. Asegúrate de que el plugin esté conectado.');
+        }
         const docPayload = {
             mensaje:   txt,
             estado:    'pendiente',
@@ -1306,16 +1342,22 @@ document.getElementById('send-btn').addEventListener('click', enviar);
 ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } });
 // ══════════════════════════════════════════
 //  IMAGEN ADJUNTA [v30.2]
+//  - Botón 📎: selecciona archivo de imagen
+//  - Pegar (Ctrl+V): pega imagen desde portapapeles
+//  - Compresión a JPEG via Canvas (800px, 75% calidad)
+//  - Preview pill visible bajo el input
+//  - Anotación automática en el textarea
 // ══════════════════════════════════════════
-let imagenAdjunta = null;
+let imagenAdjunta = null; // { base64, mime, nombre }
 
+// Comprime un File/Blob a JPEG base64 via Canvas
 function comprimirImagen(file, maxPx = 800, calidad = 0.75) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onerror = () => reject(new Error('No se pudo leer el archivo'));
         reader.onload = (e) => {
             const img = new Image();
-            img.onerror = () => reject(new Error('Imagen inválida'));
+            img.onerror = () => reject(new Error('Imagen inválida o formato no soportado'));
             img.onload = () => {
                 let w = img.width, h = img.height;
                 if (w > maxPx || h > maxPx) {
@@ -1326,7 +1368,7 @@ function comprimirImagen(file, maxPx = 800, calidad = 0.75) {
                 canvas.width = w; canvas.height = h;
                 canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                 const dataUrl = canvas.toDataURL('image/jpeg', calidad);
-                resolve({ base64: dataUrl.split(',')[1], mime: 'image/jpeg', nombre: file.name });
+                resolve({ base64: dataUrl.split(',')[1], mime: 'image/jpeg', nombre: file.name || 'imagen.jpg' });
             };
             img.src = e.target.result;
         };
@@ -1334,42 +1376,123 @@ function comprimirImagen(file, maxPx = 800, calidad = 0.75) {
     });
 }
 
+// Muestra la pill de vista previa + escribe anotación en el textarea
 function mostrarPreviewImagen(obj) {
     imagenAdjunta = obj;
+
+    // ── 1. Renderizar pill en el área de preview ─────────────
     const area = document.getElementById('img-preview-area');
-    if (!area) return;
-    area.style.display = 'block';
-    area.innerHTML = `
-        <div class="img-preview-pill" onclick="quitarImagen()" title="Click para eliminar">
-            <img class="img-preview-thumb" src="data:${obj.mime};base64,${obj.base64}" alt="preview">
-            <span class="img-preview-name">📷 ${obj.nombre}</span>
-            <span class="img-preview-remove">✕</span>
-        </div>`;
-    document.getElementById('attach-btn').classList.add('attach-btn-active');
+    if (area) {
+        area.style.display = 'block';
+        area.innerHTML = `
+            <div class="img-preview-pill" onclick="quitarImagen()" title="Click para quitar imagen">
+                <img class="img-preview-thumb"
+                     src="data:${obj.mime};base64,${obj.base64}"
+                     alt="preview"
+                     onerror="this.style.display='none'">
+                <span class="img-preview-name">📷 ${obj.nombre}</span>
+                <span style="font-size:9px;color:var(--text-3);margin-left:2px;">${Math.round(obj.base64.length / 1024)} KB</span>
+                <span class="img-preview-remove">✕</span>
+            </div>`;
+    }
+
+    // ── 2. Activar color del botón clip ──────────────────────
+    const btn = document.getElementById('attach-btn');
+    if (btn) btn.classList.add('attach-btn-active');
+
+    // ── 3. Anotación en el textarea ──────────────────────────
+    // Escribe [📷 nombre] al final del texto para que el usuario sepa que hay imagen
+    const taEl = document.getElementById('prompt');
+    if (taEl) {
+        const marker = `[📷 ${obj.nombre}]`;
+        // Eliminar cualquier anotación previa para no duplicar
+        taEl.value = taEl.value.replace(/\[📷[^\]]*\]/g, '').trimEnd();
+        taEl.value += (taEl.value ? ' ' : '') + marker;
+        taEl.style.height = 'auto';
+        taEl.style.height = taEl.scrollHeight + 'px';
+    }
 }
 
+// Elimina la imagen adjunta y limpia todo
 function quitarImagen() {
     imagenAdjunta = null;
+
     const area = document.getElementById('img-preview-area');
     if (area) { area.style.display = 'none'; area.innerHTML = ''; }
-    document.getElementById('attach-btn').classList.remove('attach-btn-active');
+
+    const btn = document.getElementById('attach-btn');
+    if (btn) btn.classList.remove('attach-btn-active');
+
     document.getElementById('file-upload').value = '';
+
+    // Limpiar anotación del textarea
+    const taEl = document.getElementById('prompt');
+    if (taEl) {
+        taEl.value = taEl.value.replace(/\[📷[^\]]*\]/g, '').trimEnd();
+        taEl.style.height = 'auto';
+        taEl.style.height = taEl.scrollHeight + 'px';
+    }
 }
 
+// ── Botón 📎 → abre el selector de archivo ──────────────────
 document.getElementById('attach-btn').addEventListener('click', () => document.getElementById('file-upload').click());
 
+// ── Selector de archivo ──────────────────────────────────────
 document.getElementById('file-upload').addEventListener('change', async (e) => {
     if (!e.target.files.length) return;
     const file = e.target.files[0];
-    if (!file.type.startsWith('image/')) { alert('⚠️ Solo se permiten imágenes.'); e.target.value = ''; return; }
-    if (file.size > 10 * 1024 * 1024) { alert('⚠️ Imagen demasiado grande (máx 10 MB).'); e.target.value = ''; return; }
+    if (!file.type.startsWith('image/')) {
+        alert('⚠️ Solo se permiten imágenes (PNG, JPG, WebP, GIF).');
+        e.target.value = ''; return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+        alert('⚠️ La imagen es demasiado grande (máx 10 MB).');
+        e.target.value = ''; return;
+    }
+    const btn = document.getElementById('attach-btn');
     try {
-        document.getElementById('attach-btn').textContent = '⏳';
+        if (btn) btn.textContent = '⏳';
         const obj = await comprimirImagen(file);
         mostrarPreviewImagen(obj);
-        console.log('[v30.2] Imagen lista: ' + Math.round(obj.base64.length / 1024) + ' KB base64');
-    } catch(err) { alert('❌ Error al procesar la imagen: ' + err.message); }
-    finally { document.getElementById('attach-btn').textContent = '📎'; e.target.value = ''; }
+        console.log('[v30.2] Imagen lista via selector: ' + Math.round(obj.base64.length / 1024) + ' KB');
+    } catch(err) {
+        alert('❌ Error al procesar la imagen: ' + err.message);
+    } finally {
+        if (btn) btn.textContent = '📎';
+        e.target.value = '';
+    }
+});
+
+// ── Pegar imagen con Ctrl+V / Cmd+V ─────────────────────────
+// [v30.2] Cuando el usuario pega dentro del textarea, si el
+// portapapeles contiene una imagen la adjuntamos automáticamente
+// igual que si hubiera usado el botón de clip.
+document.getElementById('prompt').addEventListener('paste', async (e) => {
+    const items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+
+    let imageItem = null;
+    for (const item of items) {
+        if (item.type.startsWith('image/')) { imageItem = item; break; }
+    }
+    if (!imageItem) return; // no es imagen, dejar comportamiento normal
+
+    e.preventDefault(); // evitar que pegue texto basura
+
+    const file = imageItem.getAsFile();
+    if (!file) return;
+
+    const btn = document.getElementById('attach-btn');
+    try {
+        if (btn) btn.textContent = '⏳';
+        const obj = await comprimirImagen(file);
+        mostrarPreviewImagen(obj);
+        console.log('[v30.2] Imagen pegada desde portapapeles: ' + Math.round(obj.base64.length / 1024) + ' KB');
+    } catch(err) {
+        alert('❌ Error al pegar la imagen: ' + err.message);
+    } finally {
+        if (btn) btn.textContent = '📎';
+    }
 });
 
 function setPrompt(txt) { ta.value = txt; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; ta.focus(); }
