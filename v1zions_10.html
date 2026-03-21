@@ -305,34 +305,6 @@
         .mini-stat b { color: var(--text-2); }
         .credits-pop { animation: creditsPop .4s ease-out; }
         @keyframes creditsPop { 0%{transform:scale(1);} 50%{transform:scale(1.12);color:var(--green);} 100%{transform:scale(1);} }
-
-        /* ── IMAGEN ADJUNTA [v30.2] ── */
-        .img-preview-pill {
-            display: inline-flex; align-items: center; gap: 7px;
-            background: rgba(230,48,48,0.1); border: 1px solid rgba(230,48,48,0.28);
-            border-radius: 20px; padding: 4px 10px 4px 6px;
-            font-size: 11px; font-weight: 700; color: var(--red);
-            margin-bottom: 7px; cursor: pointer; transition: all .15s;
-            max-width: 220px;
-        }
-        .img-preview-pill:hover { background: rgba(230,48,48,0.18); }
-        .img-preview-thumb {
-            width: 22px; height: 22px; border-radius: 5px;
-            object-fit: cover; flex-shrink: 0;
-            border: 1px solid rgba(230,48,48,0.3);
-        }
-        .img-preview-name {
-            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-            max-width: 130px;
-        }
-        .img-preview-remove {
-            width: 14px; height: 14px; border-radius: 50%;
-            background: rgba(230,48,48,0.25);
-            display: flex; align-items: center; justify-content: center;
-            font-size: 9px; flex-shrink: 0; transition: background .15s;
-        }
-        .img-preview-pill:hover .img-preview-remove { background: rgba(230,48,48,0.5); }
-        .attach-btn-active { color: var(--red) !important; }
     </style>
 </head>
 <body>
@@ -357,7 +329,7 @@
             </div>
             <div class="logo-text">
                 <span class="logo-name">V1zions</span>
-                <span class="logo-badge">v30.1</span>
+                <span class="logo-badge">v30.2</span>
             </div>
         </div>
     </div>
@@ -436,12 +408,9 @@
         </div>
         <div class="input-box">
             <input type="file" id="file-upload" accept="image/png,image/jpeg,image/webp,image/gif" style="display:none">
-            <button class="action-btn" id="attach-btn" title="Adjuntar imagen de interfaz">📎</button>
+            <button class="action-btn" id="attach-btn" title="Adjuntar archivo">📎</button>
             <textarea id="prompt" rows="1" placeholder="Describe el sistema que necesitas..."></textarea>
             <button class="action-btn send-btn" id="send-btn">➤</button>
-        </div>
-        <div id="img-preview-area" style="display:none; padding: 4px 4px 0;">
-            <!-- Se rellena dinámicamente con la pill de preview -->
         </div>
         <div class="input-footer">V1zions puede cometer errores — revisa el código antes de usarlo en producción.</div>
     </div>
@@ -968,7 +937,7 @@ function escucharDocumento(docId, loadMsgId, onData, maxMs = 180000) { // [v27.7
         if (!stopped) {
             stop();
             setLoadingState(false);
-            enviandoAhora = false; // [v30.2]
+            enviandoAhora = false; // [fix] timeout — desbloquear input
             const loadEl = document.getElementById(loadMsgId);
             if (loadEl) loadEl.remove();
             addMsg('ai', 'La solicitud tardó demasiado. Intenta de nuevo.');
@@ -1010,7 +979,6 @@ async function aprobarPlan(docId) {
         const loadEl = document.getElementById(lid);
         if (data.estado === 'inyectar' || data.estado === 'completado') {
             stop();
-            enviandoAhora = false;
             if (loadEl) loadEl.remove();
             const resumen = data.resultado || 'Sistema inyectado correctamente.';
             const lineas = resumen.split('\n').filter(l => l.trim());
@@ -1053,7 +1021,6 @@ async function aprobarPlan(docId) {
             addMsg('ai', html); saveMsg('ai', 'Roadmap generado.');
         } else if (data.estado === 'error') {
             stop();
-            enviandoAhora = false;
             if (loadEl) loadEl.remove();
             addMsg('ai', `❌ ${data.resultado || 'Error generando el código.'}`);
         }
@@ -1144,7 +1111,7 @@ function renderFasesPendientes() {
 let enviandoAhora = false; // [v30.2] anti-doble-envío
 
 async function enviar() {
-    if (enviandoAhora) return;
+    if (enviandoAhora) return; // [fix] anti-doble-envío
     const txt = ta.value.trim(); if (!txt) return;
     if (!isConnected) return alert("⚠️ Conecta el plugin de Roblox Studio primero.");
     const costo = calcularCosto(txt);
@@ -1152,12 +1119,8 @@ async function enviar() {
 
     enviandoAhora = true;
     setLoadingState(true);
-
-    // Mostrar mensaje del usuario con miniatura si hay imagen adjunta
     const userHtml = imagenAdjunta
-        ? `${txt}<br><img src="data:${imagenAdjunta.mime};base64,${imagenAdjunta.base64}"
-               style="max-width:180px;max-height:120px;border-radius:8px;margin-top:8px;
-                      border:1px solid rgba(230,48,48,0.3);display:block;" alt="adjunto">`
+        ? `${txt}<br><img src="data:${imagenAdjunta.mime};base64,${imagenAdjunta.base64}" style="max-width:180px;max-height:120px;border-radius:8px;margin-top:8px;border:1px solid rgba(230,48,48,0.3);display:block;" alt="adjunto">`
         : txt;
     addMsg('user', userHtml);
     saveMsg('user', txt);
@@ -1168,14 +1131,9 @@ async function enviar() {
 
     let ref;
     try {
-        if (!studioUserId) {
-            enviandoAhora = false; setLoadingState(false);
-            const loadEl = document.getElementById(lid);
-            if (loadEl) loadEl.remove();
-            return alert('⚠️ No se detectó el userId de Studio. Asegúrate de que el plugin esté conectado.');
-        }
-
-        // [v30.2] Armar payload con imagen opcional
+        // [FIX v29] Incluir userId de Roblox para que el plugin pueda filtrar
+        // solo sus propias peticiones (evita que testers vean codigo ajeno).
+        if (!studioUserId) return alert('⚠️ No se detectó el userId de Studio. Asegúrate de que el plugin esté conectado.');
         const docPayload = {
             mensaje:   txt,
             estado:    'pendiente',
@@ -1189,16 +1147,14 @@ async function enviar() {
             docPayload.imagenMime   = imagenAdjunta.mime;
             console.log('[v30.2] Petición CON imagen (' + Math.round(imagenAdjunta.base64.length / 1024) + ' KB)');
         }
-
         ref = await databases.createDocument(DB_ID, 'PeticionesRoblox', Appwrite.ID.unique(), docPayload);
-        if (imagenAdjunta) quitarImagen(); // limpiar imagen tras envío exitoso
-
+        if (imagenAdjunta) quitarImagen();
     } catch(e) {
         const loadEl = document.getElementById(lid);
         if (loadEl) loadEl.remove();
         addMsg('ai', '❌ Error de conexión con Appwrite: ' + e.message);
         setLoadingState(false);
-        enviandoAhora = false;
+        enviandoAhora = false; // [fix]
         return;
     }
 
@@ -1231,7 +1187,7 @@ async function enviar() {
         if (data.estado === 'chat_response') {
             stop();
             setLoadingState(false);
-            enviandoAhora = false; // [v30.2]
+            enviandoAhora = false; // [fix]
             if (loadEl) loadEl.remove();
             const chatHtml = `
                 <div style="
@@ -1258,7 +1214,7 @@ async function enviar() {
         if (data.estado === 'esperando_aprobacion') {
             stop();
             setLoadingState(false);
-            enviandoAhora = false;
+            enviandoAhora = false; // [fix] plan listo, usuario decide — desbloquear input
             if (!data.planData) {
                 if (loadEl) loadEl.remove();
                 addMsg('ai', '❌ El plan llegó vacío. Intenta de nuevo.');
@@ -1277,7 +1233,6 @@ async function enviar() {
         if (data.estado === 'inyectar' || data.estado === 'completado') {
             stop();
             setLoadingState(false);
-            enviandoAhora = false; // [v30.2]
             if (loadEl) loadEl.remove();
             // [FIX v29] Roadmap: usar costo fijo por fase en vez del costo
             // calculado del prompt (que depende del texto autogenerado).
@@ -1310,6 +1265,7 @@ async function enviar() {
         if (data.estado === 'roadmap_pendiente') {
             stop();
             setLoadingState(false);
+            enviandoAhora = false; // [fix] desbloquear para siguiente envío
             if (loadEl) loadEl.remove();
             let pasosArr = [];
             try { pasosArr = JSON.parse(data.pasos || '[]'); } catch(e) { pasosArr = []; }
@@ -1339,7 +1295,7 @@ async function enviar() {
         if (data.estado === 'error') {
             stop();
             setLoadingState(false);
-            enviandoAhora = false; // [v30.2]
+            enviandoAhora = false; // [fix]
             if (loadEl) loadEl.remove();
             addMsg('ai', `❌ ${data.resultado || 'Error en la inyección.'}`);
         }
@@ -1348,12 +1304,10 @@ async function enviar() {
 
 document.getElementById('send-btn').addEventListener('click', enviar);
 ta.addEventListener('keydown', e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); enviar(); } });
-
 // ══════════════════════════════════════════
 //  IMAGEN ADJUNTA [v30.2]
-//  Comprime a JPEG via Canvas — aprox 80-150 KB base64.
 // ══════════════════════════════════════════
-let imagenAdjunta = null; // { base64, mime, nombre }
+let imagenAdjunta = null;
 
 function comprimirImagen(file, maxPx = 800, calidad = 0.75) {
     return new Promise((resolve, reject) => {
@@ -1383,6 +1337,7 @@ function comprimirImagen(file, maxPx = 800, calidad = 0.75) {
 function mostrarPreviewImagen(obj) {
     imagenAdjunta = obj;
     const area = document.getElementById('img-preview-area');
+    if (!area) return;
     area.style.display = 'block';
     area.innerHTML = `
         <div class="img-preview-pill" onclick="quitarImagen()" title="Click para eliminar">
@@ -1396,7 +1351,7 @@ function mostrarPreviewImagen(obj) {
 function quitarImagen() {
     imagenAdjunta = null;
     const area = document.getElementById('img-preview-area');
-    area.style.display = 'none'; area.innerHTML = '';
+    if (area) { area.style.display = 'none'; area.innerHTML = ''; }
     document.getElementById('attach-btn').classList.remove('attach-btn-active');
     document.getElementById('file-upload').value = '';
 }
@@ -1413,12 +1368,8 @@ document.getElementById('file-upload').addEventListener('change', async (e) => {
         const obj = await comprimirImagen(file);
         mostrarPreviewImagen(obj);
         console.log('[v30.2] Imagen lista: ' + Math.round(obj.base64.length / 1024) + ' KB base64');
-    } catch(err) {
-        alert('❌ Error al procesar la imagen: ' + err.message);
-    } finally {
-        document.getElementById('attach-btn').textContent = '📎';
-        e.target.value = '';
-    }
+    } catch(err) { alert('❌ Error al procesar la imagen: ' + err.message); }
+    finally { document.getElementById('attach-btn').textContent = '📎'; e.target.value = ''; }
 });
 
 function setPrompt(txt) { ta.value = txt; ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; ta.focus(); }
