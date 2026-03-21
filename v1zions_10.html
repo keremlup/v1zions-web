@@ -329,7 +329,7 @@
             </div>
             <div class="logo-text">
                 <span class="logo-name">V1zions</span>
-                <span class="logo-badge">v27.5</span>
+                <span class="logo-badge">v30.1</span>
             </div>
         </div>
     </div>
@@ -1145,6 +1145,26 @@ async function enviar() {
     const stop = escucharDocumento(ref.$id, lid, async (data) => {
         const loadEl = document.getElementById(lid);
 
+        if (data.estado === 'chat_preview') {
+            // [v30.1] Mensaje inmediato de V1zions mientras el Agente 2 procesa.
+            // NO llamamos stop() — seguimos escuchando el siguiente estado.
+            if (loadEl) loadEl.remove();
+            addMsg('ai', `<span style="font-size:13.5px;line-height:1.6;">${data.resultado || '⚙️ Procesando...'}</span>`);
+            const newLid = 'load-preview-' + Date.now();
+            addMsg('ai', `<div class="loading-bubble"><div class="dots"><span></span><span></span><span></span></div>Generando el plan...</div>`, newLid);
+            return;
+        }
+
+        // [v30.1] Respuesta de chat puro: saludo, pregunta sobre V1zions, fuera de contexto, etc.
+        if (data.estado === 'chat_response') {
+            stop();
+            setLoadingState(false);
+            if (loadEl) loadEl.remove();
+            addMsg('ai', `<span style="font-size:13.5px;line-height:1.6;">${data.resultado || ''}</span>`);
+            saveMsg('ai', data.resultado || '');
+            return;
+        }
+
         if (data.estado === 'esperando_aprobacion') {
             stop();
             setLoadingState(false);
@@ -1325,7 +1345,7 @@ async function setupStudioStatus() {
     } catch(e) { console.warn('[Studio] Realtime no disponible:', e.message); }
 
     // 3. Polling cada 3s — red de seguridad si Realtime falla
-    setInterval(pollStatus, 15000);
+    setInterval(pollStatus, 3000);
 
     // 4. [FIX] Al volver a la pestaña (Alt+Tab, etc.) verificar estado inmediatamente
     //    Esto resuelve el bug de "requiere recargar" — el usuario vuelve de Studio
